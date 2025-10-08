@@ -7,6 +7,4 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("[Supabase 설정 오류] 환경변수가 누락되었습니다.");
 }
 
-export const createServerClient = () => {
-  return createClient(supabaseUrl, supabaseKey);
-};
+export const supabase = createClient(supabaseUrl, supabaseKey);
