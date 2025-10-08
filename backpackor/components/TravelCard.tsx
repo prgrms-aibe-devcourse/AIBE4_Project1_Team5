@@ -4,7 +4,7 @@ import React from "react";
 // ⭐️ 2. useNavigate 대신 Next.js의 useRouter를 사용함 ⭐️
 import { useRouter } from "next/navigation";
 // 🚨 경로 별칭을 사용하여 타입 임포트 경로를 수정함
-import type { TravelSummary } from "@/lib/types/travel";
+import type { TravelSummary } from "@/lib/type/travel";
 
 interface TravelCardProps {
   place: TravelSummary;

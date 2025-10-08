@@ -2,8 +2,8 @@ import TravelReviewSection from "@/components/place/reviews/TravelReviewSection"
 import RelatedPlacesSection from "@/components/place/RelatedPlacesSection";
 import { notFound } from "next/navigation";
 
-import { TravelDetail } from "@/lib/types/travel";
-import { createServerClient } from "@/lib/supabaseClient";
+import { TravelDetail } from "@/lib/type/travel";
+import { createServerClient } from "@/lib/supabase/server";
 
 const MOCK_DETAIL_DATA: TravelDetail = {
   place_id: "jeju-mock-id",
@@ -29,7 +29,7 @@ interface TravelDetailPageProps {
 
 const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
   const { placeId } = params;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
 
   const fetchDetail = async (id: string): Promise<TravelDetail> => {
     const { data: dbData, error: dbError } = await supabase

@@ -1,5 +1,14 @@
 {
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   }
 }
