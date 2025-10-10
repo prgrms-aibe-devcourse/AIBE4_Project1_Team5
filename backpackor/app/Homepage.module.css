@@ -1,0 +1,90 @@
+/* app/HomePage.module.css */
+
+/* --- 메인 콘텐츠 스타일 --- */
+.main-content {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+
+/* 1. 상단 검색 영역 */
+.hero-section {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.hero-section h1 {
+  font-size: 36px;
+  margin-bottom: 16px;
+}
+
+.hero-section p {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 32px;
+}
+
+.search-bar input {
+  width: 100%;
+  max-width: 600px;
+  padding: 16px 24px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 50px;
+}
+
+/* 2. 여행지 카드 목록 */
+.travel-section {
+  margin-bottom: 60px; /* 섹션 간의 간격 추가 */
+}
+
+.travel-section h2 {
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+/*
+  TravelCard 컴포넌트 자체에서 카드 스타일을 정의하고 있을 수 있습니다.
+  만약 이 CSS가 적용되지 않으면, TravelCard 컴포넌트의 스타일을 확인해야 합니다.
+  우선 여기에 카드 스타일의 기본 틀을 정의해 둡니다.
+*/
+.card {
+  height: 250px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s ease;
+  color: white;
+  display: flex;
+  flex-direction: column-reverse; /* 내용을 아래로 보내기 위함 */
+  padding: 20px;
+}
+.card:hover {
+  transform: scale(1.03);
+}
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+  z-index: 1;
+}
+.card-content {
+  position: relative;
+  z-index: 2;
+}
+.card-content h3 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}

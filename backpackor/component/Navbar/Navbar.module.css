@@ -1,0 +1,45 @@
+/* components/navbar/Navbar.module.css */
+
+/*
+  이 파일은 이제 Navbar 컴포넌트만을 위한 스타일을 가집니다.
+  모든 전역 스타일(:global)을 제거하여 오류와 충돌을 막았습니다.
+*/
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 8px 24px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.navbar-logo a {
+  color: black;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.navbar-menu {
+  display: flex;
+}
+
+.navbar-menu li {
+  padding: 8px 16px;
+}
+
+.navbar-menu li a {
+  color: #333333;
+}
+
+.navbar-menu li:hover {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.navbar-user a {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
