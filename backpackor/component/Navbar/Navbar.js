@@ -21,7 +21,7 @@ function Navbar() {
           <a href="#">일정 만들기</a>
         </li>
         <li>
-          <a href="#">나의 일정</a>
+          <a href="#">내 일정</a>
         </li>
         <li>
           <a href="#">리뷰</a>
@@ -29,7 +29,7 @@ function Navbar() {
       </ul>
 
       <div className={styles["navbar-user"]}>
-        <a href="#">로그인</a>
+        <a href="/login">로그인</a>
       </div>
     </nav>
   );
