@@ -39,6 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+<<<<<<< HEAD
 
 # IntelliJ 설정 폴더
 .idea/
+=======
+>>>>>>> cd3abab9b149e9f540c0645fbdeb96a005113f6a
