@@ -5,15 +5,11 @@ import { useProfile } from "@/hook/useProfile";
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
 import ReviewButton from "@/component/review/ReviewButton";
-<<<<<<< HEAD
-// DB 데이터가 없을 때 사용할 목업 데이터
-=======
 import type { TravelSummary } from "@/type/travel";
 import { useEffect, useState } from "react";
 import styles from "./HomePage.module.css";
 
 // 목업 데이터 (DB에 데이터가 없을 때 대체)
->>>>>>> c591309027435255676a33ba9a77c573bd89259f
 const MOCK_PLACES: TravelSummary[] = [
   {
     place_id: "jeju-mock-id",
