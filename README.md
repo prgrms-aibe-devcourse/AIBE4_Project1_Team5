@@ -18,7 +18,7 @@
 
 ### 커밋 메시지
 제목<BR>
-[YYMMDD] TYPE:커밋메시지
+[YYMMDD] TYPE: 커밋메시지
 
 내용<BR>
 ```markdown
@@ -30,7 +30,7 @@
 
 ### PR 템플릿
 제목<BR>
-[YYMMDD] TYPE:PR메시지
+[YYMMDD] TYPE: PR메시지
 
 내용<BR>
 ```markdown
