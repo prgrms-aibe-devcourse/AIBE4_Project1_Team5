@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useSocialLogin } from "./useSocialLogin";
 
 export default function LoginPage() {
+  const { handleSocialLogin } = useSocialLogin();
   return (
     <main className="flex flex-col items-center justify-center min-h-screen">
       <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md">
@@ -79,6 +81,7 @@ export default function LoginPage() {
           {/* Google */}
           <button
             type="button"
+            onClick={() => handleSocialLogin("google")}
             className="w-14 h-14 flex items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-50 hover:scale-105 transition-transform shadow-sm"
           >
             <img
@@ -91,6 +94,7 @@ export default function LoginPage() {
           {/* Kakao */}
           <button
             type="button"
+            onClick={() => handleSocialLogin("kakao")}
             className="w-14 h-14 flex items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-50 hover:scale-105 transition-transform shadow-sm"
           >
             <img
@@ -103,6 +107,7 @@ export default function LoginPage() {
           {/* Naver */}
           <button
             type="button"
+            onClick={() => handleSocialLogin("naver" as any)}
             className="w-14 h-14 flex items-center justify-center rounded-full border border-gray-300 bg-white hover:bg-gray-50 hover:scale-105 transition-transform shadow-sm"
           >
             <img
