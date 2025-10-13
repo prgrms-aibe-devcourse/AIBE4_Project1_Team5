@@ -1,12 +1,15 @@
-// app/page.tsx
+"use client";
 
-import type { TravelSummary } from "@/type/travel";
+import { useAuth } from "@/hook/useAuth";
+import { useProfile } from "@/hook/useProfile";
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
-import styles from "./HomePage.module.css"; // 1. 방금 만든 CSS 파일을 불러옵니다.
 import ReviewButton from "@/component/review/ReviewButton";
+import type { TravelSummary } from "@/type/travel";
+import { useEffect, useState } from "react";
+import styles from "./HomePage.module.css";
 
-// DB 데이터가 없을 때 사용할 목업 데이터
+// 목업 데이터 (DB에 데이터가 없을 때 대체)
 const MOCK_PLACES: TravelSummary[] = [
   {
     place_id: "jeju-mock-id",
@@ -46,41 +49,59 @@ const MOCK_PLACES: TravelSummary[] = [
   },
 ];
 
-const Page = async () => {
-  // 2. 데이터 불러오는 로직은 그대로 유지합니다 (아주 좋습니다!)
-  const fetchPlaces = async (): Promise<TravelSummary[]> => {
-    const supabase = createServerClient();
-    const { data: dbPlaces, error: dbError } = await supabase
-      .from("place")
-      .select("place_id, place_name, place_image, average_rating")
-      .order("average_rating", { ascending: false })
-      .limit(6); // 6개만 가져오도록 제한
+export default function Page() {
+  const { user } = useAuth();
+  const { profile } = useProfile(user?.id);
+  const [places, setPlaces] = useState<TravelSummary[]>([]);
 
-    if (dbError || !dbPlaces || dbPlaces.length < 6) {
-      console.warn("DB 데이터 부족 또는 오류. 목업을 사용합니다.");
-      return MOCK_PLACES;
-    }
+  // Supabase에서 여행지 불러오기
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      const supabase = createServerClient();
+      const { data: dbPlaces, error } = await supabase
+        .from("place")
+        .select("place_id, place_name, place_image, average_rating")
+        .order("average_rating", { ascending: false })
+        .limit(6);
 
-    return dbPlaces as TravelSummary[];
-  };
+      if (error || !dbPlaces || dbPlaces.length < 6) {
+        console.warn("DB 데이터 부족 또는 오류. 목업을 사용합니다.");
+        setPlaces(MOCK_PLACES);
+      } else {
+        setPlaces(dbPlaces);
+      }
+    };
 
-  const places = await fetchPlaces();
+    fetchPlaces();
+  }, []);
 
-  // 3. 데이터를 두 그룹으로 나눕니다.
   const popularPlaces = places.slice(0, 3);
   const bestPlaces = places.slice(3, 6);
 
-  // 4. 새로운 HTML 디자인을 적용하여 화면을 구성합니다.
   return (
     <main className={styles["main-content"]}>
+      {/* (로그인 여부에 따라 다르게 출력) */}
       <section className={styles["hero-section"]}>
-        <h1>어디로 떠나볼까요?</h1>
-        <p>새로운 여행지를 발견하고 여행을 계획해보세요.</p>
+        {user ? (
+          <>
+            <h1>
+              안녕하세요, {profile?.display_name || "사용자"}님!
+            </h1>
+            <p>취향에 맞는 테마로, 여행을 시작해보세요.</p>
+          </>
+        ) : (
+          <>
+            <h1>어디로 떠나볼까요?</h1>
+            <p>새로운 여행지를 발견하고 여행을 계획해보세요.</p>
+          </>
+        )}
+
         <div className={styles["search-bar"]}>
           <input type="text" placeholder="어디로 떠나고 싶으신가요?" />
         </div>
       </section>
 
+      {/* 인기 여행지 */}
       <section className={styles["travel-section"]}>
         <h2>인기 여행지</h2>
         <div className={styles["card-container"]}>
@@ -90,6 +111,7 @@ const Page = async () => {
         </div>
       </section>
 
+      {/* 베스트 여행지 */}
       <section className={styles["travel-section"]}>
         <h2>베스트 여행지</h2>
         <div className={styles["card-container"]}>
@@ -98,10 +120,9 @@ const Page = async () => {
           ))}
         </div>
       </section>
-      {/* 리뷰 등록 플로팅 버튼 메인 홈페이지에 추가 ( 추후 각 여행지 마다 버튼 추가로 변경 예정)*/}
+
+      {/* 리뷰 버튼 */}
       <ReviewButton places={places} />
     </main>
   );
-};
-
-export default Page;
+}

@@ -31,7 +31,7 @@ export default function ReviewButton({ places }: ReviewButtonProps) {
   const handleReviewSubmit = (reviewData: any) => {
     console.log('리뷰 제출:', reviewData);
     
-    // 리뷰 저장
+    // 리뷰 저장 (region은 자동으로 추출됨)
     saveReview({
       placeId: reviewData.placeId,
       placeName: selectedPlace?.placeName || '',

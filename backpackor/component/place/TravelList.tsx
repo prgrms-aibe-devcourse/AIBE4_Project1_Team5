@@ -3,21 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import FavoriteButton from "./FavoriteButton";
 
-// [수정!] 실제 DB 구조에 맞게 타입 재정의 (region_id 삭제, place_address 추가)
+// [수정 완료!] place_address를 다시 추가했습니다.
 export interface Place {
   place_id: string;
   place_name: string;
-  place_address: string; // 주소 컬럼 추가
+  place_address: string; // <-- 이 줄이 빠져있었습니다!
   place_description: string;
   average_rating: number;
   place_image: string;
   favorite_count: number;
 }
 
-// [삭제!] REGION_MAP은 더 이상 필요 없으므로 삭제합니다.
+// [삭제!] REGION_MAP은 더 이상 사용하지 않으므로 삭제합니다.
 
-// --- 지역 필터 드롭다운에 표시할 목록 ---
 const REGIONS = [
   "전체",
   "서울특별시",
@@ -39,14 +39,13 @@ const REGIONS = [
   "제주특별자치도",
 ];
 
-// --- 여행지 카드 UI 컴포넌트 ---
 const TravelCard = ({ destination }: { destination: Place }) => {
   const [imgSrc, setImgSrc] = useState(destination.place_image);
 
   return (
     <Link
       href={`/place/${destination.place_id}`}
-      className="travel-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+      className="travel-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
     >
       <div className="relative w-full aspect-video">
         <Image
@@ -60,13 +59,18 @@ const TravelCard = ({ destination }: { destination: Place }) => {
             setImgSrc("/default-image.png");
           }}
         />
+        <FavoriteButton
+          placeId={destination.place_id}
+          initialIsFavorite={false}
+          initialFavoriteCount={destination.favorite_count}
+        />
       </div>
-      <div className="card-info p-4">
+      <div className="card-info p-4 flex-grow flex flex-col">
         <h3 className="text-lg font-bold mb-1">{destination.place_name}</h3>
-        <p className="text-sm text-gray-600 mb-2 h-10 overflow-hidden">
+        <p className="text-sm text-gray-600 mb-2 h-10 overflow-hidden flex-grow">
           {destination.place_description}
         </p>
-        <p className="flex items-center text-sm font-semibold">
+        <p className="flex items-center text-sm font-semibold mt-auto">
           <svg
             className="w-5 h-5 text-yellow-400 mr-1"
             viewBox="0 0 20 20"
@@ -81,7 +85,6 @@ const TravelCard = ({ destination }: { destination: Place }) => {
   );
 };
 
-// --- '여행지 목록' 페이지의 메인 컴포넌트 ---
 export default function TravelList({
   initialPlaces,
 }: {
@@ -92,7 +95,7 @@ export default function TravelList({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const filteredDestinations = initialPlaces.filter((dest) => {
-    // [수정 완료!] 주소(place_address)에 선택한 지역명이 포함되어 있는지 확인하는 방식으로 변경
+    // [수정 완료!] region_id 대신 place_address를 사용하는 올바른 필터 로직입니다.
     const regionMatch =
       selectedRegion === "전체" ||
       (dest.place_address && dest.place_address.includes(selectedRegion));
@@ -102,7 +105,7 @@ export default function TravelList({
 
   return (
     <main className="travel-app-container max-w-6xl mx-auto px-4 py-8">
-      {/* ... 이하 JSX 코드는 모두 동일 ... */}
+      {/* ... 이하 JSX는 모두 동일 ... */}
       <h1 className="text-3xl font-bold mb-2">여행지 둘러보기</h1>
       <p className="text-gray-600 mb-6">
         대한민국의 아름다운 여행지들을 탐색해보세요.

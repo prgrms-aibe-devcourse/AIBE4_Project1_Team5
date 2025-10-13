@@ -1,8 +1,8 @@
 // app/my-planner/page.tsx '내 일정' 목록 페이지로, 서버에서 사용자의 전체 여행 계획 데이터를 불러오는 역할
 
+import PlanList from "@/component/my-planner/PlanList"; // 클라이언트 컴포넌트인 PlanList를 import 합니다.
 import { createServerClient } from "@/lib/supabaseClient";
 import Link from "next/link";
-import PlanList from "@/component/my-planner/PlanList"; // 클라이언트 컴포넌트인 PlanList를 import 합니다.
 
 // trip_plan 테이블의 데이터 타입을 정의합니다.
 interface TripPlan {
