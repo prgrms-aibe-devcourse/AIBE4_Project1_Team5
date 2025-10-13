@@ -25,7 +25,7 @@ export default function AiPlannerDatePage() {
         const startDate = format(selectedRange.from, 'yyyy-MM-dd');
         const endDate = format(selectedRange.to, 'yyyy-MM-dd');
 
-        router.push(`/planner/ai/companion?start=${startDate}&end=${endDate}`);
+        router.push(`/planner/ai/region?start=${startDate}&end=${endDate}`);
     };
 
     return (
