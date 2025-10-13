@@ -1,4 +1,4 @@
-// component/my-page/TripPlanCard.tsx 여행일정 한 개의 요약 정보를 보여주는 재사용 가능한 카드 UI 컴포넌트
+// component/my-planner/TripPlanCard.tsx 여행일정 한 개의 요약 정보를 보여주는 재사용 가능한 카드 UI 컴포넌트
 
 import Link from 'next/link';
 import { differenceInDays } from 'date-fns';
@@ -54,7 +54,7 @@ export default function TripPlanCard({ plan, onDelete }: TripPlanCardProps) {
                 */}
 
                 <div className="flex gap-2">
-                    <Link href={`/my-page/${plan.trip_id}`} className="flex-1 text-center px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg text-sm hover:bg-blue-600">
+                    <Link href={`/my-planner/${plan.trip_id}`} className="flex-1 text-center px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg text-sm hover:bg-blue-600">
                         상세보기
                     </Link>
                     <Link
