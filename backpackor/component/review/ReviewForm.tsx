@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, X, Upload } from 'lucide-react'; // npm install lucide-react
+import { Star, X, Upload } from 'lucide-react';
 
 interface ReviewFormProps {
   placeId: string;
