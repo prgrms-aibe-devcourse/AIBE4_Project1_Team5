@@ -4,6 +4,7 @@ import type { TravelSummary } from "@/type/travel";
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
 import styles from "./HomePage.module.css"; // 1. 방금 만든 CSS 파일을 불러옵니다.
+import ReviewButton from "@/component/review/ReviewButton";
 
 // DB 데이터가 없을 때 사용할 목업 데이터
 const MOCK_PLACES: TravelSummary[] = [
@@ -97,6 +98,8 @@ const Page = async () => {
           ))}
         </div>
       </section>
+      {/* 리뷰 등록 플로팅 버튼 메인 홈페이지에 추가 ( 추후 각 여행지 마다 버튼 추가로 변경 예정)*/}
+      <ReviewButton places={places} />
     </main>
   );
 };
