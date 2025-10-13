@@ -1,8 +1,8 @@
 // app/my-planner/[tripId]/page.tsx 특정 여행일정의 상세 정보를 서버에서 불러와 보여주는 동적 상세 페이지
 
+import TripDetailClient from "@/component/my-planner/TripDetailClient"; // [추가] 클라이언트 컴포넌트를 import
 import { createServerClient } from "@/lib/supabaseClient";
 import { notFound } from "next/navigation";
-import TripDetailClient from "@/component/my-planner/TripDetailClient"; // [추가] 클라이언트 컴포넌트를 import
 
 interface TripDetailPageProps {
   params: { tripId: string };
