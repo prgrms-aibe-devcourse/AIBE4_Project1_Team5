@@ -9,7 +9,7 @@ export function useAuth() {
   const [provider, setProvider] = useState<string | null>(null);
 
   useEffect(() => {
-    // ✅ 세션 복원
+    // 세션 복원
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);

@@ -1,5 +1,6 @@
-import React from "react";
+import Image from "next/image";
 import Link from "next/link";
+import React from "react";
 
 // Navbar 컴포넌트에 props가 없으므로 React.FC (Functional Component) 타입을 지정합니다.
 const Navbar: React.FC = () => {
@@ -7,9 +8,19 @@ const Navbar: React.FC = () => {
     // Navbar.module.css의 스타일을 Tailwind CSS 유틸리티 클래스로 변환하여 적용합니다.
     <nav className="flex justify-between items-center bg-white py-2 px-6 border-b border-gray-200">
       {/* 로고 */}
-      <div className="text-2xl font-bold text-black">
-        <Link href="/">BackpacKOR</Link>
-      </div>
+      <Link
+        href="/"
+        className="flex items-center transition-transform duration-300 hover:scale-105"
+      >
+        <Image
+          src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png"
+          alt="BackpacKOR 로고"
+          width={200}
+          height={56}
+          priority
+          className="w-[200px] h-auto object-contain"
+        />
+      </Link>
 
       {/* 메뉴 */}
       <ul className="flex">
