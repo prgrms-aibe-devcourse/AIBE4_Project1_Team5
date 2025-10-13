@@ -51,7 +51,7 @@ const Navbar: React.FC = () => {
         <li className="py-2 px-4">
           {/* 현재 페이지가 없으므로 #으로 유지합니다. */}
           <Link
-            href="#"
+            href="/my-planner"
             className="text-gray-800 hover:text-blue-500 hover:font-bold"
           >
             내 일정

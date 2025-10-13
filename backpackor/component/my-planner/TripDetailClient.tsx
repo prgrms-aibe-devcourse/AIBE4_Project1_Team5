@@ -1,4 +1,4 @@
-// component/my-page/TripDetailClient.tsx 일정 상세페이지의 UI를 그리고, 수정/삭제 등 상호작용을 처리하는 클라이언트 컴포넌트
+// component/my-planner/TripDetailClient.tsx 일정 상세페이지의 UI를 그리고, 수정/삭제 등 상호작용을 처리하는 클라이언트 컴포넌트
 'use client';
 
 import { createBrowserClient } from "@/lib/supabaseClient";
@@ -55,7 +55,7 @@ export default function TripDetailClient({ plan, groupedDetails }: TripDetailCli
             <header className="mb-8">
                 <div className="flex justify-between items-start">
                     <div>
-                        <Link href="/my-page" className="text-blue-500 hover:underline mb-2 inline-block">&larr; 내 일정 목록으로 돌아가기</Link>
+                        <Link href="/my-planner" className="text-blue-500 hover:underline mb-2 inline-block">&larr; 내 일정 목록으로 돌아가기</Link>
                         <h1 className="text-4xl font-bold">{plan.trip_title}</h1>
                         <p className="text-lg text-gray-500">{plan.trip_start_date} ~ {plan.trip_end_date}</p>
                     </div>

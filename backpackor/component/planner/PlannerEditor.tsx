@@ -144,14 +144,18 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
                 await supabase.from('trip_plan_detail').insert(newPlanDetails);
             }
             alert("일정이 수정되었습니다.");
-            router.push(`/my-page/${tripIdToEdit}`);
+            router.push(`/my-planner/${tripIdToEdit}`);
         } else {
             // --- 생성 로직 ---
             const { data: insertedPlan, error: planError } = await supabase.from('trip_plan').insert({
                 user_id: testUserId, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
             }).select('trip_id').single();
 
-            if (planError || !insertedPlan) { /* ...에러 처리... */ }
+            if (planError || !insertedPlan) {
+                /* ...에러 처리... */
+                console.error("일정 저장 실패 원인:", planError);
+                alert("일정 저장에 실패했습니다. 개발자 도구의 콘솔을 확인해주세요.");
+            }
             else {
                 const planDetails = Object.entries(plan).flatMap(([day, places]) =>
                     places.map((p, i) => ({ trip_id: insertedPlan.trip_id, place_id: p.place_id, day_number: parseInt(day), visit_order: i + 1 }))
@@ -160,7 +164,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
                     await supabase.from('trip_plan_detail').insert(planDetails);
                 }
                 alert("일정이 저장되었습니다.");
-                router.push('/my-page');
+                router.push('/my-planner');
             }
         }
         setIsSaving(false);
