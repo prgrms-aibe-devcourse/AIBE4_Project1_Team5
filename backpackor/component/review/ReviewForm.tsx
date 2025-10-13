@@ -1,8 +1,7 @@
-// component/review/ReviewForm.tsx
 'use client';
 
 import { useState } from 'react';
-import { Star, X, Upload } from 'lucide-react'; // npm install lucide-react
+import { Star, X, Upload } from 'lucide-react';
 
 interface ReviewFormProps {
   placeId: string;
@@ -33,6 +32,7 @@ export default function ReviewForm({
   const [author, setAuthor] = useState<string>('');
   const [images, setImages] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const handleStarClick = (starIndex: number, isHalf: boolean) => {
     const newRating = isHalf ? starIndex - 0.5 : starIndex;
@@ -54,24 +54,71 @@ export default function ReviewForm({
       return;
     }
 
-    const newImages: string[] = [];
-    const filesToProcess = Math.min(files.length, remainingSlots);
-
-    for (let i = 0; i < filesToProcess; i++) {
-      const file = files[i];
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            newImages.push(event.target.result as string);
-            if (newImages.length === filesToProcess) {
-              setImages([...images, ...newImages]);
-            }
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+    // 이미지 파일만 필터링
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      alert('이미지 파일만 업로드 가능합니다!');
+      e.target.value = '';
+      return;
     }
+
+    const filesToProcess = imageFiles.slice(0, remainingSlots);
+    setIsUploading(true);
+    let processedCount = 0;
+    const newImages: string[] = [];
+
+    console.log(`${filesToProcess.length}개의 이미지 업로드 시작...`);
+
+    filesToProcess.forEach((file, index) => {
+      // 파일 크기 체크 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name}은(는) 5MB를 초과하여 업로드할 수 없습니다.`);
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          setIsUploading(false);
+          if (newImages.length > 0) {
+            setImages(prevImages => [...prevImages, ...newImages.filter(img => img)]);
+          }
+        }
+        return;
+      }
+
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          newImages[index] = event.target.result as string;
+          processedCount++;
+          console.log(`이미지 ${processedCount}/${filesToProcess.length} 업로드 완료`);
+          
+          // 모든 파일 처리 완료 시
+          if (processedCount === filesToProcess.length) {
+            const validImages = newImages.filter(img => img); // undefined 제거
+            if (validImages.length > 0) {
+              setImages(prevImages => [...prevImages, ...validImages]);
+              console.log(`총 ${validImages.length}개 이미지 추가됨`);
+            }
+            setIsUploading(false);
+          }
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error(`${file.name} 읽기 실패:`, error);
+        alert(`${file.name} 업로드 실패`);
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          const validImages = newImages.filter(img => img);
+          if (validImages.length > 0) {
+            setImages(prevImages => [...prevImages, ...validImages]);
+          }
+          setIsUploading(false);
+        }
+      };
+
+      reader.readAsDataURL(file);
+    });
 
     e.target.value = '';
   };
@@ -269,15 +316,24 @@ export default function ReviewForm({
 
             {/* 업로드 버튼 */}
             {images.length < 5 && (
-              <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors">
+              <label className={`flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg ${isUploading ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-indigo-500 hover:bg-indigo-50'} transition-colors`}>
                 <div className="text-center">
-                  <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-                  <p className="text-sm text-gray-600">
-                    클릭하여 이미지 업로드
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {images.length}/5 업로드됨
-                  </p>
+                  {isUploading ? (
+                    <>
+                      <div className="mx-auto mb-2 text-indigo-500 animate-spin">⏳</div>
+                      <p className="text-sm text-gray-600">업로드 중...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                      <p className="text-sm text-gray-600">
+                        클릭하여 이미지 업로드
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {images.length}/5 업로드됨 (최대 5MB)
+                      </p>
+                    </>
+                  )}
                 </div>
                 <input
                   type="file"
@@ -285,6 +341,7 @@ export default function ReviewForm({
                   multiple
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={isUploading}
                 />
               </label>
             )}

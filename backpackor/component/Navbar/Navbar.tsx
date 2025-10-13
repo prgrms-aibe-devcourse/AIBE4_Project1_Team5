@@ -59,7 +59,7 @@ const Navbar: React.FC = () => {
         </li>
         <li className="py-2 px-4">
           <Link
-            href="/"
+            href="/review"
             className="text-gray-800 hover:text-blue-500 hover:font-bold"
           >
             리뷰
