@@ -5,7 +5,6 @@ import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
 import styles from "./HomePage.module.css"; // 1. 방금 만든 CSS 파일을 불러옵니다.
 import ReviewButton from "@/component/review/ReviewButton";
-
 // DB 데이터가 없을 때 사용할 목업 데이터
 const MOCK_PLACES: TravelSummary[] = [
   {
