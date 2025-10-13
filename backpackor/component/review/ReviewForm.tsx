@@ -1,4 +1,3 @@
-// component/review/ReviewForm.tsx
 'use client';
 
 import { useState } from 'react';
