@@ -150,15 +150,12 @@ export default function ReviewForm({
 
     console.log('제출된 리뷰:', reviewData);
     
-    // 부모 컴포넌트에 리뷰 데이터 전달
-    onSubmit(reviewData);
-    
     setSubmitted(true);
     
-    // 2초 후 모달 닫기
+    // 1.5초 후 부모 컴포넌트에 전달 (성공 메시지 보여주기)
     setTimeout(() => {
-      onCancel();
-    }, 2000);
+      onSubmit(reviewData);
+    }, 1500);
   };
 
   const renderStars = () => {

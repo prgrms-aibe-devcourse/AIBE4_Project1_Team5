@@ -1,4 +1,5 @@
-// component/planner/PlannerEditor.tsx 새로운 여행 일정을 생성하거나 기존 일정을 수정하는 일정편집 페이지 컴포넌트
+// component/planner/PlannerEditor.tsx
+// 새로운 여행 일정을 생성하거나 기존 일정을 수정하는 일정편집 페이지 컴포넌트
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -17,11 +18,6 @@ interface DayInfo {
 }
 type Plan = Record<number, Place[]>;
 
-interface TripPlanDetail {
-    place: Place;
-    day_number: number;
-}
-
 interface PlannerEditorProps {
     initialPlaces: Place[];
 }
@@ -36,62 +32,60 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
     const tripIdToEdit = searchParams.get('trip_id');
     const startDateStr = searchParams.get('start');
     const endDateStr = searchParams.get('end');
+    const aiGeneratedTitle = searchParams.get('aiTitle');
+    const aiGeneratedPlanStr = searchParams.get('aiPlan');
 
     // --- 상태 (State) ---
     const [places] = useState<Place[]>(initialPlaces);
     const [plan, setPlan] = useState<Plan>({});
     const [activeDay, setActiveDay] = useState<number>(1);
     const [isSaving, setIsSaving] = useState(false);
-    const [tripTitle, setTripTitle] = useState("나만의 새로운 여행");
+    const [tripTitle, setTripTitle] = useState(aiGeneratedTitle || "나만의 새로운 여행");
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [isLoading, setIsLoading] = useState(true); // [추가] 데이터 로딩 상태 추가
+    const [isLoading, setIsLoading] = useState(true);
 
-    // --- Effects ---
+    // --- Effects (페이지 로드 시 실행) ---
     useEffect(() => {
-        const fetchPlanData = async () => {
-            if (!tripIdToEdit) {
-                setIsLoading(false);
-                return;
-            }
+        const initializePlan = async () => {
+            setIsLoading(true);
 
-            // 1. 기본 정보 (제목) 가져오기
-            const { data: planData, error: planError } = await supabase
-                .from('trip_plan')
-                .select('trip_title')
-                .eq('trip_id', tripIdToEdit)
-                .single();
+            if (aiGeneratedPlanStr) {
+                // 시나리오 1: AI 추천 계획이 있는 경우
+                const aiPlan = JSON.parse(aiGeneratedPlanStr);
+                const hydratedPlan: Plan = {};
+                for (const day in aiPlan) {
 
-            if (planData) setTripTitle(planData.trip_title);
-
-            // 2. 상세 일정 정보 가져오기
-            const { data: details, error: detailsError } = await supabase
-                .from('trip_plan_detail')
-                .select('day_number, place(*)')
-                .eq('trip_id', tripIdToEdit);
-
-            if (planError || detailsError) {
-                alert("기존 일정 정보를 불러오는 데 실패했습니다.");
-                setIsLoading(false);
-                return;
-            }
-
-            // 3. 불러온 데이터로 plan 상태 채우기
-            const newPlan: Plan = {};
-            // forEach 내부의 detail 타입을 any로 지정합니다.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (details || []).forEach((detail: any) => {
-                if (!newPlan[detail.day_number]) {
-                    newPlan[detail.day_number] = [];
+                    hydratedPlan[parseInt(day, 10)] = aiPlan[day]
+                        .map((p: { place_name: string }) =>
+                            initialPlaces.find(ip => ip.place_name === p.place_name)
+                        )
+                        .filter((p?: Place): p is Place => p !== undefined); // undefined 제거
                 }
-                newPlan[detail.day_number].push(detail.place);
-            });
-            setPlan(newPlan);
-            setIsLoading(false); // 로딩 완료
+                setPlan(hydratedPlan);
+
+            } else if (tripIdToEdit) {
+                // 시나리오 2: 기존 일정을 수정하는 경우
+                const { data: planData } = await supabase.from('trip_plan').select('trip_title').eq('trip_id', tripIdToEdit).single();
+                if (planData) setTripTitle(planData.trip_title);
+
+                const { data: details } = await supabase.from('trip_plan_detail').select('day_number, place(*)').eq('trip_id', tripIdToEdit);
+                const newPlan: Plan = {};
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (details as any[] || []).forEach(detail => {
+                    if (!newPlan[detail.day_number]) newPlan[detail.day_number] = [];
+                    newPlan[detail.day_number].push(detail.place);
+                });
+                setPlan(newPlan);
+            }
+
+            // 시나리오 3: 아무것도 없는 순수 생성 모드(일정 직접 짜기)는 그냥 넘어감
+            setIsLoading(false);
         };
 
-        fetchPlanData();
-    }, [tripIdToEdit]);
+        initializePlan();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 이 Effect는 페이지가 처음 로드될 때 한 번만 실행되도록 의도
 
     // --- 데이터 가공 ---
     let days: DayInfo[] = [];
@@ -108,7 +102,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
 
     // --- 핸들러 함수 ---
     const handleAddPlace = (place: Place) => {
-        setPlan(prevPlan => ({...prevPlan, [activeDay]: [...(prevPlan[activeDay] || []), place] }));
+        setPlan(prevPlan => ({ ...prevPlan, [activeDay]: [...(prevPlan[activeDay] || []), place] }));
     };
 
     const handleRemovePlace = (day: number, placeId: string) => {
@@ -135,28 +129,21 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
             // --- 수정 로직 ---
             await supabase.from('trip_plan').update({ trip_title: tripTitle }).eq('trip_id', tripIdToEdit);
             await supabase.from('trip_plan_detail').delete().eq('trip_id', tripIdToEdit);
-
             const newPlanDetails = Object.entries(plan).flatMap(([day, places]) =>
                 places.map((p, i) => ({ trip_id: tripIdToEdit, place_id: p.place_id, day_number: parseInt(day), visit_order: i + 1 }))
             );
-
             if (newPlanDetails.length > 0) {
                 await supabase.from('trip_plan_detail').insert(newPlanDetails);
             }
             alert("일정이 수정되었습니다.");
             router.push(`/my-planner/${tripIdToEdit}`);
         } else {
-            // --- 생성 로직 ---
-            const { data: insertedPlan, error: planError } = await supabase.from('trip_plan').insert({
+            // --- 생성 로직 (AI 추천 포함) ---
+            const { data: insertedPlan } = await supabase.from('trip_plan').insert({
                 user_id: testUserId, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
             }).select('trip_id').single();
 
-            if (planError || !insertedPlan) {
-                /* ...에러 처리... */
-                console.error("일정 저장 실패 원인:", planError);
-                alert("일정 저장에 실패했습니다. 개발자 도구의 콘솔을 확인해주세요.");
-            }
-            else {
+            if (insertedPlan) {
                 const planDetails = Object.entries(plan).flatMap(([day, places]) =>
                     places.map((p, i) => ({ trip_id: insertedPlan.trip_id, place_id: p.place_id, day_number: parseInt(day), visit_order: i + 1 }))
                 );
@@ -171,8 +158,8 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
     };
 
     // 로딩 중일 때 화면
-    if (isLoading && tripIdToEdit) {
-        return <div className="w-full h-screen flex items-center justify-center">기존 일정 정보를 불러오는 중...</div>;
+    if (isLoading) {
+        return <div className="w-full h-screen flex items-center justify-center">일정 정보를 불러오는 중...</div>;
     }
 
     // --- 렌더링 (JSX) ---

@@ -1,10 +1,9 @@
-// app/review/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ReviewForm from '@/component/review/ReviewForm';
-import { getReviews, saveReview, toggleLike, type Review } from '@/lib/reviewStore';
+import Link from 'next/link';
+import { getReviews, toggleLike, type Review } from '@/lib/reviewStore';
 import { Star, Heart, Camera } from 'lucide-react';
 
 const REGIONS = [
@@ -32,13 +31,11 @@ export default function ReviewPage() {
   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
-  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState("전체");
   const [showPhotoOnly, setShowPhotoOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'latest' | 'likes' | 'rating-high' | 'rating-low'>('latest');
   const [currentUserId] = useState(() => {
-    // 간단한 사용자 ID (실제로는 인증 시스템 사용)
     if (typeof window !== 'undefined') {
       let userId = localStorage.getItem('userId');
       if (!userId) {
@@ -49,26 +46,47 @@ export default function ReviewPage() {
     }
     return 'user_default';
   });
-  const [selectedPlace, setSelectedPlace] = useState({
-    placeId: 'jeju-mock-id',
-    placeName: '제주도',
-  });
 
   // 리뷰 불러오기 + 데이터 마이그레이션
   useEffect(() => {
-    const storedReviews = getReviews();
+    const loadReviews = () => {
+      const storedReviews = getReviews();
+      
+      // 기존 리뷰 데이터에 새 속성 추가 (마이그레이션)
+      const migratedReviews = storedReviews.map(review => ({
+        ...review,
+        region: review.region || '기타',
+        likes: review.likes || 0,
+        likedBy: review.likedBy || [],
+      }));
+      
+      setReviews(migratedReviews);
+      setFilteredReviews(migratedReviews);
+      setIsLoading(false);
+    };
+
+    loadReviews();
+
+    // 스토리지 변경 감지 (다른 탭에서 리뷰 추가 시)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'travel-reviews') {
+        loadReviews();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     
-    // 기존 리뷰 데이터에 새 속성 추가 (마이그레이션)
-    const migratedReviews = storedReviews.map(review => ({
-      ...review,
-      region: review.region || '기타',
-      likes: review.likes || 0,
-      likedBy: review.likedBy || [],
-    }));
+    // 페이지 포커스 시 리뷰 새로고침
+    const handleFocus = () => {
+      loadReviews();
+    };
     
-    setReviews(migratedReviews);
-    setFilteredReviews(migratedReviews);
-    setIsLoading(false);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // 필터링 및 정렬 적용
@@ -103,21 +121,6 @@ export default function ReviewPage() {
 
     setFilteredReviews(filtered);
   }, [reviews, selectedRegion, showPhotoOnly, sortBy]);
-
-  const handleReviewSubmit = (reviewData: any) => {
-    const newReview = saveReview({
-      placeId: reviewData.placeId,
-      placeName: selectedPlace.placeName,
-      rating: reviewData.rating,
-      title: reviewData.title,
-      content: reviewData.content,
-      author: reviewData.author,
-      images: reviewData.images,
-    });
-
-    setReviews([newReview, ...reviews]);
-    setIsReviewFormOpen(false);
-  };
 
   const handleLike = (reviewId: string) => {
     const updatedReview = toggleLike(reviewId, currentUserId);
@@ -193,13 +196,13 @@ export default function ReviewPage() {
                   다른 여행자들의 생생한 후기를 확인하세요
                 </p>
               </div>
-              <button
-                onClick={() => setIsReviewFormOpen(true)}
+              <Link
+                href="/review/write"
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2"
               >
                 <span className="text-xl">✍️</span>
                 리뷰 작성하기
-              </button>
+              </Link>
             </div>
 
             {/* 통계 정보 */}
@@ -297,12 +300,12 @@ export default function ReviewPage() {
                     : "첫 번째 리뷰를 작성해보세요!"}
                 </p>
                 {!(showPhotoOnly || selectedRegion !== "전체") && (
-                  <button
-                    onClick={() => setIsReviewFormOpen(true)}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all"
+                  <Link
+                    href="/review/write"
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all inline-block"
                   >
                     리뷰 작성하기
-                  </button>
+                  </Link>
                 )}
               </div>
             ) : (
@@ -398,33 +401,6 @@ export default function ReviewPage() {
           </div>
         </div>
       </div>
-
-      {/* 리뷰 작성 모달 */}
-      {isReviewFormOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setIsReviewFormOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setIsReviewFormOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg"
-            >
-              ✕
-            </button>
-
-            <ReviewForm
-              placeId={selectedPlace.placeId}
-              placeName={selectedPlace.placeName}
-              onSubmit={handleReviewSubmit}
-              onCancel={() => setIsReviewFormOpen(false)}
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 }
