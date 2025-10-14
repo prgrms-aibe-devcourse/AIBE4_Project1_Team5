@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
 const NAV_LINKS = [
+  { href: "/", label: "홈" }, // '홈' 링크 추가
   { href: "/place", label: "여행지" },
   { href: "/planner", label: "일정 계획" },
   { href: "/my-planner", label: "내 일정" },
