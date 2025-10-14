@@ -28,7 +28,7 @@ interface TravelDetailPageProps {
 }
 
 const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
-  const { placeId } = params;
+  const { placeId } = await params;
   const supabase = createServerClient();
 
   const fetchDetail = async (id: string): Promise<TravelDetail> => {
