@@ -1,7 +1,7 @@
 import RelatedPlacesSection from "@/component/place/RelatedPlacesSection";
 import TravelReviewSection from "@/component/review/TravelReviewSection";
+import FavoriteButton from "@/component/place/FavoriteButton";
 import { notFound } from "next/navigation";
-
 import { createServerClient } from "@/lib/supabaseClient";
 import { TravelDetail } from "@/type/travel";
 
@@ -56,7 +56,26 @@ const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
     return dbData as TravelDetail;
   };
 
+  // 사용자의 찜 상태 확인
+  const checkUserFavorite = async (id: string): Promise<boolean> => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return false;
+
+    const { data } = await supabase
+      .from("user_favorite_place")
+      .select("place_id")
+      .eq("user_id", user.id)
+      .eq("place_id", id)
+      .single();
+
+    return !!data;
+  };
+
   const data = await fetchDetail(placeId);
+  const initialIsFavorite = await checkUserFavorite(placeId);
 
   return (
     <div className="travel-app-container">
@@ -68,7 +87,11 @@ const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
         }}
       >
         {/* 찜 버튼 */}
-        <div className="favorite-button">❤️</div>
+        <FavoriteButton
+          initialIsFavorite={initialIsFavorite}
+          initialFavoriteCount={data.favorite_count}
+          placeId={data.place_id}
+        />
 
         {/* 제목, 주소, 평점 정보 */}
         <div className="overlay-info">

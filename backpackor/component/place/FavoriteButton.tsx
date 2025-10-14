@@ -1,5 +1,3 @@
-// component/place/FavoriteButton.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,14 +10,12 @@ interface FavoriteButtonProps {
   initialIsFavorite: boolean;
   initialFavoriteCount: number;
   placeId: string;
-  isLarge?: boolean; // [추가] 크게 표시할지 여부를 결정하는 prop
 }
 
 export default function FavoriteButton({
   initialIsFavorite,
   initialFavoriteCount,
   placeId,
-  isLarge = false, // [수정] 기본값은 false (작은 버튼)
 }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [favoriteCount, setFavoriteCount] = useState(initialFavoriteCount);
@@ -29,77 +25,121 @@ export default function FavoriteButton({
   const supabase = createBrowserClient();
   const router = useRouter();
 
+  // 컴포넌트 로드 시, 현재 로그인된 사용자 정보 가져오기
   useEffect(() => {
     const fetchUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+
+      // 로그인된 사용자의 찜 목록을 조회해서 isFavorite 초기 상태를 설정
+      if (user) {
+        const { data } = await supabase
+          .from("user_favorite_place")
+          .select("place_id")
+          .eq("user_id", user.id)
+          .eq("place_id", placeId)
+          .single();
+
+        setIsFavorite(!!data);
+      }
     };
     fetchUser();
-  }, [supabase]);
+  }, [supabase, placeId]);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      alert("로그인이 필요한 기능입니다.");
-      router.push("/login");
+      const confirmLogin = window.confirm(
+        "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?"
+      );
+      if (confirmLogin) {
+        //placeId만 저장
+        const placeIdFromPath = window.location.pathname.split("/").pop();
+        sessionStorage.setItem("redirectAfterLogin", placeIdFromPath || "");
+        router.push("/login");
+      }
       return;
     }
 
     if (isLoading) return;
     setIsLoading(true);
 
-    const incrementAmount = isFavorite ? -1 : 1;
-    setIsFavorite(!isFavorite);
-    setFavoriteCount(favoriteCount + incrementAmount);
+    try {
+      if (isFavorite) {
+        // 찜 취소: user_favorite_place에서 삭제
+        const { error: deleteError } = await supabase
+          .from("user_favorite_place")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("place_id", placeId);
 
-    const { error } = await supabase.rpc("update_favorite_count", {
-      place_id_input: placeId,
-      increment_amount: incrementAmount,
-    });
+        if (deleteError) throw deleteError;
 
-    if (error) {
+        // place 테이블의 favorite_count 감소
+        const { error: updateError } = await supabase.rpc(
+          "update_favorite_count",
+          {
+            place_id_input: placeId,
+            increment_amount: -1,
+          }
+        );
+
+        if (updateError) throw updateError;
+
+        setIsFavorite(false);
+        setFavoriteCount(favoriteCount - 1);
+      } else {
+        // 찜 추가: user_favorite_place에 추가
+        const { error: insertError } = await supabase
+          .from("user_favorite_place")
+          .insert({
+            user_id: user.id,
+            place_id: placeId,
+          });
+
+        if (insertError) throw insertError;
+
+        // place 테이블의 favorite_count 증가
+        const { error: updateError } = await supabase.rpc(
+          "update_favorite_count",
+          {
+            place_id_input: placeId,
+            increment_amount: 1,
+          }
+        );
+
+        if (updateError) throw updateError;
+
+        setIsFavorite(true);
+        setFavoriteCount(favoriteCount + 1);
+      }
+    } catch (error) {
       console.error("찜 업데이트 실패:", error);
-      setIsFavorite(isFavorite);
-      setFavoriteCount(favoriteCount);
       alert("찜 상태를 업데이트하는 데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
-
-  // [수정] isLarge prop에 따라 스타일을 다르게 적용
-  const buttonClasses = `
-    z-10 bg-white/70 rounded-full backdrop-blur-sm transition-colors
-    ${isLarge ? 'p-4' : 'p-2'} // 상세 페이지에서는 더 큰 패딩
-    ${isLarge ? 'h-16 w-16 flex items-center justify-center' : ''} // 상세 페이지에서 고정 크기 및 중앙 정렬 (내부)
-    ${isLoading ? "cursor-not-allowed" : "hover:bg-white/90"}
-  `;
-
-  const heartSize = isLarge ? 36 : 20; // [수정] isLarge에 따라 하트 아이콘 크기 조절
-  const countTextSize = isLarge ? 'text-base' : 'text-xs'; // [추가] 찜 개수 텍스트 크기 조절
 
   return (
     <button
       onClick={handleFavoriteClick}
-      className={buttonClasses}
+      className={`favorite-button ${isLoading ? "cursor-not-allowed" : ""}`}
       aria-label="찜하기"
       disabled={isLoading}
     >
-      <div className="flex flex-col items-center">
-        <Heart
-          size={heartSize}
-          className={`transition-all ${
-            isFavorite ? "text-red-500 fill-red-500" : "text-gray-600"
-          }`}
-        />
-        <span className={`${countTextSize} font-semibold text-gray-700 mt-1`}>
-          {favoriteCount}
-        </span>
-      </div>
+      <Heart
+        size={24}
+        className={`transition-all ${
+          isFavorite
+            ? "text-red-500 fill-red-500"
+            : "text-black fill-none stroke-[2]"
+        }`}
+      />
     </button>
   );
 }
