@@ -1,58 +1,73 @@
-/* 전체 컨테이너 스타일 */
+/* 파일 위치: app/place/[placeId]/page.module.css */
+
 .travelAppContainer {
   max-width: 1200px;
   margin: 20px auto;
   padding: 0;
   background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   min-height: calc(100vh - 40px);
   overflow: visible;
 }
 
-/* 커버 섹션 (상세 이미지) */
 .coverSection {
   position: relative;
-  min-height: 500px;
+  height: 400px;
   background-size: cover;
   background-position: center;
-  border-radius: 16px 16px 0 0;
+  border-radius: 12px 12px 0 0;
   margin-bottom: 0;
-  box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 찜 버튼 영역: 상단 중앙에 원형 배경과 함께 배치 */
+.coverSection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  border-radius: 12px 12px 0 0;
+}
+
 .favoriteButton {
   position: absolute;
-  top: 32px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
-  background-color: rgba(255, 255, 255, 0.95);
+  width: 48px;
+  height: 48px;
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
   transition: all 0.2s ease;
-  border: 3px solid white;
-}
-.favoriteButton:hover {
-  transform: translateX(-50%) scale(1.15);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-.favoriteButton:active {
-  transform: translateX(-50%) scale(1.05);
+  border: none;
+  backdrop-filter: blur(10px);
 }
 
-/* 제목 및 평점 오버레이: 완전 중앙 정렬 */
+.favoriteButton:hover {
+  transform: translateX(-50%) scale(1.1);
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.favoriteButton:active {
+  transform: translateX(-50%) scale(1);
+}
+
 .overlayInfo {
   position: absolute;
   top: 50%;
@@ -62,187 +77,255 @@
   max-width: 900px;
   color: white;
   text-align: center;
-  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 0 20px;
+  z-index: 5;
 }
+
 .overlayInfo h1 {
-  font-size: 64px;
-  font-weight: 800;
+  font-size: 40px;
+  font-weight: 700;
   margin: 0;
-  letter-spacing: -1.5px;
+  letter-spacing: -0.5px;
   color: white !important;
-  line-height: 1.1;
+  line-height: 1.2;
 }
+
 .subtitleRatingLine {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   justify-content: center;
-  font-size: 18px;
+  font-size: 15px;
 }
+
 .subtitle {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 400;
   margin: 0;
   opacity: 0.95;
   color: white;
   display: inline-block;
 }
+
 .rating {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: white;
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 6px 14px;
-  border-radius: 20px;
-  backdrop-filter: blur(4px);
 }
 
-/* 상세 페이지 본문 레이아웃 */
 .detailContentLayout {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 80px;
-  padding: 50px 60px;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  padding: 32px 24px;
   margin-bottom: 0;
   align-items: start;
 }
 
-/* 왼쪽 섹션 */
 .detailLeftSection {
   grid-column: 1;
 }
 
-/* 오른쪽 섹션 - Sticky */
 .detailRightSection {
   grid-column: 2;
-  padding: 30px;
-  background-color: #f9fafb;
-  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   position: sticky;
   top: 20px;
   align-self: start;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* 스크롤바 스타일링 */
+/* 스크롤바 숨김 - 스크롤 기능은 유지 */
+.detailRightSection {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
 .detailRightSection::-webkit-scrollbar {
-  width: 6px;
-}
-.detailRightSection::-webkit-scrollbar-track {
-  background: #e5e7eb;
-  border-radius: 10px;
-}
-.detailRightSection::-webkit-scrollbar-thumb {
-  background: #9ca3af;
-  border-radius: 10px;
-}
-.detailRightSection::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  display: none; /* Chrome, Safari, Opera */
 }
 
-/* 여행 소개 섹션 */
 .travelIntro {
-  margin-bottom: 60px;
+  margin-bottom: 48px;
 }
+
 .travelIntro h2 {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 20px 0;
-  color: #1f2937;
+  margin: 0 0 16px 0;
+  color: #1a1a1a;
 }
+
 .travelIntro p {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4a4a4a;
   margin: 0;
 }
 
-/* 여행 정보 섹션 스타일 */
-.travelInfoSection h2 {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0 0 24px 0;
-  color: #1f2937;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #3b82f6;
+.travelInfoSection {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
+
+.travelInfoSection h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: #1a1a1a;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .infoItem {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f0f0f0;
 }
+
 .infoItem:last-of-type {
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
 }
+
 .infoItem strong {
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
 .infoItem span {
-  font-size: 16px;
-  color: #1f2937;
-  font-weight: 500;
+  font-size: 15px;
+  color: #1a1a1a;
+  font-weight: 400;
+  line-height: 1.5;
 }
+
 .planButtonContainer {
-  margin-top: 32px;
+  margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #f0f0f0;
 }
+
 .planButton {
   width: 100%;
-  background-color: #3b82f6;
+  background-color: #4c6ef5;
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 16px 24px;
-  font-size: 16px;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: none;
 }
+
 .planButton:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  background-color: #3b5bdb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
 }
+
 .planButton:active {
   transform: translateY(0);
 }
 
-/* 반응형 디자인 */
+/* 추가: 교통 정보 섹션 스타일 */
+.transportSection {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.transportSection h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: #1a1a1a;
+}
+
+/* 추가: 최적 여행시기 섹션 스타일 */
+.bestSeasonSection {
+  background-color: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.bestSeasonSection h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #1a1a1a;
+}
+
+.bestSeasonSection p {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.seasonNote {
+  background-color: #f0f5ff;
+  border-left: 3px solid #4c6ef5;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.seasonNote p {
+  font-size: 13px;
+  color: #4c6ef5;
+  margin: 0;
+  line-height: 1.6;
+}
+
 @media (max-width: 1024px) {
   .detailContentLayout {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 40px 30px;
+    gap: 32px;
+    padding: 32px 20px;
   }
 
   .detailRightSection {
     position: static;
+    grid-column: 1;
     max-height: none;
+    overflow-y: visible;
   }
 
   .overlayInfo h1 {
-    font-size: 48px;
+    font-size: 32px;
+  }
+
+  .coverSection {
+    height: 350px;
   }
 }
 
@@ -253,202 +336,21 @@
   }
 
   .coverSection {
-    min-height: 400px;
+    height: 300px;
     border-radius: 0;
   }
 
   .overlayInfo h1 {
-    font-size: 36px;
+    font-size: 28px;
   }
 
   .detailContentLayout {
-    padding: 30px 20px;
+    padding: 24px 16px;
   }
-}
 
-/* 커버 섹션 (상세 이미지) */
-.coverSection {
-  position: relative;
-  min-height: 450px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 12px;
-  margin-bottom: 40px;
-  box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.25);
-}
-
-/* ⭐️ 찜 버튼 영역: 상단 중앙에 원형 배경과 함께 배치 ⭐️ */
-.favoriteButton {
-  position: absolute;
-  top: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 56px;
-  height: 56px;
-  background-color: rgba(255, 255, 255, 0.95);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10;
-  transition: transform 0.2s ease;
-}
-.favoriteButton:hover {
-  transform: translateX(-50%) scale(1.1);
-}
-
-/* ⭐️ 제목 및 평점 오버레이: 완전 중앙 정렬 ⭐️ */
-.overlayInfo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  color: white;
-  text-align: center;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.overlayInfo h1 {
-  font-size: 56px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -1px;
-  color: white !important;
-}
-.subtitle {
-  font-size: 16px;
-  font-weight: 400;
-  margin: 0;
-  opacity: 0.95;
-  color: white;
-  display: inline-block;
-}
-.rating {
-  font-size: 16px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: white;
-}
-.subtitleRatingLine {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-}
-.subtitleRatingLine::after {
-  content: "|";
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0 4px;
-}
-
-/* 상세 페이지 본문 레이아웃 */
-.detailContentLayout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 60px;
-  padding: 0 20px;
-  margin-bottom: 50px;
-  align-items: start;
-}
-
-/* 왼쪽 섹션 */
-.detailLeftSection {
-  grid-column: 1;
-}
-
-/* 오른쪽 섹션 - Sticky */
-.detailRightSection {
-  grid-column: 2;
-  padding-left: 40px;
-  border-left: 1px solid #eee;
-  position: sticky;
-  top: 20px;
-  align-self: start;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-}
-
-/* 스크롤바 스타일링 (선택사항) */
-.detailRightSection::-webkit-scrollbar {
-  width: 6px;
-}
-.detailRightSection::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-.detailRightSection::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-.detailRightSection::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* 여행 소개 섹션 */
-.travelIntro h2 {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  color: #1f2937;
-}
-.travelIntro p {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #4b5563;
-  margin: 0;
-}
-
-/* 여행 정보 섹션 스타일 */
-.travelInfoSection h2 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  color: #1f2937;
-}
-.infoItem {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #f3f4f6;
-}
-.infoItem:last-of-type {
-  border-bottom: none;
-}
-.infoItem strong {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-}
-.infoItem span {
-  font-size: 15px;
-  color: #1f2937;
-}
-.planButtonContainer {
-  margin-top: 30px;
-}
-.planButton {
-  width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.planButton:hover {
-  background-color: #2563eb;
+  .travelInfoSection,
+  .transportSection,
+  .bestSeasonSection {
+    padding: 20px;
+  }
 }
