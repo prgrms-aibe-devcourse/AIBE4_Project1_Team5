@@ -47,7 +47,7 @@ export default async function MyPage({ searchParams }: MyPageProps) {
           <p className="text-gray-500">나의 여행 계획들을 관리해보세요.</p>
         </div>
         <Link
-          href="/planner/new"
+          href="/planner"
           className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
         >
           + 새 일정 만들기

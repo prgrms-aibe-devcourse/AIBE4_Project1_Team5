@@ -12,14 +12,13 @@ export default function AiPlannerTransportPage() {
     const searchParams = useSearchParams();
     const [selectedTransport, setSelectedTransport] = useState<string[]>([]);
 
-    // 이전 단계 정보 가져옴
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
+    const region = searchParams.get('region');
     const companion = searchParams.get('companion');
     const styles = searchParams.getAll('style');
     const speed = searchParams.get('speed');
 
-    // 옵션을 객체 배열로 관리
     const transportOptions = [
         { name: "자동차", value: "car" },
         { name: "자전거", value: "bicycle" },
@@ -36,29 +35,28 @@ export default function AiPlannerTransportPage() {
         );
     };
 
-    // 이전/다음 단계로 넘어갈 URL을 생성하는 함수
-    const getStepUrl = (nextStep: 'speed' | 'loading') => {
+    const createUrl = (isNextStep: boolean) => {
         const params = new URLSearchParams();
         params.append('start', startDate || '');
         params.append('end', endDate || '');
+        params.append('region', region || '');
         params.append('companion', companion || '');
         styles.forEach(style => params.append('style', style));
         params.append('speed', speed || '');
 
-        if (nextStep === 'loading') {
-            // 마지막 단계에서는 transport 정보까지 모두 담아서 loading 페이지로 넘깁니다.
+        if (isNextStep) {
+            // 'AI 추천 받기'를 누를 때는 transport 정보까지 모두 담습니다.
             selectedTransport.forEach(transport => params.append('transport', transport));
             return `/planner/ai/loading?${params.toString()}`;
+        } else {
+            return `/planner/ai/speed?${params.toString()}`;
         }
-
-        // 이전 단계로 돌아갈 경우
-        return `/planner/ai/speed?${params.toString()}`;
     };
 
     return (
         <div className="w-full min-h-screen bg-gray-50 flex flex-col items-center pt-24">
             <div className="w-full max-w-2xl text-center">
-                <p className="text-blue-500 font-semibold mb-2">여행 스타일 선택 (4/4)</p>
+                <p className="text-blue-500 font-semibold mb-2">여행 스타일 선택 (5/5)</p>
                 <h1 className="text-3xl font-bold mb-4">어떤 이동수단을 이용하실 건가요?</h1>
                 <p className="text-gray-500">주요 이동수단을 모두 선택해주세요.</p>
 
@@ -75,11 +73,11 @@ export default function AiPlannerTransportPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                    <Link href={getStepUrl('speed')} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
+                    <Link href={createUrl(false)} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
                         이전 단계
                     </Link>
                     <Link
-                        href={getStepUrl('loading')}
+                        href={createUrl(true)}
                         className={`px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 ${selectedTransport.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={(e) => { if (selectedTransport.length === 0) e.preventDefault(); }}
                     >
