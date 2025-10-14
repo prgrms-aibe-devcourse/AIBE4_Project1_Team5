@@ -6,87 +6,74 @@ import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
 import ReviewButton from "@/component/review/ReviewButton";
 import type { TravelSummary } from "@/type/travel";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./HomePage.module.css";
 
-// 목업 데이터 (DB에 데이터가 없을 때 대체)
-const MOCK_PLACES: TravelSummary[] = [
-  {
-    place_id: "jeju-mock-id",
-    place_name: "제주도 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=1",
-    average_rating: 4.8,
-  },
-  {
-    place_id: "busan-mock-id",
-    place_name: "부산 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=2",
-    average_rating: 4.5,
-  },
-  {
-    place_id: "seoul-mock-id",
-    place_name: "서울 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=3",
-    average_rating: 4.6,
-  },
-  {
-    place_id: "gyeongju-mock-id",
-    place_name: "경주 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=4",
-    average_rating: 4.9,
-  },
-  {
-    place_id: "jeonju-mock-id",
-    place_name: "전주 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=5",
-    average_rating: 4.7,
-  },
-  {
-    place_id: "namhae-mock-id",
-    place_name: "남해 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=6",
-    average_rating: 4.5,
-  },
-];
+// [수정] 목업 데이터(MOCK_PLACES)를 완전히 삭제했습니다.
+// 이제 모든 데이터는 Supabase DB에서 직접 가져옵니다.
 
 export default function Page() {
   const { user } = useAuth();
   const { profile } = useProfile(user?.id);
-  const [places, setPlaces] = useState<TravelSummary[]>([]);
 
-  // Supabase에서 여행지 불러오기
+  // [수정] 인기/베스트 여행지를 각각 저장할 state를 분리합니다.
+  const [popularPlaces, setPopularPlaces] = useState<TravelSummary[]>([]);
+  const [bestPlaces, setBestPlaces] = useState<TravelSummary[]>([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    router.push(`/place?search=${searchTerm}`);
+  };
+
+  // [수정] Supabase에서 인기/베스트 여행지를 각각 불러오도록 로직을 변경합니다.
   useEffect(() => {
     const fetchPlaces = async () => {
       const supabase = createServerClient();
-      const { data: dbPlaces, error } = await supabase
+
+      // 1. 인기 여행지 불러오기 (찜 많은 순 상위 3개)
+      const { data: popularData, error: popularError } = await supabase
         .from("place")
         .select("place_id, place_name, place_image, average_rating")
-        .order("average_rating", { ascending: false })
-        .limit(6);
+        .order("favorite_count", { ascending: false })
+        .limit(3);
 
-      if (error || !dbPlaces || dbPlaces.length < 6) {
-        console.warn("DB 데이터 부족 또는 오류. 목업을 사용합니다.");
-        setPlaces(MOCK_PLACES);
+      if (popularError) {
+        console.error("인기 여행지 로딩 실패:", popularError);
       } else {
-        setPlaces(dbPlaces);
+        setPopularPlaces(popularData || []);
+      }
+
+      // 2. 베스트 여행지 불러오기 (별점 높은 순 상위 3개)
+      //    (참고) 저희가 만든 DB 함수 덕분에 average_rating은 항상 최신 평균 별점을 반영합니다.
+      const { data: bestData, error: bestError } = await supabase
+        .rpc("get_places_with_details") // 평균 별점 계산을 위해 함수를 사용합니다.
+        .order("average_rating", { ascending: false })
+        .limit(3);
+
+      if (bestError) {
+        console.error("베스트 여행지 로딩 실패:", bestError);
+      } else {
+        // rpc 결과가 TravelSummary 타입과 호환되므로 그대로 사용합니다.
+        setBestPlaces(bestData || []);
       }
     };
 
     fetchPlaces();
   }, []);
 
-  const popularPlaces = places.slice(0, 3);
-  const bestPlaces = places.slice(3, 6);
+  // [삭제] 기존의 slice 로직은 더 이상 필요 없으므로 삭제했습니다.
 
   return (
     <main className={styles["main-content"]}>
-      {/* (로그인 여부에 따라 다르게 출력) */}
       <section className={styles["hero-section"]}>
         {user ? (
           <>
-            <h1>
-              안녕하세요, {profile?.display_name || "사용자"}님!
-            </h1>
+            <h1>안녕하세요, {profile?.display_name || "사용자"}님!</h1>
             <p>취향에 맞는 테마로, 여행을 시작해보세요.</p>
           </>
         ) : (
@@ -96,15 +83,21 @@ export default function Page() {
           </>
         )}
 
-        <div className={styles["search-bar"]}>
-          <input type="text" placeholder="어디로 떠나고 싶으신가요?" />
-        </div>
+        <form className={styles["search-bar"]} onSubmit={handleSearch}>
+          <input
+            type="text"
+            placeholder="어디로 떠나고 싶으신가요?"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </form>
       </section>
 
       {/* 인기 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>인기 여행지</h2>
+        <h2>인기 여행지 TOP3</h2>
         <div className={styles["card-container"]}>
+          {/* [수정] popularPlaces state를 직접 사용합니다. */}
           {popularPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />
           ))}
@@ -113,16 +106,17 @@ export default function Page() {
 
       {/* 베스트 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>베스트 여행지</h2>
+        <h2>베스트 여행지 TOP3</h2>
         <div className={styles["card-container"]}>
+          {/* [수정] bestPlaces state를 직접 사용합니다. */}
           {bestPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />
           ))}
         </div>
       </section>
 
-      {/* 리뷰 버튼 */}
-      <ReviewButton places={places} />
+      {/* [수정] ReviewButton에는 두 목록을 합쳐서 전달합니다. */}
+      <ReviewButton places={[...popularPlaces, ...bestPlaces]} />
     </main>
   );
 }
