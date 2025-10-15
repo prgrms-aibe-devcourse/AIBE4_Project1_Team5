@@ -5,7 +5,7 @@ import { useAuth } from "@/hook/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface TripPlan {
   trip_id: number;
@@ -20,11 +20,17 @@ export default function MyPlannerPage() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [plans, setPlans] = useState<TripPlan[]>([]);
-  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansLoading, setPlansLoading] = useState(true); // 초기값 true로 변경
+
+  // searchParams에서 정렬 값만 추출 (깜박임 방지)
+  const sortOrder = useMemo(
+    () => searchParams.get("sort") || "desc",
+    [searchParams]
+  );
 
   // 인증 상태 확인 및 리다이렉트 처리
   useEffect(() => {
-    if (authLoading) return; // 로딩 중이면 아무것도 하지 않음
+    if (authLoading) return;
 
     if (!user) {
       const redirectPath = encodeURIComponent("/my-planner");
@@ -39,15 +45,13 @@ export default function MyPlannerPage() {
     const fetchPlans = async () => {
       try {
         setPlansLoading(true);
-        const sortOrder =
-          searchParams.get("sort") === "asc" ? "created_at" : "created_at";
-        const isAscending = searchParams.get("sort") === "asc";
+        const isAscending = sortOrder === "asc";
 
         const { data, error } = await supabase
           .from("trip_plan")
           .select("*")
           .eq("user_id", user.id)
-          .order(sortOrder, { ascending: isAscending });
+          .order("created_at", { ascending: isAscending });
 
         if (error) throw error;
         setPlans(data || []);
@@ -60,7 +64,7 @@ export default function MyPlannerPage() {
     };
 
     fetchPlans();
-  }, [user, searchParams]);
+  }, [user, sortOrder]);
 
   // 인증 로딩 중
   if (authLoading) {
@@ -114,9 +118,7 @@ export default function MyPlannerPage() {
         <Link
           href="/my-planner?sort=desc"
           className={`px-3 py-1 rounded-full text-sm ${
-            !searchParams.get("sort") || searchParams.get("sort") === "desc"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200"
+            sortOrder === "desc" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
         >
           최신순
@@ -124,9 +126,7 @@ export default function MyPlannerPage() {
         <Link
           href="/my-planner?sort=asc"
           className={`px-3 py-1 rounded-full text-sm ${
-            searchParams.get("sort") === "asc"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200"
+            sortOrder === "asc" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
         >
           오래된순
