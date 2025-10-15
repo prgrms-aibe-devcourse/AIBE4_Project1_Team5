@@ -123,7 +123,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
 
     const handleSavePlan = async () => {
         setIsSaving(true);
-        const testUserId = '2770999e-5675-49d3-8cd4-e4fc5984699a'; // TODO: 로그인 기능 완성 후 실제 유저 ID로 변경
+        const testUserId = '35fcc2ad-5f65-489c-8d63-d805f8fcf35a'; // TODO: 로그인 기능 완성 후 실제 유저 ID로 변경
 
         if (tripIdToEdit) {
             // --- 수정 로직 ---

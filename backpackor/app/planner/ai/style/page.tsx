@@ -6,15 +6,16 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 /**
- * AI 여행 계획 생성을 위한 여행 스타일 선택 페이지 컴포넌트입니다.
+ * AI 여행 계획 생성을 위한 여행 스타일 선택 페이지 컴포넌트
  */
 export default function AiPlannerStylePage() {
     const searchParams = useSearchParams();
     const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
 
+    // .get('region') 대신 .getAll('region')을 사용하여 모든 지역 정보를 배열로 가져옵니다.
+    const regions = searchParams.getAll('region');
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
-    const region = searchParams.get('region');
     const companion = searchParams.get('companion');
 
     const styleOptions = [
@@ -34,20 +35,27 @@ export default function AiPlannerStylePage() {
         );
     };
 
-    const nextStepUrl = () => {
-        if (selectedStyles.length === 0) return '#';
-
+    /**
+     * @param isNext '다음 단계'로 갈 것인지 여부
+     */
+    const createUrl = (isNext: boolean) => {
         const params = new URLSearchParams();
-        params.append('start', startDate || '');
-        params.append('end', endDate || '');
-        params.append('region', region || ''); // region 추가
-        params.append('companion', companion || '');
-        selectedStyles.forEach(style => params.append('style', style));
 
-        return `/planner/ai/speed?${params.toString()}`;
+        // 이전 단계들에서 받아온 파라미터들을 모두 추가합니다.
+        if (startDate) params.append('start', startDate);
+        if (endDate) params.append('end', endDate);
+        regions.forEach(region => params.append('region', region)); // 모든 지역 추가
+        if (companion) params.append('companion', companion);
+
+        if (isNext) {
+            // '다음 단계'일 경우, 현재 페이지에서 선택한 스타일 정보를 추가합니다.
+            selectedStyles.forEach(style => params.append('style', style));
+            return `/planner/ai/speed?${params.toString()}`;
+        } else {
+            // '이전 단계'일 경우, 동행 선택 페이지로 돌아갑니다.
+            return `/planner/ai/companion?${params.toString()}`;
+        }
     };
-
-    const previousStepUrl = `/planner/ai/companion?start=${startDate}&end=${endDate}&region=${region}`;
 
     return (
         <div className="w-full min-h-screen bg-gray-50 flex flex-col items-center pt-24">
@@ -69,11 +77,12 @@ export default function AiPlannerStylePage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                    <Link href={previousStepUrl} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
+                    {/* 이전/다음 링크 모두 createUrl 함수를 사용하도록 변경 */}
+                    <Link href={createUrl(false)} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
                         이전 단계
                     </Link>
                     <Link
-                        href={nextStepUrl()}
+                        href={selectedStyles.length > 0 ? createUrl(true) : '#'}
                         className={`px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 ${selectedStyles.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={(e) => { if (selectedStyles.length === 0) e.preventDefault(); }}
                     >
