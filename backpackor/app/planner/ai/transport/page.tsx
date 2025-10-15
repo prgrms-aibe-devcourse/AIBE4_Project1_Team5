@@ -12,11 +12,12 @@ export default function AiPlannerTransportPage() {
     const searchParams = useSearchParams();
     const [selectedTransport, setSelectedTransport] = useState<string[]>([]);
 
+    // 다중 파라미터들을 배열로 받아옵니다.
+    const regions = searchParams.getAll('region');
+    const styles = searchParams.getAll('style');
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
-    const region = searchParams.get('region');
     const companion = searchParams.get('companion');
-    const styles = searchParams.getAll('style');
     const speed = searchParams.get('speed');
 
     const transportOptions = [
@@ -35,20 +36,26 @@ export default function AiPlannerTransportPage() {
         );
     };
 
-    const createUrl = (isNextStep: boolean) => {
+    /**
+     * @param isNext '다음 단계'로 갈 것인지 여부
+     */
+    const createUrl = (isNext: boolean) => {
         const params = new URLSearchParams();
-        params.append('start', startDate || '');
-        params.append('end', endDate || '');
-        params.append('region', region || '');
-        params.append('companion', companion || '');
-        styles.forEach(style => params.append('style', style));
-        params.append('speed', speed || '');
 
-        if (isNextStep) {
-            // 'AI 추천 받기'를 누를 때는 transport 정보까지 모두 담습니다.
+        // 이전 단계들에서 받아온 모든 파라미터들을 추가합니다.
+        if (startDate) params.append('start', startDate);
+        if (endDate) params.append('end', endDate);
+        if (companion) params.append('companion', companion);
+        if (speed) params.append('speed', speed);
+        regions.forEach(region => params.append('region', region));
+        styles.forEach(style => params.append('style', style));
+
+        if (isNext) {
+            // '다음 단계'일 경우, 현재 페이지에서 선택한 이동수단 정보를 추가합니다.
             selectedTransport.forEach(transport => params.append('transport', transport));
             return `/planner/ai/loading?${params.toString()}`;
         } else {
+            // '이전 단계'일 경우, 속도 선택 페이지로 돌아갑니다.
             return `/planner/ai/speed?${params.toString()}`;
         }
     };
@@ -73,11 +80,12 @@ export default function AiPlannerTransportPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
+                    {/* 이전/다음 링크 모두 createUrl 함수를 사용하도록 변경 */}
                     <Link href={createUrl(false)} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
                         이전 단계
                     </Link>
                     <Link
-                        href={createUrl(true)}
+                        href={selectedTransport.length > 0 ? createUrl(true) : '#'}
                         className={`px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 ${selectedTransport.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={(e) => { if (selectedTransport.length === 0) e.preventDefault(); }}
                     >
