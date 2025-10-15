@@ -91,7 +91,7 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.5px;
-  color: white !important;
+  color: rgb(255, 255, 255) !important;
   line-height: 1.2;
 }
 
@@ -100,7 +100,7 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.5px;
-  color: #f0f0f0 !important;
+  color: #e6edc6de !important;
   line-height: -1.2;
 }
 
