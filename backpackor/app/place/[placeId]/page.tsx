@@ -75,9 +75,9 @@ const TravelDetailPage = async ({
 
         {/* 제목, 주소, 평점 정보 */}
         <div className={styles.overlayInfo}>
+          <h2>[ {data.place_category} ]</h2>
           <h1>{data.place_name}</h1>
           <div className={styles.subtitleRatingLine}>
-            <span className={styles.subtitle}>{data.place_address}</span>
             <span className={styles.rating}>
               ⭐ {data.average_rating.toFixed(1)}
             </span>

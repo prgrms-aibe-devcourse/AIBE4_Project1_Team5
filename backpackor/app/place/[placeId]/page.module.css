@@ -61,7 +61,7 @@
 
 .favoriteButton:hover {
   transform: translateX(-50%) scale(1.1);
-  background-color: rgba(255, 255, 255, 1);
+  background-color: rgb(255, 255, 255);
 }
 
 .favoriteButton:active {
@@ -81,7 +81,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 0 20px;
   z-index: 5;
 }
@@ -93,6 +93,15 @@
   letter-spacing: -0.5px;
   color: white !important;
   line-height: 1.2;
+}
+
+.overlayInfo h2 {
+  font-size: 25px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+  color: #f0f0f0 !important;
+  line-height: -1.2;
 }
 
 .subtitleRatingLine {
