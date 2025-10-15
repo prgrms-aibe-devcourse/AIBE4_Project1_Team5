@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import Sort from "./Sort"; // Sort 컴포넌트를 import 합니다.
 
-// [수정] Place 타입에 review_count를 추가하여 타입 안정성을 높입니다.
+// Place 타입 인터페이스
 export interface Place {
   place_id: string;
   place_name: string;
@@ -14,9 +15,10 @@ export interface Place {
   average_rating: number;
   place_image: string;
   favorite_count: number;
-  review_count: number; // review_count 타입 추가
+  review_count: number;
 }
 
+// 지역 상수 배열
 const REGIONS = [
   "전체",
   "서울특별시",
@@ -38,6 +40,7 @@ const REGIONS = [
   "제주특별자치도",
 ];
 
+// TravelCard 컴포넌트
 const TravelCard = ({ destination }: { destination: Place }) => {
   const [imgSrc, setImgSrc] = useState(destination.place_image);
   const region = destination.place_address?.split(" ")[0] || "지역 정보 없음";
@@ -55,9 +58,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
           style={{ objectFit: "cover" }}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority
-          onError={() => {
-            setImgSrc("/default-image.png");
-          }}
+          onError={() => setImgSrc("/default-image.png")}
         />
       </div>
       <div className="card-info p-4 flex-grow flex flex-col">
@@ -70,7 +71,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
               viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l1.83 4.401 4.753.392c.83.069 1.171 1.107.536 1.651l-3.62 3.102 1.07 4.632c.181.79-.702 1.4-1.437 1.016L12 16.205l-4.118 2.593c-.735.384-1.618-.226-1.437-1.016l1.07-4.632L3.29 8.928c-.635-.544-.294-1.582.536-1.651l4.753-.392l1.83-4.401Z" />
+              <path d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l1.83 4.401 4.753 .392c.83.069 1.171 1.107 .536 1.651l-3.62 3.102 1.07 4.632c.181 .79-.702 1.4-1.437 1.016L12 16.205l-4.118 2.593c-.735.384-1.618-.226-1.437-1.016l1.07-4.632L3.29 8.928c-.635-.544-.294-1.582.536-1.651l4.753-.392l1.83-4.401Z" />
             </svg>
             {destination.average_rating.toFixed(1)}
           </p>
@@ -86,7 +87,6 @@ const TravelCard = ({ destination }: { destination: Place }) => {
                 clipRule="evenodd"
               />
             </svg>
-            {/* [수정 완료!] 이 부분을 review_count가 아닌 favorite_count로 수정했습니다. */}
             <span>{destination.favorite_count}</span>
           </div>
         </div>
@@ -105,7 +105,8 @@ export default function TravelList({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentSort = searchParams.get("sort") || "name_asc";
+  const currentSort = searchParams.get("sort") || "popularity_desc";
+  const [visibleCount, setVisibleCount] = useState(18);
 
   const handleSortChange = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -123,12 +124,13 @@ export default function TravelList({
 
   return (
     <main className="travel-app-container max-w-6xl mx-auto px-4 py-8">
-      {/* ... 이하 JSX 코드는 기존과 동일 ... */}
       <h1 className="text-3xl font-bold mb-2">여행지 둘러보기</h1>
       <p className="text-gray-600 mb-6">
         대한민국의 아름다운 여행지들을 탐색해보세요.
       </p>
+
       <div className="flex justify-between items-center my-6">
+        {/* [복구] 지역별 필터 및 찜하기 UI */}
         <div className="flex gap-4 items-center">
           <div className="relative">
             <button
@@ -136,7 +138,7 @@ export default function TravelList({
               className="px-4 py-2 text-sm font-semibold border rounded-full flex items-center gap-2 hover:bg-gray-100 transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M2 4.75A.75.75 0 0 1 2.75 4h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 3.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1-.75-.75Z" />
+                <path d="M2 4.75A.75.75 0 0 1 2.75 4h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 3.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8.75Z" />
               </svg>
               {selectedRegion === "전체" ? "지역별 필터" : selectedRegion}
             </button>
@@ -167,46 +169,26 @@ export default function TravelList({
             찜한 여행지
           </label>
         </div>
-        <div className="text-sm text-gray-600 flex items-center gap-2">
-          <button
-            onClick={() => handleSortChange("name_asc")}
-            className={
-              currentSort === "name_asc"
-                ? "font-bold text-black"
-                : "cursor-pointer hover:text-black"
-            }
-          >
-            인기순
-          </button>
-          <span className="text-gray-300">|</span>
-          <button
-            onClick={() => handleSortChange("reviews_desc")}
-            className={
-              currentSort === "reviews_desc"
-                ? "font-bold text-black"
-                : "cursor-pointer hover:text-black"
-            }
-          >
-            리뷰많은순
-          </button>
-          <span className="text-gray-300">|</span>
-          <button
-            onClick={() => handleSortChange("rating_desc")}
-            className={
-              currentSort === "rating_desc"
-                ? "font-bold text-black"
-                : "cursor-pointer hover:text-black"
-            }
-          >
-            별점높은순
-          </button>
-        </div>
+
+        <Sort currentSort={currentSort} onSortChange={handleSortChange} />
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDestinations.map((dest) => (
+        {filteredDestinations.slice(0, visibleCount).map((dest) => (
           <TravelCard key={dest.place_id} destination={dest} />
         ))}
       </div>
+
+      {visibleCount < filteredDestinations.length && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => setVisibleCount((prevCount) => prevCount + 18)}
+            className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            더보기
+          </button>
+        </div>
+      )}
     </main>
   );
 }
