@@ -3,26 +3,19 @@
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 
-export type UserProfile = {
+interface UserProfile {
   display_name: string | null;
   profile_image: string | null;
-};
+}
 
-const FALLBACK_PROFILE =
-  "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
-
-export function useProfile(userId?: string | null) {
+export function useProfile(userId?: string) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileUrl, setProfileUrl] = useState<string>(FALLBACK_PROFILE);
+
+  const DEFAULT_PROFILE_URL =
+    "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
 
   useEffect(() => {
-    if (!userId) {
-      setProfile(null);
-      setProfileUrl(FALLBACK_PROFILE);
-      return;
-    }
-
-    let cancelled = false;
+    if (!userId) return;
 
     const fetchProfile = async () => {
       try {
@@ -32,25 +25,25 @@ export function useProfile(userId?: string | null) {
           .eq("user_id", userId)
           .single();
 
-        if (cancelled) return;
+        if (error && error.code !== "PGRST116") throw error;
 
-        if (error) {
-          console.error("프로필 불러오기 실패:", error);
-          setProfile(null);
-          setProfileUrl(FALLBACK_PROFILE);
-        } else if (data) {
-          setProfile(data);
-          setProfileUrl(data.profile_image ?? FALLBACK_PROFILE);
-        }
-      } catch {}
+        setProfile({
+          display_name: data?.display_name ?? null,
+          profile_image: data?.profile_image ?? DEFAULT_PROFILE_URL,
+        });
+      } catch (err) {
+        console.error("user_profile 조회 실패:", err);
+        setProfile({
+          display_name: null,
+          profile_image: DEFAULT_PROFILE_URL,
+        });
+      }
     };
 
     fetchProfile();
-
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
+
+  const profileUrl = profile?.profile_image ?? DEFAULT_PROFILE_URL;
 
   return { profile, profileUrl };
 }
