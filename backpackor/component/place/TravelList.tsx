@@ -176,7 +176,7 @@ export default function TravelList({
                 : "cursor-pointer hover:text-black"
             }
           >
-            가나다순
+            인기순
           </button>
           <span className="text-gray-300">|</span>
           <button
