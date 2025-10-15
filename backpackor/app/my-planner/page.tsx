@@ -1,10 +1,12 @@
-// app/my-planner/page.tsx '내 일정' 목록 페이지로, 서버에서 사용자의 전체 여행 계획 데이터를 불러오는 역할
+"use client";
 
-import PlanList from "@/component/my-planner/PlanList"; // 클라이언트 컴포넌트인 PlanList를 import 합니다.
-import { createServerClient } from "@/lib/supabaseClient";
+import PlanList from "@/component/my-planner/PlanList";
+import { useAuth } from "@/hook/useAuth";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-// trip_plan 테이블의 데이터 타입을 정의합니다.
 interface TripPlan {
   trip_id: number;
   trip_title: string;
@@ -13,30 +15,87 @@ interface TripPlan {
   created_at: string;
 }
 
-// 이 페이지가 받을 searchParams의 타입을 정의합니다.
-interface MyPageProps {
-  searchParams: {
-    sort?: "asc" | "desc";
-  };
-}
+export default function MyPlannerPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const [plans, setPlans] = useState<TripPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true); // 초기값 true로 변경
 
-export default async function MyPage({ searchParams }: MyPageProps) {
-  const supabase = createServerClient();
+  // searchParams에서 정렬 값만 추출 (깜박임 방지)
+  const sortOrder = useMemo(
+    () => searchParams.get("sort") || "desc",
+    [searchParams]
+  );
 
-  // URL 쿼리에 따라 정렬 순서를 결정합니다.
-  const sortOrder = searchParams.sort === "asc" ? "created_at" : "created_at";
-  const isAscending = searchParams.sort === "asc";
+  // 인증 상태 확인 및 리다이렉트 처리
+  useEffect(() => {
+    if (authLoading) return;
 
-  // Supabase에서 데이터를 불러옵니다.
-  const { data: plans, error } = await supabase
-    .from("trip_plan")
-    .select("*")
-    .order(sortOrder, { ascending: isAscending });
+    if (!user) {
+      const redirectPath = encodeURIComponent("/my-planner");
+      router.replace(`/login?redirect=${redirectPath}`);
+    }
+  }, [user, authLoading, router]);
 
-  // 데이터 로딩 중 에러가 발생하면 에러 메시지를 보여줍니다.
-  if (error) {
-    console.error("데이터 로딩 실패:", error);
-    return <div>일정을 불러오는 중 오류가 발생했습니다.</div>;
+  // 로그인된 경우 trip_plan 데이터 불러오기
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPlans = async () => {
+      try {
+        setPlansLoading(true);
+        const isAscending = sortOrder === "asc";
+
+        const { data, error } = await supabase
+          .from("trip_plan")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: isAscending });
+
+        if (error) throw error;
+        setPlans(data || []);
+      } catch (err) {
+        console.error("데이터 로딩 실패:", err);
+        setPlans([]);
+      } finally {
+        setPlansLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, [user, sortOrder]);
+
+  // 인증 로딩 중
+  if (authLoading) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <div className="space-y-6">
+          {/* 헤더 스켈레톤 */}
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+          </div>
+
+          {/* 필터 스켈레톤 */}
+          <div className="flex gap-3">
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+          </div>
+
+          {/* 목록 스켈레톤 */}
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-20 bg-gray-200 rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -59,7 +118,7 @@ export default async function MyPage({ searchParams }: MyPageProps) {
         <Link
           href="/my-planner?sort=desc"
           className={`px-3 py-1 rounded-full text-sm ${
-            !isAscending ? "bg-blue-500 text-white" : "bg-gray-200"
+            sortOrder === "desc" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
         >
           최신순
@@ -67,15 +126,25 @@ export default async function MyPage({ searchParams }: MyPageProps) {
         <Link
           href="/my-planner?sort=asc"
           className={`px-3 py-1 rounded-full text-sm ${
-            isAscending ? "bg-blue-500 text-white" : "bg-gray-200"
+            sortOrder === "asc" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
         >
           오래된순
         </Link>
       </div>
 
-      {/* 실제 목록 UI는 PlanList 컴포넌트에 데이터를 넘겨서 그리도록 합니다. */}
-      <PlanList initialPlans={plans || []} />
+      {plansLoading ? (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="h-20 bg-gray-200 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <PlanList initialPlans={plans || []} />
+      )}
     </div>
   );
 }
