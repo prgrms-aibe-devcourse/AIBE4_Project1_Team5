@@ -4,12 +4,14 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { differenceInDays, format, addDays } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react'; // useMemo 추가
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableItem } from '@/component/planner/SortableItem';
 import type { Place } from '@/app/planner/edit/page';
 import { createBrowserClient } from '@/lib/supabaseClient';
+import EditorPlaceCard from '@/component/planner/EditorPlaceCard';
+import Sort from '@/component/place/Sort'; // [추가] Sort 컴포넌트 import
 
 // --- 데이터 타입 정의 ---
 interface DayInfo {
@@ -44,6 +46,9 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [visiblePlacesCount, setVisiblePlacesCount] = useState<number>(12);
+    // [추가] 정렬 상태를 관리하는 state
+    const [sortOrder, setSortOrder] = useState('popularity_desc');
 
     // --- Effects (페이지 로드 시 실행) ---
     useEffect(() => {
@@ -51,41 +56,36 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
             setIsLoading(true);
 
             if (aiGeneratedPlanStr) {
-                // 시나리오 1: AI 추천 계획이 있는 경우
                 const aiPlan = JSON.parse(aiGeneratedPlanStr);
                 const hydratedPlan: Plan = {};
                 for (const day in aiPlan) {
-
                     hydratedPlan[parseInt(day, 10)] = aiPlan[day]
                         .map((p: { place_name: string }) =>
                             initialPlaces.find(ip => ip.place_name === p.place_name)
                         )
-                        .filter((p?: Place): p is Place => p !== undefined); // undefined 제거
+                        .filter((p?: Place): p is Place => p !== undefined);
                 }
                 setPlan(hydratedPlan);
-
             } else if (tripIdToEdit) {
-                // 시나리오 2: 기존 일정을 수정하는 경우
                 const { data: planData } = await supabase.from('trip_plan').select('trip_title').eq('trip_id', tripIdToEdit).single();
                 if (planData) setTripTitle(planData.trip_title);
 
                 const { data: details } = await supabase.from('trip_plan_detail').select('day_number, place(*)').eq('trip_id', tripIdToEdit);
                 const newPlan: Plan = {};
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (details as any[] || []).forEach(detail => {
                     if (!newPlan[detail.day_number]) newPlan[detail.day_number] = [];
                     newPlan[detail.day_number].push(detail.place);
                 });
                 setPlan(newPlan);
             }
-
-            // 시나리오 3: 아무것도 없는 순수 생성 모드(일정 직접 짜기)는 그냥 넘어감
             setIsLoading(false);
         };
-
         initializePlan();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // 이 Effect는 페이지가 처음 로드될 때 한 번만 실행되도록 의도
+    }, [aiGeneratedPlanStr, initialPlaces, tripIdToEdit, supabase]);
+
+    useEffect(() => {
+        setVisiblePlacesCount(12);
+    }, [searchQuery, sortOrder]); // [수정] 정렬 순서가 바뀔 때도 개수 초기화
 
     // --- 데이터 가공 ---
     let days: DayInfo[] = [];
@@ -96,9 +96,27 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
         days = Array.from({ length: duration }, (_, i) => ({ day: i + 1, date: format(addDays(start, i), 'yyyy. MM. dd') }));
     }
 
-    const filteredPlaces = places.filter(place =>
-        place.place_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // [수정] 정렬과 필터링을 함께 처리하는 useMemo
+    const displayPlaces = useMemo(() => {
+        const sorted = [...places].sort((a, b) => {
+            switch (sortOrder) {
+                case 'review_desc':
+                    return (b.review_count || 0) - (a.review_count || 0) || (b.favorite_count || 0) - (a.favorite_count || 0);
+                case 'rating_desc':
+                    return (b.average_rating || 0) - (a.average_rating || 0) || (b.favorite_count || 0) - (a.favorite_count || 0);
+                case 'popularity_desc':
+                default:
+                    return (b.favorite_count || 0) - (a.favorite_count || 0);
+            }
+        });
+
+        if (!searchQuery) {
+            return sorted;
+        }
+        return sorted.filter(place =>
+            place.place_name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [places, sortOrder, searchQuery]);
 
     // --- 핸들러 함수 ---
     const handleAddPlace = (place: Place) => {
@@ -126,7 +144,6 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
         const testUserId = '35fcc2ad-5f65-489c-8d63-d805f8fcf35a'; // TODO: 로그인 기능 완성 후 실제 유저 ID로 변경
 
         if (tripIdToEdit) {
-            // --- 수정 로직 ---
             await supabase.from('trip_plan').update({ trip_title: tripTitle }).eq('trip_id', tripIdToEdit);
             await supabase.from('trip_plan_detail').delete().eq('trip_id', tripIdToEdit);
             const newPlanDetails = Object.entries(plan).flatMap(([day, places]) =>
@@ -138,7 +155,6 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
             alert("일정이 수정되었습니다.");
             router.push(`/my-planner/${tripIdToEdit}`);
         } else {
-            // --- 생성 로직 (AI 추천 포함) ---
             const { data: insertedPlan } = await supabase.from('trip_plan').insert({
                 user_id: testUserId, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
             }).select('trip_id').single();
@@ -201,19 +217,41 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
                 </section>
 
                 <section className="w-1/2 h-full bg-white rounded-lg p-4 shadow-sm flex flex-col overflow-hidden">
-                    <h2 className="font-bold text-lg mb-4">📍 여행지 둘러보기</h2>
+                    {/* [수정] 제목과 정렬 버튼을 함께 배치 */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="font-bold text-lg">📍 여행지 둘러보기</h2>
+                        <Sort currentSort={sortOrder} onSortChange={setSortOrder} />
+                    </div>
+                    
                     <input type="text" placeholder="어디로 떠나고 싶으신가요?" className="w-full p-2 border rounded-md mb-4" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                    <div className="flex-grow overflow-y-auto space-y-3 pr-2">
-                        {filteredPlaces.map((place) => (
-                            <div key={place.place_id} className="flex items-center gap-4 p-2 border rounded-md bg-gray-50">
-                                <img src={place.place_image} alt={place.place_name} className="w-24 h-24 object-cover rounded-md" />
-                                <div className="flex-grow"><h4 className="font-bold">{place.place_name}</h4></div>
-                                <button onClick={() => handleAddPlace(place)} className="px-3 py-1 bg-white border border-blue-500 text-blue-500 text-sm font-semibold rounded-md hover:bg-blue-50">추가</button>
+                    
+                    <div className="flex-grow overflow-y-auto pr-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* [수정] displayPlaces 배열 사용 */}
+                            {displayPlaces.slice(0, visiblePlacesCount).map((place) => (
+                                <EditorPlaceCard 
+                                    key={place.place_id} 
+                                    place={place} 
+                                    onAddPlace={handleAddPlace} 
+                                />
+                            ))}
+                        </div>
+                        
+                        {/* [수정] displayPlaces 배열 사용 */}
+                        {visiblePlacesCount < displayPlaces.length && (
+                            <div className="flex justify-center mt-6">
+                                <button
+                                    onClick={() => setVisiblePlacesCount(prev => prev + 12)}
+                                    className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    더보기
+                                </button>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </section>
             </main>
         </div>
     );
 }
+
