@@ -4,7 +4,7 @@ import { useAuth } from "@/hook/useAuth";
 import { useProfile } from "@/hook/useProfile";
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
-import ReviewButton from "@/component/review/ReviewButton";
+// import ReviewButton from "@/component/review/ReviewButton";
 import type { TravelSummary } from "@/type/travel";
 import { useEffect, useState } from "react";
 import styles from "./HomePage.module.css";
@@ -122,7 +122,7 @@ export default function Page() {
       </section>
 
       {/* 리뷰 버튼 */}
-      <ReviewButton places={places} />
+      {/* <ReviewButton places={places} /> */}
     </main>
   );
 }

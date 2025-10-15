@@ -1,406 +1,326 @@
+// app/review/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { getReviews, toggleLike, type Review } from '@/lib/reviewStore';
-import { Star, Heart, Camera } from 'lucide-react';
+import { getReviews, getReviewsByRegion, deleteReview, type ReviewWithImages } from '@/lib/reviewStoreSupabase';
+import { useAuth } from '@/hook/useAuth';
+import { WriteButton } from '@/component/review/ReviewButton';
 
 const REGIONS = [
-  "전체",
-  "서울특별시",
-  "부산광역시",
-  "대구광역시",
-  "인천광역시",
-  "광주광역시",
-  "대전광역시",
-  "울산광역시",
-  "세종특별자치시",
-  "경기도",
-  "강원도",
-  "충청북도",
-  "충청남도",
-  "전라북도",
-  "전라남도",
-  "경상북도",
-  "경상남도",
-  "제주특별자치도",
+  '전체',
+  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+  '경기도', '강원도', '충청북도', '충청남도', '전라북도', '전라남도', '경상북도', '경상남도', '제주도'
 ];
 
-export default function ReviewPage() {
+export default function ReviewListPage() {
   const router = useRouter();
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
+  const { user } = useAuth();
+  
+  const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState('전체');
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedRegion, setSelectedRegion] = useState("전체");
-  const [showPhotoOnly, setShowPhotoOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<'latest' | 'likes' | 'rating-high' | 'rating-low'>('latest');
-  const [currentUserId] = useState(() => {
-    if (typeof window !== 'undefined') {
-      let userId = localStorage.getItem('userId');
-      if (!userId) {
-        userId = `user_${Date.now()}`;
-        localStorage.setItem('userId', userId);
-      }
-      return userId;
-    }
-    return 'user_default';
-  });
 
-  // 리뷰 불러오기 + 데이터 마이그레이션
+  // 리뷰 목록 가져오기
   useEffect(() => {
-    const loadReviews = () => {
-      const storedReviews = getReviews();
+    const fetchReviews = async () => {
+      setIsLoading(true);
       
-      // 기존 리뷰 데이터에 새 속성 추가 (마이그레이션)
-      const migratedReviews = storedReviews.map(review => ({
-        ...review,
-        region: review.region || '기타',
-        likes: review.likes || 0,
-        likedBy: review.likedBy || [],
-      }));
+      let data: ReviewWithImages[];
+      if (selectedRegion === '전체') {
+        data = await getReviews();
+      } else {
+        data = await getReviewsByRegion(selectedRegion);
+      }
       
-      setReviews(migratedReviews);
-      setFilteredReviews(migratedReviews);
+      setReviews(data);
       setIsLoading(false);
     };
 
-    loadReviews();
+    fetchReviews();
+  }, [selectedRegion]);
 
-    // 스토리지 변경 감지 (다른 탭에서 리뷰 추가 시)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'travel-reviews') {
-        loadReviews();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+  // 리뷰 삭제
+  const handleDelete = async (reviewId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
     
-    // 페이지 포커스 시 리뷰 새로고침
-    const handleFocus = () => {
-      loadReviews();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
-  // 필터링 및 정렬 적용
-  useEffect(() => {
-    let filtered = [...reviews];
-
-    // 지역 필터
-    if (selectedRegion !== "전체") {
-      filtered = filtered.filter(review => (review.region || '기타') === selectedRegion);
+    if (!confirm('정말 삭제하시겠습니까?')) {
+      return;
     }
 
-    // 포토리뷰 필터
-    if (showPhotoOnly) {
-      filtered = filtered.filter(review => review.images && review.images.length > 0);
-    }
-
-    // 정렬
-    switch (sortBy) {
-      case 'latest':
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-      case 'likes':
-        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-        break;
-      case 'rating-high':
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'rating-low':
-        filtered.sort((a, b) => a.rating - b.rating);
-        break;
-    }
-
-    setFilteredReviews(filtered);
-  }, [reviews, selectedRegion, showPhotoOnly, sortBy]);
-
-  const handleLike = (reviewId: string) => {
-    const updatedReview = toggleLike(reviewId, currentUserId);
-    if (updatedReview) {
-      // 상태 업데이트
-      setReviews(reviews.map(r => r.id === reviewId ? updatedReview : r));
+    try {
+      await deleteReview(reviewId);
+      // 삭제 후 목록 갱신
+      setReviews(reviews.filter(review => review.review_id !== reviewId));
+      alert('리뷰가 삭제되었습니다.');
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      alert('삭제에 실패했습니다.');
     }
   };
 
-  const hasUserLiked = (review: Review): boolean => {
-    // 안전하게 체크 (기존 데이터 호환)
-    return review.likedBy?.includes(currentUserId) || false;
+  // 리뷰 수정
+  const handleEdit = (reviewId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    router.push(`/review/edit/${reviewId}`);
   };
 
+  // 별점 렌더링
   const renderStars = (rating: number) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      const isFilled = i <= Math.floor(rating);
-      const isHalfFilled = i === Math.ceil(rating) && rating % 1 !== 0;
+      const fillPercentage = Math.min(Math.max((rating - (i - 1)) * 100, 0), 100);
       
       stars.push(
-        <Star
-          key={i}
-          size={20}
-          className={`${
-            isFilled || isHalfFilled
-              ? 'fill-yellow-400 text-yellow-400'
-              : 'text-gray-300'
-          } inline-block`}
-        />
+        <span key={i} className="relative inline-block text-yellow-400 text-xl">
+          <span className="text-gray-300">★</span>
+          <span 
+            className="absolute left-0 top-0 overflow-hidden"
+            style={{ width: `${fillPercentage}%` }}
+          >
+            ★
+          </span>
+        </span>
       );
     }
     return stars;
   };
 
-  const calculateAverageRating = () => {
-    if (filteredReviews.length === 0) return 0;
-    const sum = filteredReviews.reduce((acc, review) => acc + review.rating, 0);
-    return (sum / filteredReviews.length).toFixed(1);
+  // 전체 리뷰 통계 계산
+  const calculateStats = () => {
+    if (reviews.length === 0) {
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingCounts: {} as Record<string, number>
+      };
+    }
+
+    const ratingCounts: Record<string, number> = {};
+    // 0.5 단위로 초기화
+    for (let i = 5; i >= 0.5; i -= 0.5) {
+      ratingCounts[i.toFixed(1)] = 0;
+    }
+
+    let totalRating = 0;
+
+    reviews.forEach((review) => {
+      totalRating += review.rating;
+      // 0.5 단위로 반올림
+      const roundedRating = (Math.round(review.rating * 2) / 2).toFixed(1);
+      if (ratingCounts[roundedRating] !== undefined) {
+        ratingCounts[roundedRating]++;
+      }
+    });
+
+    return {
+      averageRating: totalRating / reviews.length,
+      totalReviews: reviews.length,
+      ratingCounts
+    };
+  };
+
+  const stats = calculateStats();
+
+  // 날짜 포맷팅 (시간 포함)
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p className="text-gray-600">리뷰를 불러오는 중...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* 헤더 섹션 */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
-                  <button
-                    onClick={() => router.push('/')}
-                    className="text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-2"
-                  >
-                    ← 홈으로
-                  </button>
-                </div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                  여행 리뷰
-                </h1>
-                <p className="text-gray-600">
-                  다른 여행자들의 생생한 후기를 확인하세요
-                </p>
-              </div>
-              <Link
-                href="/review/write"
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2"
-              >
-                <span className="text-xl">✍️</span>
-                리뷰 작성하기
-              </Link>
-            </div>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* 헤더 */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">여행 리뷰</h1>
+        {user && <WriteButton />}
+      </div>
 
-            {/* 통계 정보 */}
-            <div className="flex gap-8 pt-6 border-t border-gray-200">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600">
-                  {calculateAverageRating()}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">평균 평점</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600">
-                  {filteredReviews.length}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">리뷰 수</div>
-              </div>
-            </div>
-          </div>
+      {/* 지역 필터 */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-3">지역별 필터</h2>
+        <select
+          value={selectedRegion}
+          onChange={(e) => setSelectedRegion(e.target.value)}
+          className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+        >
+          {REGIONS.map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          {/* 필터 섹션 */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-800">필터</h3>
-              
-              {/* 정렬 및 지역 필터 */}
-              <div className="flex items-center gap-4">
-                {/* 지역 필터 드롭다운 */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="region" className="text-sm font-semibold text-gray-700">
-                    지역별:
-                  </label>
-                  <select
-                    id="region"
-                    value={selectedRegion}
-                    onChange={(e) => setSelectedRegion(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold bg-white hover:bg-gray-50 cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {REGIONS.map((region) => (
-                      <option key={region} value={region}>
-                        {region}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 정렬 드롭다운 */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort" className="text-sm font-semibold text-gray-700">
-                    정렬:
-                  </label>
-                  <select
-                    id="sort"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold bg-white hover:bg-gray-50 cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="latest">최신순</option>
-                    <option value="likes">좋아요순</option>
-                    <option value="rating-high">평점 높은순</option>
-                    <option value="rating-low">평점 낮은순</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            {/* 포토리뷰만 보기 토글 */}
-            <div>
-              <button
-                onClick={() => setShowPhotoOnly(!showPhotoOnly)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
-                  showPhotoOnly
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Camera size={20} />
-                포토리뷰만 보기
-              </button>
-            </div>
-          </div>
-
-          {/* 리뷰 목록 */}
-          <div className="space-y-6">
-            {filteredReviews.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  {showPhotoOnly || selectedRegion !== "전체" 
-                    ? "조건에 맞는 리뷰가 없습니다"
-                    : "아직 등록된 리뷰가 없습니다"}
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  {showPhotoOnly || selectedRegion !== "전체"
-                    ? "다른 필터를 선택해보세요"
-                    : "첫 번째 리뷰를 작성해보세요!"}
-                </p>
-                {!(showPhotoOnly || selectedRegion !== "전체") && (
-                  <Link
-                    href="/review/write"
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all inline-block"
-                  >
-                    리뷰 작성하기
-                  </Link>
-                )}
-              </div>
-            ) : (
-              filteredReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow"
-                >
-                  {/* 리뷰 헤더 */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h3 className="text-xl font-bold text-gray-800">
-                          {review.title}
-                        </h3>
-                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold">
-                          {review.placeName}
-                        </span>
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                          {review.region || '기타'}
-                        </span>
-                        {review.images && review.images.length > 0 && (
-                          <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                            <Camera size={14} />
-                            포토리뷰
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          {renderStars(review.rating)}
-                          <span className="ml-2 font-semibold text-gray-700">
-                            {review.rating.toFixed(1)}
-                          </span>
-                        </div>
-                        <span>•</span>
-                        <span>{review.author}</span>
-                        <span>•</span>
-                        <span>{review.createdAt}</span>
-                      </div>
-                    </div>
-                    
-                    {/* 좋아요 버튼 */}
-                    <button
-                      onClick={() => handleLike(review.id)}
-                      className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                        hasUserLiked(review)
-                          ? 'bg-red-50'
-                          : 'hover:bg-gray-50'
-                      }`}
+     {/* 통계 */}
+      <div className="mb-6 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* 평균 평점 */}
+          <div className="flex flex-col items-center justify-center md:w-1/3 border-r border-gray-200 pr-8">
+            <p className="text-7xl text-gray-500 mb-3">평균 평점</p>
+            <p className="text-7xl font-bold text-gray-900 mb-3">
+              {stats.averageRating.toFixed(1)}
+            </p>
+            <div className="flex mb-3">
+              {[1, 2, 3, 4, 5].map((position) => {
+                const fillPercentage = Math.min(Math.max((stats.averageRating - (position - 1)) * 100, 0), 100);
+                return (
+                  <span key={position} className="relative inline-block text-yellow-400 text-3xl">
+                    <span className="text-gray-300">★</span>
+                    <span 
+                      className="absolute left-0 top-0 overflow-hidden"
+                      style={{ width: `${fillPercentage}%` }}
                     >
-                      <Heart
-                        size={24}
-                        className={`${
-                          hasUserLiked(review)
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400'
-                        } transition-all`}
+                      ★
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+            <p className="text-base text-gray-500">
+              총 리뷰 수 <span className="font-semibold text-gray-700 text-lg">{stats.totalReviews}</span>개
+            </p>
+          </div>
+
+          {/* 별점 분포 */}
+          <div className="flex-1">
+            <p className="text-sm text-gray-700 font-semibold mb-4">별점 분포</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {Array.from({ length: 10 }, (_, i) => (5 - i * 0.5).toFixed(1)).map((rating) => {
+                const count = stats.ratingCounts[rating] || 0;
+                const percentage = stats.totalReviews > 0 ? (count / stats.totalReviews) * 100 : 0;
+                
+                return (
+                  <div key={rating} className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 w-10">{rating}점</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-yellow-400 h-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
                       />
-                      <span className={`text-xs font-semibold ${
-                        hasUserLiked(review) ? 'text-red-500' : 'text-gray-500'
-                      }`}>
-                        {review.likes || 0}
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* 리뷰 내용 */}
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    {review.content}
-                  </p>
-
-                  {/* 이미지 갤러리 */}
-                  {review.images && review.images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                      {review.images.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square rounded-lg overflow-hidden bg-gray-100"
-                        >
-                          <img
-                            src={image}
-                            alt={`리뷰 이미지 ${index + 1}`}
-                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300 cursor-pointer"
-                          />
-                        </div>
-                      ))}
                     </div>
-                  )}
-                </div>
-              ))
-            )}
+                    <span className="text-sm text-gray-500 w-50 text-middle">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </>
+
+      {/* 리뷰 목록 */}
+      {reviews.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">
+            {selectedRegion === '전체' 
+              ? '아직 작성된 리뷰가 없습니다.' 
+              : `${selectedRegion} 지역에 작성된 리뷰가 없습니다.`}
+          </p>
+          {user && (
+            <WriteButton className="mt-4" />
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reviews.map((review) => (
+            <div
+              key={review.review_id}
+              onClick={() => router.push(`/review/${review.review_id}`)}
+              className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative"
+            >
+              {/* 썸네일 이미지 */}
+              {review.images.length > 0 ? (
+                <div className="w-full h-48 bg-gray-200">
+                  <img
+                    src={review.images[0].review_image}
+                    alt={review.review_title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-400">이미지 없음</span>
+                </div>
+              )}
+
+              {/* 내용 */}
+              <div className="p-4">
+                {/* 지역 뱃지 */}
+                <div className="mb-2">
+                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                    {review.region}
+                  </span>
+                </div>
+
+                {/* 제목 */}
+                <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+                  {review.review_title}
+                </h3>
+
+                {/* 별점 */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex">
+                    {renderStars(review.rating)}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {review.rating.toFixed(1)}
+                  </span>
+                </div>
+
+                {/* 내용 미리보기 */}
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {review.review_content}
+                </p>
+
+                {/* 날짜 정보 */}
+                <div className="flex flex-col gap-1 mb-2">
+                  <p className="text-xs text-gray-500">
+                    <span className="font-medium">작성:</span> {formatDate(review.created_at)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    <span className="font-medium">수정:</span> {formatDate(review.updated_at || review.created_at)}
+                    {review.updated_at && review.updated_at !== review.created_at && (
+                      <span className="ml-1 text-orange-600">(수정됨)</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* 본인 리뷰인 경우에만 수정/삭제 버튼 표시 */}
+                {user && user.id === review.user_id && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => handleEdit(review.review_id, e)}
+                      className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(review.review_id, e)}
+                      className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
