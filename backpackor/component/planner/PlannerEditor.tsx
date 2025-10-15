@@ -81,7 +81,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
             setIsLoading(false);
         };
         initializePlan();
-    }, [aiGeneratedPlanStr, initialPlaces, tripIdToEdit, supabase]);
+    }, []);
 
     useEffect(() => {
         setVisiblePlacesCount(12);
@@ -167,7 +167,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
         } else {
             // --- 생성 로직 (AI 추천 포함) ---
             const { data: insertedPlan } = await supabase.from('trip_plan').insert({
-                user_id: testUserId, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
+                user_id: user.id, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
             }).select('trip_id').single();
 
                 if (insertedPlan) {
