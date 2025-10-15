@@ -35,9 +35,9 @@ export default function Page() {
         display_name: displayName.trim(),
       });
       alert("프로필이 업데이트되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 업데이트 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -61,9 +61,9 @@ export default function Page() {
         profile_image: file,
       });
       alert("프로필 사진이 변경되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 사진 변경 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -79,9 +79,9 @@ export default function Page() {
     try {
       await deleteProfileImage();
       alert("프로필 사진이 삭제되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 사진 삭제 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
     }
   };

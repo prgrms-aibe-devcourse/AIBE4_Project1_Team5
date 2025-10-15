@@ -22,7 +22,7 @@ export default function AiLoadingPage() {
             try {
                 // 1. 백엔드 API에 모든 파라미터를 그대로 넘겨 요청을 보냅니다.
                 // searchParams.toString()이 'region=서울&region=강릉' 과 같은 형태로 만들어줍니다.
-                const response = await fetch(`/api/generate-plan?${searchParams.toString()}`);
+                const response = await fetch(`/api/planner?${searchParams.toString()}`);
                 if (!response.ok) {
                     throw new Error('AI 추천 생성에 실패했습니다.');
                 }

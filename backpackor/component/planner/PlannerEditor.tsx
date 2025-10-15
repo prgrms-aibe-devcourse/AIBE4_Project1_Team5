@@ -140,10 +140,20 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
     };
 
     const handleSavePlan = async () => {
+        // 제목이 비어있는지 확인
+        if (!tripTitle.trim()) {
+            alert('여행 제목을 입력해주세요.');
+            return;
+        }
+
         setIsSaving(true);
-        const testUserId = '35fcc2ad-5f65-489c-8d63-d805f8fcf35a'; // TODO: 로그인 기능 완성 후 실제 유저 ID로 변경
+
+        try {
+            // Supabase에서 현재 로그인한 사용자 정보를 가져옵니다.
+            const { data: { user } } = await supabase.auth.getUser();
 
         if (tripIdToEdit) {
+            // --- 수정 로직 ---
             await supabase.from('trip_plan').update({ trip_title: tripTitle }).eq('trip_id', tripIdToEdit);
             await supabase.from('trip_plan_detail').delete().eq('trip_id', tripIdToEdit);
             const newPlanDetails = Object.entries(plan).flatMap(([day, places]) =>
@@ -155,22 +165,34 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
             alert("일정이 수정되었습니다.");
             router.push(`/my-planner/${tripIdToEdit}`);
         } else {
+            // --- 생성 로직 (AI 추천 포함) ---
             const { data: insertedPlan } = await supabase.from('trip_plan').insert({
                 user_id: testUserId, trip_title: tripTitle, trip_start_date: startDateStr, trip_end_date: endDateStr
             }).select('trip_id').single();
 
-            if (insertedPlan) {
-                const planDetails = Object.entries(plan).flatMap(([day, places]) =>
-                    places.map((p, i) => ({ trip_id: insertedPlan.trip_id, place_id: p.place_id, day_number: parseInt(day), visit_order: i + 1 }))
-                );
-                if (planDetails.length > 0) {
-                    await supabase.from('trip_plan_detail').insert(planDetails);
+                if (insertedPlan) {
+                    const planDetails = Object.entries(plan).flatMap(([day, places]) =>
+                        places.map((p, i) => ({ trip_id: insertedPlan.trip_id, place_id: p.place_id, day_number: parseInt(day), visit_order: i + 1 }))
+                    );
+
+                    if (planDetails.length > 0) {
+                        const { error: detailError } = await supabase.from('trip_plan_detail').insert(planDetails);
+                        if (detailError) throw detailError;
+                    }
+
+                    alert("일정이 저장되었습니다.");
+                    router.push('/my-planner');
                 }
-                alert("일정이 저장되었습니다.");
-                router.push('/my-planner');
             }
+        } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            console.error("일정 저장/수정 중 오류 발생:", (error as any).message);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            alert(`오류가 발생했습니다: ${(error as any).message}`);
+        } finally {
+            // 저장 상태를 false로 변경
+            setIsSaving(false);
         }
-        setIsSaving(false);
     };
 
     // 로딩 중일 때 화면
