@@ -12,12 +12,14 @@ interface FavoriteButtonProps {
   initialIsFavorite: boolean;
   initialFavoriteCount: number;
   placeId: string;
+  isLarge?: boolean; // [추가] 크게 표시할지 여부를 결정하는 prop
 }
 
 export default function FavoriteButton({
   initialIsFavorite,
   initialFavoriteCount,
   placeId,
+  isLarge = false, // [수정] 기본값은 false (작은 버튼)
 }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [favoriteCount, setFavoriteCount] = useState(initialFavoriteCount);
@@ -27,15 +29,12 @@ export default function FavoriteButton({
   const supabase = createBrowserClient();
   const router = useRouter();
 
-  // 컴포넌트 로드 시, 현재 로그인된 사용자 정보 가져오기
   useEffect(() => {
     const fetchUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
-
-      // TODO: 로그인된 사용자의 찜 목록을 조회해서 isFavorite 초기 상태를 설정
     };
     fetchUser();
   }, [supabase]);
@@ -44,7 +43,6 @@ export default function FavoriteButton({
     e.preventDefault();
     e.stopPropagation();
 
-    // [핵심 기능!] 로그인하지 않았다면 알림 후 로그인 페이지로 이동
     if (!user) {
       alert("로그인이 필요한 기능입니다.");
       router.push("/login");
@@ -73,23 +71,32 @@ export default function FavoriteButton({
     setIsLoading(false);
   };
 
+  // [수정] isLarge prop에 따라 스타일을 다르게 적용
+  const buttonClasses = `
+    z-10 bg-white/70 rounded-full backdrop-blur-sm transition-colors
+    ${isLarge ? 'p-4' : 'p-2'} // 상세 페이지에서는 더 큰 패딩
+    ${isLarge ? 'h-16 w-16 flex items-center justify-center' : ''} // 상세 페이지에서 고정 크기 및 중앙 정렬 (내부)
+    ${isLoading ? "cursor-not-allowed" : "hover:bg-white/90"}
+  `;
+
+  const heartSize = isLarge ? 36 : 20; // [수정] isLarge에 따라 하트 아이콘 크기 조절
+  const countTextSize = isLarge ? 'text-base' : 'text-xs'; // [추가] 찜 개수 텍스트 크기 조절
+
   return (
     <button
       onClick={handleFavoriteClick}
-      className={`absolute top-3 right-3 z-10 p-2 bg-white/70 rounded-full backdrop-blur-sm hover:bg-white/90 transition-colors ${
-        isLoading ? "cursor-not-allowed" : ""
-      }`}
+      className={buttonClasses}
       aria-label="찜하기"
       disabled={isLoading}
     >
       <div className="flex flex-col items-center">
         <Heart
-          size={20}
+          size={heartSize}
           className={`transition-all ${
             isFavorite ? "text-red-500 fill-red-500" : "text-gray-600"
           }`}
         />
-        <span className="text-xs font-semibold text-gray-700 mt-1">
+        <span className={`${countTextSize} font-semibold text-gray-700 mt-1`}>
           {favoriteCount}
         </span>
       </div>
