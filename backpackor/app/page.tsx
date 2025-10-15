@@ -1,93 +1,72 @@
 "use client";
 
+// Link와 Backpack 아이콘을 새로 import 합니다.
+import Link from "next/link";
+
 import { useAuth } from "@/hook/useAuth";
 import { useProfile } from "@/hook/useProfile";
-import { createServerClient } from "@/lib/supabaseClient";
+// [수정] 클라이언트 컴포넌트에 맞는 createBrowserClient를 import 합니다.
 import TravelCard from "@/component/place/TravelCard";
-// import ReviewButton from "@/component/review/ReviewButton";
+
+import { createBrowserClient } from "@/lib/supabaseClient";
 import type { TravelSummary } from "@/type/travel";
 import { useEffect, useState } from "react";
 import styles from "./HomePage.module.css";
 
-// 목업 데이터 (DB에 데이터가 없을 때 대체)
-const MOCK_PLACES: TravelSummary[] = [
-  {
-    place_id: "jeju-mock-id",
-    place_name: "제주도 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=1",
-    average_rating: 4.8,
-  },
-  {
-    place_id: "busan-mock-id",
-    place_name: "부산 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=2",
-    average_rating: 4.5,
-  },
-  {
-    place_id: "seoul-mock-id",
-    place_name: "서울 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=3",
-    average_rating: 4.6,
-  },
-  {
-    place_id: "gyeongju-mock-id",
-    place_name: "경주 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=4",
-    average_rating: 4.9,
-  },
-  {
-    place_id: "jeonju-mock-id",
-    place_name: "전주 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=5",
-    average_rating: 4.7,
-  },
-  {
-    place_id: "namhae-mock-id",
-    place_name: "남해 (Mock)",
-    place_image: "https://picsum.photos/400/200?random=6",
-    average_rating: 4.5,
-  },
-];
-
 export default function Page() {
   const { user } = useAuth();
   const { profile } = useProfile(user?.id);
-  const [places, setPlaces] = useState<TravelSummary[]>([]);
 
-  // Supabase에서 여행지 불러오기
+  const [popularPlaces, setPopularPlaces] = useState<TravelSummary[]>([]);
+  const [bestPlaces, setBestPlaces] = useState<TravelSummary[]>([]);
+
+  // [삭제] 검색창 관련 state와 핸들러 함수를 삭제했습니다.
+  // const [searchTerm, setSearchTerm] = useState("");
+  // const router = useRouter();
+  // const handleSearch = (e: FormEvent<HTMLFormElement>) => { ... };
+
   useEffect(() => {
     const fetchPlaces = async () => {
-      const supabase = createServerClient();
-      const { data: dbPlaces, error } = await supabase
+      // [수정] 'use client' 컴포넌트에서는 createBrowserClient를 사용합니다.
+      const supabase = createBrowserClient();
+
+      // 1. 인기 여행지 불러오기 (찜 많은 순 상위 3개)
+      const { data: popularData, error: popularError } = await supabase
         .from("place")
         .select("place_id, place_name, place_image, average_rating")
-        .order("average_rating", { ascending: false })
-        .limit(6);
+        .order("favorite_count", { ascending: false })
+        .limit(3);
 
-      if (error || !dbPlaces || dbPlaces.length < 6) {
-        console.warn("DB 데이터 부족 또는 오류. 목업을 사용합니다.");
-        setPlaces(MOCK_PLACES);
+      if (popularError) {
+        console.error("인기 여행지 로딩 실패:", popularError);
       } else {
-        setPlaces(dbPlaces);
+        setPopularPlaces(popularData || []);
+      }
+
+      // 2. 베스트 여행지 불러오기 (별점 높은 순 상위 3개)
+      const { data: bestData, error: bestError } = await supabase
+        .rpc("get_places_with_details")
+        .order("average_rating", { ascending: false })
+        .limit(3);
+
+      if (bestError) {
+        console.error("베스트 여행지 로딩 실패:", bestError);
+      } else {
+        setBestPlaces(bestData || []);
       }
     };
 
     fetchPlaces();
   }, []);
 
-  const popularPlaces = places.slice(0, 3);
-  const bestPlaces = places.slice(3, 6);
-
   return (
     <main className={styles["main-content"]}>
-      {/* (로그인 여부에 따라 다르게 출력) */}
       <section className={styles["hero-section"]}>
         {user ? (
           <>
-            <h1>
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-3">
               안녕하세요, {profile?.display_name || "사용자"}님!
             </h1>
-            <p>취향에 맞는 테마로, 여행을 시작해보세요.</p>
           </>
         ) : (
           <>
@@ -96,14 +75,24 @@ export default function Page() {
           </>
         )}
 
-        <div className={styles["search-bar"]}>
-          <input type="text" placeholder="어디로 떠나고 싶으신가요?" />
+        <div className="mt-10 flex flex-col items-center gap-5 text-center">
+          <div className="flex items-center gap-3 text-xl font-semibold text-gray-800">
+            <p className="text-lg text-gray-600 mb-8">
+              취향에 맞는 테마로, 여행을 시작해보세요.
+            </p>
+          </div>
+          <Link
+            href="/place"
+            className="inline-block px-10 py-4 bg-blue-600 text-white font-bold rounded-full text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+          >
+            여행지 둘러보기
+          </Link>
         </div>
       </section>
 
       {/* 인기 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>인기 여행지</h2>
+        <h2>인기 여행지 TOP3</h2>
         <div className={styles["card-container"]}>
           {popularPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />
@@ -113,7 +102,7 @@ export default function Page() {
 
       {/* 베스트 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>베스트 여행지</h2>
+        <h2>베스트 여행지 TOP3</h2>
         <div className={styles["card-container"]}>
           {bestPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />

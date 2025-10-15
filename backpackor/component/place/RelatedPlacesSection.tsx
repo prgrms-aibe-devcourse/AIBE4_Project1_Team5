@@ -1,136 +1,279 @@
-"use client"; // ⭐️ 1. 클라이언트 컴포넌트임을 명시함 ⭐️
+// @/component/place/RelatedPlacesSection.tsx
+
+"use client";
 
 import React, { useEffect, useState } from "react";
-// ⭐️ 2. useNavigate 대신 Next.js의 useRouter를 사용함 ⭐️
-import { useRouter } from "next/navigation";
-
-// 🚨 팀 프로젝트에 맞게 경로를 수정해야 합니다.
-// 현재 구조상 'lib' 또는 'utils'에 타입이 있을 것으로 가정합니다.
+import { supabase } from "@/lib/supabaseClient";
 import type { TravelSummary } from "@/type/travel";
-// import { supabase } from "@/lib/supabase/client"; // 실제 Supabase 경로로 변경 필요
+import TravelCard from "@/component/place/TravelCard";
 
-// ----------------------------------------------------
-// ⭐️ 목업 추천 장소 데이터 (유지) ⭐️
-// ----------------------------------------------------
-const MOCK_RELATED_PLACES: TravelSummary[] = [
-  {
-    place_id: "seongsan-ilchulbong",
-    place_name: "성산일출봉",
-    place_image: "https://picsum.photos/300/200?random=11",
-    average_rating: 4.7,
-  },
-  {
-    place_id: "hyeopjae-beach",
-    place_name: "협재해수욕장",
-    place_image: "https://picsum.photos/300/200?random=12",
-    average_rating: 4.6,
-  },
-  {
-    place_id: "hallasan",
-    place_name: "한라산 국립공원",
-    place_image: "https://picsum.photos/300/200?random=10",
-    average_rating: 4.9,
-  },
-];
+// 한 페이지에 보여줄 카드 개수를 3으로 설정
+const CARDS_PER_PAGE = 3;
 
-// ⭐️ 상위 컴포넌트(TravelDetailPage)로부터 props를 받습니다. ⭐️
 interface RelatedPlacesSectionProps {
   currentPlaceId: string;
   regionId: number;
 }
 
-// ⭐️ 추천 장소 카드 컴포넌트 ⭐️
-const RelatedPlaceCard: React.FC<TravelSummary> = (place) => {
-  // ⭐️ 2. useNavigate -> useRouter.push()로 변경 ⭐️
-  const router = useRouter();
+const fetchInitialPlaces = async (
+  regionId: number,
+  excludePlaceId: string
+): Promise<TravelSummary[]> => {
+  // 1단계: 평점 4 이상인 장소 최대 CARDS_PER_PAGE(3)개 조회
+  const { data: highRatedData } = await supabase
+    .from("place")
+    .select("*")
+    .eq("region_id", regionId)
+    .gte("average_rating", 4)
+    .neq("place_id", excludePlaceId)
+    .order("average_rating", { ascending: false })
+    .limit(CARDS_PER_PAGE);
 
-  const handleClick = () => {
-    // 클릭 시 해당 추천 장소의 상세 페이지로 이동
-    // 기존: navigate(`/travel/${place.place_id}`);
-    // Next.js: `app/place/[placeId]/page.tsx` 경로에 맞춰 /place/로 변경
-    router.push(`/place/${place.place_id}`);
-  };
+  if (highRatedData && highRatedData.length >= CARDS_PER_PAGE) {
+    return highRatedData;
+  }
 
-  return (
-    <div
-      onClick={handleClick}
-      style={{
-        width: "30%",
-        cursor: "pointer",
-        padding: "10px",
-        border: "1px solid #ddd",
-      }}
-    >
-           {" "}
-      <img
-        src={place.place_image}
-        alt={place.place_name}
-        style={{
-          width: "100%",
-          height: "150px",
-          objectFit: "cover",
-          marginBottom: "10px",
-        }}
-      />
-            <p style={{ fontWeight: "bold" }}>{place.place_name}</p>     {" "}
-      <small>★ {place.average_rating.toFixed(1)}</small>   {" "}
-    </div>
-  );
+  // 2단계: 부족하면 랜덤으로 채우기
+  const excludeIds = [
+    excludePlaceId,
+    ...(highRatedData || []).map((p) => p.place_id),
+  ];
+  // 넉넉하게 20개 조회 후 클라이언트에서 랜덤 셔플
+  const { data: randomData } = await supabase
+    .from("place")
+    .select("*")
+    .eq("region_id", regionId)
+    .not("place_id", "in", `(${excludeIds.join(",")})`)
+    .limit(20);
+
+  if (!randomData) return highRatedData || [];
+
+  const shuffled = [...randomData].sort(() => Math.random() - 0.5);
+  const needed = CARDS_PER_PAGE - (highRatedData?.length || 0);
+
+  return [...(highRatedData || []), ...shuffled.slice(0, needed)];
 };
 
-const RelatedPlacesSection: React.FC<RelatedPlacesSectionProps> = (props) => {
-  // ⭐️ 나머지 로직 (useState, useEffect)은 'use client'가 있으므로 그대로 유지함 ⭐️
-  const [relatedPlaces, setRelatedPlaces] = useState<TravelSummary[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+const fetchMoreRandomPlaces = async (
+  regionId: number,
+  excludeIds: string[],
+  count: number
+): Promise<TravelSummary[]> => {
+  // 다음 페이지를 채울 만큼 넉넉하게 조회 (3배)
+  const { data } = await supabase
+    .from("place")
+    .select("*")
+    .eq("region_id", regionId)
+    .not("place_id", "in", `(${excludeIds.join(",")})`)
+    .limit(count * 3);
+
+  if (!data || data.length === 0) return [];
+
+  const shuffled = [...data].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
+
+const RelatedPlacesSection: React.FC<RelatedPlacesSectionProps> = ({
+  currentPlaceId,
+  regionId,
+}) => {
+  const [allPlaces, setAllPlaces] = useState<TravelSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    // ... 데이터 페칭 로직 유지 ...
-    const fetchRelatedPlaces = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        setError(null); // ... 목업 데이터 사용 로직 ...
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setRelatedPlaces(MOCK_RELATED_PLACES); // 목업 데이터 사용
+        const places = await fetchInitialPlaces(regionId, currentPlaceId);
+        setAllPlaces(places);
+        setCurrentPage(0);
       } catch (err) {
-        console.error("추천 장소 로드 실패:", err);
-        setError("추천 장소를 불러오는 데 실패함.");
+        console.error("❌ 추천 장소 로딩 실패:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchRelatedPlaces();
-  }, [props.regionId, props.currentPlaceId]);
+    fetchData();
+  }, [regionId, currentPlaceId]);
 
-  if (loading) return <div>추천 장소를 로딩 중임...</div>;
-  if (error) return <div style={{ color: "red" }}>오류: {error}</div>; // ... JSX 반환 로직 유지 ...
+  const handleNext = async () => {
+    const nextPage = currentPage + 1;
+    const requiredPlaces = (nextPage + 1) * CARDS_PER_PAGE;
 
-  if (relatedPlaces.length === 0) {
+    // 다음 페이지에 필요한 장소가 부족하면 추가 로딩
+    if (allPlaces.length < requiredPlaces) {
+      const usedIds = [currentPlaceId, ...allPlaces.map((p) => p.place_id)];
+      const newPlaces = await fetchMoreRandomPlaces(
+        regionId,
+        usedIds,
+        CARDS_PER_PAGE
+      );
+
+      if (newPlaces.length > 0) {
+        setAllPlaces((prev) => [...prev, ...newPlaces]);
+      } else {
+        // 더 이상 로드할 장소가 없음을 표시 (슬라이드 비활성화 로직에 영향)
+        // 현재는 무한 스크롤이 아니므로 그냥 다음 페이지로 넘어가지 않도록 처리하지 않음
+      }
+    }
+
+    setCurrentPage(nextPage);
+  };
+
+  const handlePrev = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  if (loading) {
     return (
-      <div style={{ padding: "20px", borderTop: "1px solid #ccc" }}>
-                <h2>같이 가보면 좋을 장소</h2>       {" "}
-        <p style={{ color: "#999" }}>같은 지역의 추천 장소가 아직 없음.</p>     {" "}
-      </div>
+      <section className="related-places-section">
+        <h2>같이 가보면 좋을 장소</h2>
+        <div style={{ padding: "20px", color: "#666" }}>
+          추천 장소를 로딩 중입니다...
+        </div>
+      </section>
     );
   }
 
+  if (allPlaces.length === 0) {
+    return (
+      <section className="related-places-section">
+        <h2>같이 가보면 좋을 장소</h2>
+        <p className="no-places-text">추천 장소가 없습니다.</p>
+      </section>
+    );
+  }
+
+  const startIdx = currentPage * CARDS_PER_PAGE;
+  const endIdx = startIdx + CARDS_PER_PAGE;
+  const visiblePlaces = allPlaces.slice(startIdx, endIdx);
+
+  const isPrevDisabled = currentPage === 0;
+  // 다음 장소가 아예 없어서 다음 페이지가 비어있을 때만 비활성화
+  const isNextDisabled =
+    endIdx >= allPlaces.length && visiblePlaces.length < CARDS_PER_PAGE;
+
   return (
-    <section style={{ padding: "20px", borderTop: "1px solid #ccc" }}>
-            <h2>같이 가보면 좋을 장소</h2>     {" "}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "15px",
-        }}
-      >
-               {" "}
-        {relatedPlaces.map((place) => (
-          <RelatedPlaceCard key={place.place_id} {...place} />
-        ))}
-             {" "}
+    <section className="related-places-section">
+      <div className="section-header">
+        <h2>같이 가보면 좋을 장소</h2>
+        <div className="navigation-buttons">
+          <button
+            onClick={handlePrev}
+            disabled={isPrevDisabled}
+            className="nav-button"
+            aria-label="이전 장소"
+          >
+            ←
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={isNextDisabled}
+            className="nav-button"
+            aria-label="다음 장소"
+          >
+            →
+          </button>
+        </div>
       </div>
-         {" "}
+
+      <div className="cards-container">
+        {visiblePlaces.map((place) => (
+          <TravelCard key={place.place_id} place={place} />
+        ))}
+      </div>
+
+      <style jsx>{`
+        .related-places-section {
+          padding: 40px 20px;
+          border-top: 1px solid #e5e5e5;
+          margin-top: 40px;
+        }
+
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin: 0;
+        }
+
+        .navigation-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .nav-button {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 1px solid #e5e5e5;
+          background-color: white;
+          color: #1a1a1a;
+          font-size: 18px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .nav-button:hover:not(:disabled) {
+          background-color: #f5f5f5;
+          border-color: #d0d0d0;
+        }
+
+        .nav-button:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+          background-color: #fafafa;
+        }
+
+        .cards-container {
+          display: grid;
+          /* 💡 수정: 카드를 3개로 키우기 위해 3열 레이아웃으로 변경 */
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .no-places-text {
+          color: #999;
+          padding: 20px;
+          text-align: center;
+        }
+
+        /* 반응형 처리 */
+        @media (max-width: 1400px) {
+          /* 1400px 이상에서는 3열, 1400px 미만에서는 3열 유지 */
+        }
+
+        @media (max-width: 1024px) {
+          .cards-container {
+            /* 1024px 미만에서는 2열로 변경 */
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .cards-container {
+            /* 640px 미만에서는 1열로 변경 */
+            grid-template-columns: 1fr;
+          }
+
+          .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+          }
+        }
+      `}</style>
     </section>
   );
 };

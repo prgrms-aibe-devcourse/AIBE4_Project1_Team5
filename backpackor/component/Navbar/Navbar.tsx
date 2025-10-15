@@ -5,10 +5,10 @@ import { useProfile } from "@/hook/useProfile";
 import { useSocialAuth } from "@/hook/useSocialAuth";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
-  { href: "/", label: "홈" }, // '홈' 링크 추가
+  { href: "/", label: "홈" },
   { href: "/place", label: "여행지" },
   { href: "/planner", label: "일정 계획" },
   { href: "/my-planner", label: "내 일정" },
@@ -16,7 +16,7 @@ const NAV_LINKS = [
 ] as const;
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { profile, profileUrl } = useProfile(user?.id);
   const { handleSocialLogout } = useSocialAuth();
 
@@ -67,7 +67,13 @@ export default function Navbar() {
 
       {/* 우측: 로그인 / 프로필 */}
       <div className="flex items-center gap-3 relative" ref={menuRef}>
-        {user ? (
+        {loading ? (
+          // 로딩 중 스켈레톤 UI
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />
+            <div className="w-20 h-5 rounded bg-gray-200 animate-pulse" />
+          </div>
+        ) : user ? (
           <>
             <button
               onClick={() => setIsMenuOpen((prev) => !prev)}

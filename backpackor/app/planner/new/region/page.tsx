@@ -1,4 +1,4 @@
-// app/planner/ai/region/page.tsx
+// app/planner/new/region/page.tsx
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -13,16 +13,17 @@ interface Region {
 }
 
 /**
- * AI 여행 계획 생성을 위한 지역 선택 페이지 컴포넌트 (다중 선택)
+ * 직접 여행 계획 생성을 위한 지역 선택 페이지 컴포넌트입니다.
  */
-export default function AiRegionSelectPage() {
+export default function RegionSelectPage() {
     const searchParams = useSearchParams();
     const supabase = createBrowserClient();
 
-    const [regions, setRegions] = useState<Region[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedRegions, setSelectedRegions] = useState<string[]>([]); // 다중 선택을 위해 string 배열로 변경
+    const [regions, setRegions] = useState<Region[]>([]); // DB에서 가져온 전체 지역 목록
+    const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+    const [selectedRegions, setSelectedRegions] = useState<string[]>([]); // 사용자가 선택한 지역 목록 (다중 선택)
 
+    // 컴포넌트가 처음 렌더링될 때 Supabase에서 지역 목록을 가져옵니다.
     useEffect(() => {
         const fetchRegions = async () => {
             const { data, error } = await supabase
@@ -30,27 +31,30 @@ export default function AiRegionSelectPage() {
                 .select('*')
                 .order('region_id', { ascending: true });
 
-            if (data) setRegions(data);
-            else if (error) {
+            if (data) {
+                setRegions(data);
+            } else if (error) {
                 console.error("지역 정보 로딩 실패:", error);
                 alert("지역 정보를 불러오는 데 실패했습니다.");
             }
             setIsLoading(false);
         };
-        fetchRegions();
-    }, []);
 
-    // 지역 버튼 클릭 핸들러 (다중 선택 로직)
+        fetchRegions();
+    }, []); // 빈 배열을 전달하여 한 번만 실행되도록 합니다.
+
+    // 지역 버튼 클릭 시, 선택 목록에 추가하거나 제거하는 함수
     const handleSelectRegion = (regionName: string) => {
         setSelectedRegions(prev =>
             prev.includes(regionName)
-                ? prev.filter(r => r !== regionName)
-                : [...prev, regionName]
+                ? prev.filter(r => r !== regionName) // 이미 선택된 지역이면 배열에서 제거
+                : [...prev, regionName] // 선택되지 않은 지역이면 배열에 추가
         );
     };
 
-    // 이전, 다음 단계 URL 생성 함수
+    // 이전, 다음 단계로 이동할 URL을 생성하는 함수
     const createUrl = (isNext: boolean) => {
+        // 이전 페이지에서 받아온 날짜 정보를 가져옵니다.
         const startDate = searchParams.get('start');
         const endDate = searchParams.get('end');
         const params = new URLSearchParams();
@@ -59,12 +63,12 @@ export default function AiRegionSelectPage() {
         if (endDate) params.append('end', endDate);
 
         if (isNext) {
-            // 다음 단계로 갈 때, 선택된 모든 지역 정보를 'region' 파라미터로 넘겨줍니다.
+            // '다음 단계'일 경우, 선택된 모든 지역 정보를 파라미터에 추가합니다.
             selectedRegions.forEach(region => params.append('region', region));
-            return `/planner/ai/companion?${params.toString()}`;
+            return `/planner/edit?${params.toString()}`;
         } else {
-            // 이전 단계는 날짜 선택 페이지
-            return `/planner/ai`;
+            // '이전 단계'일 경우, 날짜 선택 페이지로 돌아갑니다.
+            return `/planner/new`;
         }
     };
 
@@ -83,6 +87,7 @@ export default function AiRegionSelectPage() {
                         <button
                             key={region.region_id}
                             onClick={() => handleSelectRegion(region.region_name)}
+                            // 선택된 지역인지 확인하여 다른 스타일을 적용합니다.
                             className={`px-6 py-3 bg-white border rounded-lg text-gray-700 font-semibold hover:border-blue-500 transition-colors duration-200 shadow-sm ${selectedRegions.includes(region.region_name) ? 'border-blue-500 border-2' : 'border-gray-200'}`}
                         >
                             {region.region_name}
@@ -96,11 +101,11 @@ export default function AiRegionSelectPage() {
                     </Link>
                     <Link
                         href={createUrl(true)}
-                        // 선택된 지역이 하나도 없으면 비활성화
+                        // 선택된 지역이 하나도 없으면 버튼을 비활성화합니다.
                         className={`px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 ${selectedRegions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={(e) => { if (selectedRegions.length === 0) e.preventDefault(); }}
                     >
-                        다음 단계
+                        일정 만들러 가기
                     </Link>
                 </div>
             </div>

@@ -1,23 +1,50 @@
-// app/place/page.tsx
-
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelList from "@/component/place/TravelList";
 
-export default async function PlacePage() {
-  const supabase = createServerClient();
-  const { data: places, error } = await supabase.from("place").select("*");
+interface PlacePageProps {
+  searchParams: {
+    sort?: string;
+  };
+}
 
-  // --- ▼▼▼ 디버깅을 위한 코드 추가 ▼▼▼ ---
-  console.log("Supabase에서 불러온 데이터:", places);
+export default async function PlacePage({ searchParams }: PlacePageProps) {
+  const supabase = createServerClient();
+
+  // URL 파라미터가 없으면 'popularity_desc'(인기순)을 기본값으로 사용
+  const sortBy = searchParams.sort || "popularity_desc";
+
+  let query = supabase.rpc("get_places_with_details");
+
+  // sortBy 값에 따라 정렬 순서를 적용
+  switch (sortBy) {
+    case "review_desc":
+      // 1순위: 리뷰 많은 순, 2순위: 인기순
+      query = query
+        .order("review_count", { ascending: false })
+        .order("favorite_count", { ascending: false });
+      break;
+
+    case "rating_desc":
+      // 1순위: 별점 높은 순, 2순위: 인기순
+      query = query
+        .order("average_rating", { ascending: false })
+        .order("favorite_count", { ascending: false });
+      break;
+
+    case "popularity_desc":
+    default:
+      // 기본 정렬: 인기순
+      query = query.order("favorite_count", { ascending: false });
+      break;
+  }
+
+  const { data: places, error } = await query;
+
   if (error) {
     console.error("Error fetching places:", error);
-  }
-  // --- ▲▲▲ 디버깅을 위한 코드 추가 ▲▲▲ ---
-
-  if (error) {
     return <div>데이터를 불러오는 중 오류가 발생했습니다.</div>;
   }
 
-  // 데이터가 null일 경우를 대비해, 항상 빈 배열이라도 전달하도록 수정
+  // @ts-ignore
   return <TravelList initialPlaces={places || []} />;
 }
