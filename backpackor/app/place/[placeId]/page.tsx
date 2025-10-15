@@ -1,25 +1,12 @@
+// app/place/[placeId]/page.tsx
 import RelatedPlacesSection from "@/component/place/RelatedPlacesSection";
 import TravelReviewSection from "@/component/review/TravelReviewSection";
+import FavoriteButton from "@/component/place/FavoriteButton";
+import TravelInfoSection from "@/component/place/TravelInfoSection";
 import { notFound } from "next/navigation";
-
 import { createServerClient } from "@/lib/supabaseClient";
 import { TravelDetail } from "@/type/travel";
-
-const MOCK_DETAIL_DATA: TravelDetail = {
-  place_id: "jeju-mock-id",
-  place_name: "제주도",
-  place_address: "제주특별자치도",
-  place_description:
-    "제주도는 대한민국 남서쪽에 위치한 화산섬으로, 독특한 지형과 아름다운 자연경관으로 유명합니다. 유네스코 세계자연유산으로 지정된 한국의 국립공원과 성산일출봉은 제주도의 특별한 지질학적 가치를 보여줍니다.",
-  latitude: 33.4893,
-  longitude: 126.498,
-  place_image: "https://picsum.photos/1000/300?random=1",
-  place_detail_image: "https://picsum.photos/1200/400?random=2",
-  average_rating: 4.5,
-  favorite_count: 243,
-  region_id: 1,
-  place_type: "자연관광",
-};
+import styles from "./page.module.css"; // ⭐ 이 줄 추가!
 
 interface TravelDetailPageProps {
   params: {
@@ -27,8 +14,12 @@ interface TravelDetailPageProps {
   };
 }
 
-const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
-  const { placeId } = params;
+const TravelDetailPage = async ({
+  params,
+}: {
+  params: { placeId: string } | Promise<{ placeId: string }>;
+}) => {
+  const { placeId } = await params;
   const supabase = createServerClient();
 
   const fetchDetail = async (id: string): Promise<TravelDetail> => {
@@ -38,57 +29,68 @@ const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
       .eq("place_id", id)
       .single();
 
-    if (dbError) {
-      console.error("DB 오류 또는 데이터 없음. 목업 사용:", dbError);
-      if (id === MOCK_DETAIL_DATA.place_id) {
-        return MOCK_DETAIL_DATA;
-      }
-      notFound();
-    }
-
-    if (!dbData) {
-      if (id === MOCK_DETAIL_DATA.place_id) {
-        return MOCK_DETAIL_DATA;
-      }
+    if (dbError || !dbData) {
       notFound();
     }
 
     return dbData as TravelDetail;
   };
 
+  // 사용자의 찜 상태 확인
+  const checkUserFavorite = async (id: string): Promise<boolean> => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return false;
+
+    const { data } = await supabase
+      .from("user_favorite_place")
+      .select("place_id")
+      .eq("user_id", user.id)
+      .eq("place_id", id)
+      .single();
+
+    return !!data;
+  };
+
   const data = await fetchDetail(placeId);
+  const initialIsFavorite = await checkUserFavorite(placeId);
 
   return (
-    <div className="travel-app-container">
+    <div className={styles.travelAppContainer}>
       {/* 1. 커버 이미지 섹션 및 오버레이 정보 */}
       <div
-        className="cover-section"
+        className={styles.coverSection}
         style={{
           backgroundImage: `url(${data.place_detail_image})`,
         }}
       >
         {/* 찜 버튼 */}
-        <div className="favorite-button">❤️</div>
+        <FavoriteButton
+          initialIsFavorite={initialIsFavorite}
+          initialFavoriteCount={data.favorite_count}
+          placeId={data.place_id}
+        />
 
         {/* 제목, 주소, 평점 정보 */}
-        <div className="overlay-info">
+        <div className={styles.overlayInfo}>
+          <h2>[ {data.place_category} ]</h2>
           <h1>{data.place_name}</h1>
-          <div className="subtitle-rating-line">
-            <span className="subtitle">{data.place_address}</span>
-            <span className="rating">
-              <span className="star">⭐</span>
-              {data.average_rating.toFixed(1)}
+          <div className={styles.subtitleRatingLine}>
+            <span className={styles.rating}>
+              ⭐ {data.average_rating.toFixed(1)}
             </span>
           </div>
         </div>
       </div>
 
       {/* 2. 상세 소개, 리뷰, 추천 장소 / 여행 정보 (2단 Grid 레이아웃) */}
-      <div className="detail-content-layout">
+      <div className={styles.detailContentLayout}>
         {/* 2-A: 왼쪽 섹션 (소개, 리뷰, 추천) */}
-        <div className="detail-left-section">
+        <div className={styles.detailLeftSection}>
           {/* 여행 소개 섹션 */}
-          <div className="travel-intro">
+          <div className={styles.travelIntro}>
             <h2>여행 소개</h2>
             <p>{data.place_description}</p>
           </div>
@@ -108,30 +110,12 @@ const TravelDetailPage = async ({ params }: TravelDetailPageProps) => {
         </div>
 
         {/* 2-B: 오른쪽 섹션 (여행 정보) */}
-        <div className="detail-right-section travel-info-section">
-          <h2>여행 정보</h2>
-
-          <div className="info-item">
-            <strong>위치</strong>
-            <span>{data.place_address}</span>
-          </div>
-
-          <div className="info-item">
-            <strong>적정 여행 기간</strong>
-            <span>2박 3일 ~ 3박 4일 (임시)</span>
-          </div>
-
-          {/* 교통 정보 섹션 */}
-          <h2>교통 정보</h2>
-          <div className="info-item">
-            <strong>항공편</strong>
-            <span>인천/김포 공항 (임시)</span>
-          </div>
-
-          {/* 여행 계획 세우기 버튼 */}
-          <div className="plan-button-container">
-            <button className="plan-button">여행 계획 세우기</button>
-          </div>
+        <div className={styles.detailRightSection}>
+          <TravelInfoSection
+            placeAddress={data.place_address}
+            travelPeriod="2박 3일 ~ 3박 4일"
+            flightInfo="인천/김포 공항"
+          />
         </div>
       </div>
     </div>

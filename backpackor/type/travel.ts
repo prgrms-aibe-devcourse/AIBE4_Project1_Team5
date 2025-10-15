@@ -1,4 +1,5 @@
 export type TravelDetail = {
+  place_category: string;
   place_id: string;
   place_name: string;
   place_address: string;
