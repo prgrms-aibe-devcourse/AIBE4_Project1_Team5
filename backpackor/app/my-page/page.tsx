@@ -148,9 +148,6 @@ export default function Page() {
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               개인 정보
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              정보를 업데이트하세요.
-            </p>
           </div>
 
           <div className="space-y-6">
@@ -182,9 +179,6 @@ export default function Page() {
               <div className="p-2.5 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300">
                 {user?.email ?? "-"}
               </div>
-              <p className="text-gray-400 text-xs mt-1">
-                이메일은 변경할 수 없습니다.
-              </p>
             </div>
 
             {/* 변경사항 저장 버튼 */}
