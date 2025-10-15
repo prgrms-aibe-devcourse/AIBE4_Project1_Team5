@@ -35,7 +35,7 @@ const REGIONS = [
   "전라남도",
   "경상북도",
   "경상남도",
-  "제주특별자치_도",
+  "제주특별자치도",
 ];
 
 const TravelCard = ({ destination }: { destination: Place }) => {

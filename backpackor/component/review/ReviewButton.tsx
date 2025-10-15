@@ -1,76 +1,10 @@
 // component/review/ReviewButton.tsx
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteReview } from '@/lib/reviewStoreSupabase';
 
-
-interface EditButtonProps {
-  reviewId: string;
-}
-
-export function EditButton({ reviewId }: EditButtonProps) {
-  const router = useRouter();
-
-  const handleEdit = () => {
-    router.push(`/review/edit/${reviewId}`);
-  };
-
-  return (
-    <button
-      onClick={handleEdit}
-      className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-    >
-      수정
-    </button>
-  );
-}
-
-interface DeleteButtonProps {
-  reviewId: string;
-  onDeleted?: () => void;
-}
-
-export function DeleteButton({ reviewId, onDeleted }: DeleteButtonProps) {
-  const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (isDeleting) return;
-    
-    const confirmed = confirm('정말 이 리뷰를 삭제하시겠습니까?');
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    const success = await deleteReview(reviewId);
-    
-    if (success) {
-      alert('리뷰가 삭제되었습니다.');
-      if (onDeleted) {
-        onDeleted();
-      } else {
-        router.push('/review');
-        router.refresh();
-      }
-    } else {
-      alert('리뷰 삭제에 실패했습니다.');
-    }
-    
-    setIsDeleting(false);
-  };
-
-  return (
-    <button
-      onClick={handleDelete}
-      disabled={isDeleting}
-      className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isDeleting ? '삭제 중...' : '삭제'}
-    </button>
-  );
-}
-
+// ========== 리뷰 작성 버튼 ==========
 interface WriteButtonProps {
   className?: string;
 }
@@ -81,9 +15,121 @@ export function WriteButton({ className = '' }: WriteButtonProps) {
   return (
     <button
       onClick={() => router.push('/review/write')}
-      className={`px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors ${className}`}
+      className={`px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors ${className}`}
     >
       리뷰 작성
     </button>
+  );
+}
+
+// ========== 리뷰 수정 버튼 ==========
+interface EditButtonProps {
+  reviewId: string;
+  className?: string;
+  onClick?: (e: React.MouseEvent) => void;
+}
+
+export function EditButton({ reviewId, className = '', onClick }: EditButtonProps) {
+  const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 부모 클릭 이벤트 방지
+    if (onClick) {
+      onClick(e);
+    } else {
+      router.push(`/review/edit/${reviewId}`);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors ${className}`}
+    >
+      수정
+    </button>
+  );
+}
+
+// ========== 리뷰 삭제 버튼 ==========
+interface DeleteButtonProps {
+  reviewId: string;
+  className?: string;
+  onDelete?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
+}
+
+export function DeleteButton({ reviewId, className = '', onDelete, onClick }: DeleteButtonProps) {
+  const router = useRouter();
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 부모 클릭 이벤트 방지
+    
+    if (onClick) {
+      onClick(e);
+      return;
+    }
+
+    if (!confirm('정말 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const success = await deleteReview(reviewId);
+      
+      if (success) {
+        alert('리뷰가 삭제되었습니다.');
+        if (onDelete) {
+          onDelete(); // 삭제 후 콜백 실행
+        } else {
+          router.push('/review'); // 리뷰 목록으로 이동
+          router.refresh();
+        }
+      } else {
+        alert('삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors ${className}`}
+    >
+      삭제
+    </button>
+  );
+}
+
+// ========== 리뷰 수정/삭제 버튼 그룹 ==========
+interface ReviewActionButtonsProps {
+  reviewId: string;
+  onEdit?: (e: React.MouseEvent) => void;
+  onDelete?: () => void;
+  className?: string;
+}
+
+export function ReviewActionButtons({ 
+  reviewId, 
+  onEdit, 
+  onDelete, 
+  className = '' 
+}: ReviewActionButtonsProps) {
+  return (
+    <div className={`flex gap-2 ${className}`}>
+      <EditButton 
+        reviewId={reviewId} 
+        onClick={onEdit}
+        className="flex-1"
+      />
+      <DeleteButton 
+        reviewId={reviewId} 
+        onDelete={onDelete}
+        className="flex-1"
+      />
+    </div>
   );
 }

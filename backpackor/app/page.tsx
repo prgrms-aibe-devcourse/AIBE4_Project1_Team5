@@ -71,7 +71,7 @@ export default function Page() {
         ) : (
           <>
             <h1>어디로 떠나볼까요?</h1>
-            <p>새로운 여행지를 발견하고 여행을 계획해보세요.</p>
+            
           </>
         )}
 
@@ -110,8 +110,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 리뷰 버튼 */}
-      {/* <ReviewButton places={places} /> */}
+      
     </main>
   );
 }
