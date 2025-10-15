@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import Sort from "./Sort"; // [수정] 방금 만든 Sort 컴포넌트를 import 합니다.
 
 // Place 타입 인터페이스
 export interface Place {
@@ -72,7 +73,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
               viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l1.83 4.401 4.753 .392c.83.069 1.171 1.107.536 1.651l-3.62 3.102 1.07 4.632c.181.79-.702 1.4-1.437 1.016L12 16.205l-4.118 2.593c-.735.384-1.618-.226-1.437-1.016l1.07-4.632L3.29 8.928c-.635-.544-.294-1.582.536-1.651l4.753-.392l1.83-4.401Z" />
+              <path d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l1.83 4.401 4.753 .392c.83.069 1.171 1.107 .536 1.651l-3.62 3.102 1.07 4.632c.181 .79-.702 1.4-1.437 1.016L12 16.205l-4.118 2.593c-.735.384-1.618-.226-1.437-1.016l1.07-4.632L3.29 8.928c-.635-.544-.294-1.582.536-1.651l4.753-.392l1.83-4.401Z" />
             </svg>
             {destination.average_rating.toFixed(1)}
           </p>
@@ -107,9 +108,7 @@ export default function TravelList({
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "popularity_desc";
-
-  // [수정] "더보기" 기능을 위해 보여줄 아이템 개수를 관리하는 상태 추가
-  const [visibleCount, setVisibleCount] = useState(18); // 처음에는 18개만 보여주기
+  const [visibleCount, setVisibleCount] = useState(18);
 
   const handleSortChange = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -127,26 +126,60 @@ export default function TravelList({
 
   return (
     <main className="travel-app-container max-w-6xl mx-auto px-4 py-8">
-      {/* --- 필터 및 정렬 UI --- */}
       <h1 className="text-3xl font-bold mb-2">여행지 둘러보기</h1>
       <p className="text-gray-600 mb-6">
         대한민국의 아름다운 여행지들을 탐색해보세요.
       </p>
       <div className="flex justify-between items-center my-6">
-        <div className="flex gap-4 items-center">{/* ... */}</div>
-        <div className="text-sm text-gray-600 flex items-center gap-2">
-          {/* ... */}
+        <div className="flex gap-4 items-center">
+          <div className="relative">
+            <button
+              onClick={() => setIsRegionDropdownOpen(!isRegionDropdownOpen)}
+              className="px-4 py-2 text-sm font-semibold border rounded-full flex items-center gap-2 hover:bg-gray-100 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 4.75A.75.75 0 0 1 2.75 4h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 3.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1-.75-.75Z" />
+              </svg>
+              {selectedRegion === "전체" ? "지역별 필터" : selectedRegion}
+            </button>
+            {isRegionDropdownOpen && (
+              <ul className="absolute z-10 mt-1 w-48 bg-white border rounded-md shadow-lg">
+                {REGIONS.map((region) => (
+                  <li
+                    key={region}
+                    onClick={() => {
+                      setSelectedRegion(region);
+                      setIsRegionDropdownOpen(false);
+                    }}
+                    className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                  >
+                    {region}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <input
+              type="checkbox"
+              checked={showFavoritesOnly}
+              onChange={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className="rounded"
+            />
+            찜한 여행지
+          </label>
         </div>
+
+        {/* [수정] 기존 정렬 버튼 UI를 Sort 컴포넌트로 교체 */}
+        <Sort currentSort={currentSort} onSortChange={handleSortChange} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* [수정] .slice()를 사용해 visibleCount 개수만큼만 렌더링합니다. */}
         {filteredDestinations.slice(0, visibleCount).map((dest) => (
           <TravelCard key={dest.place_id} destination={dest} />
         ))}
       </div>
 
-      {/* [수정] "더보기" 버튼 추가 */}
       {visibleCount < filteredDestinations.length && (
         <div className="flex justify-center mt-8">
           <button
