@@ -7,7 +7,7 @@ import { useAuth } from "@/hook/useAuth";
 import { useProfile } from "@/hook/useProfile";
 // [수정] 클라이언트 컴포넌트에 맞는 createBrowserClient를 import 합니다.
 import TravelCard from "@/component/place/TravelCard";
-import ReviewButton from "@/component/review/ReviewButton";
+
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { TravelSummary } from "@/type/travel";
 import { useEffect, useState } from "react";
@@ -110,7 +110,8 @@ export default function Page() {
         </div>
       </section>
 
-      <ReviewButton places={[...popularPlaces, ...bestPlaces]} />
+      {/* 리뷰 버튼 */}
+      {/* <ReviewButton places={places} /> */}
     </main>
   );
 }
