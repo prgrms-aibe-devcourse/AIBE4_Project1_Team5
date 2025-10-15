@@ -110,8 +110,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 리뷰 버튼 */}
-      {/* <ReviewButton places={places} /> */}
+      
     </main>
   );
 }

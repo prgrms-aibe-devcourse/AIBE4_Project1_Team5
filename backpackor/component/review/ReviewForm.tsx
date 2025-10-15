@@ -1,391 +1,535 @@
 // component/review/ReviewForm.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Star, X, Upload } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  saveReview,
+  updateReview,
+  uploadImage,
+  saveReviewImages,
+  getReviewById,
+  deleteReviewImage,
+  getRegions,
+} from "@/lib/reviewStoreSupabase";
+import ImageModal from "./ImageModal";
 
 interface ReviewFormProps {
-  placeId: string;
-  placeName: string;
-  onSubmit: (reviewData: ReviewData) => void;
-  onCancel: () => void;
+  reviewId?: string;
+  placeId?: string;
 }
 
-interface ReviewData {
-  placeId: string;
-  rating: number;
-  title: string;
-  content: string;
-  author: string;
-  images: string[];
-}
+export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
+  const router = useRouter();
 
-export default function ReviewForm({ 
-  placeId, 
-  placeName, 
-  onSubmit, 
-  onCancel 
-}: ReviewFormProps) {
-  const [rating, setRating] = useState<number>(0);
-  const [hoverRating, setHoverRating] = useState<number>(0);
-  const [title, setTitle] = useState<string>('');
-  const [content, setContent] = useState<string>('');
-  const [author, setAuthor] = useState<string>('');
-  const [images, setImages] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+  // 폼 상태
+  const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
+  const [regions, setRegions] = useState<string[]>([]); // 지역 목록
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
 
-  const handleStarClick = (starIndex: number, isHalf: boolean) => {
-    const newRating = isHalf ? starIndex - 0.5 : starIndex;
-    setRating(newRating);
-  };
+  // 이미지 관련 상태
+  const [existingImages, setExistingImages] = useState<
+    Array<{ id: number; url: string }>
+  >([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
-  const handleStarHover = (starIndex: number, isHalf: boolean) => {
-    const newHoverRating = isHalf ? starIndex - 0.5 : starIndex;
-    setHoverRating(newHoverRating);
-  };
+  // 이미지 모달 상태
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImages, setModalImages] = useState<string[]>([]);
+  const [modalIndex, setModalIndex] = useState(0);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  // UI 상태
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const remainingSlots = 5 - images.length;
-    if (remainingSlots <= 0) {
-      alert('최대 5개의 이미지만 등록할 수 있습니다!');
-      return;
-    }
-
-    // 이미지 파일만 필터링
-    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-    
-    if (imageFiles.length === 0) {
-      alert('이미지 파일만 업로드 가능합니다!');
-      e.target.value = '';
-      return;
-    }
-
-    const filesToProcess = imageFiles.slice(0, remainingSlots);
-    setIsUploading(true);
-    let processedCount = 0;
-    const newImages: string[] = [];
-
-    console.log(`${filesToProcess.length}개의 이미지 업로드 시작...`);
-
-    filesToProcess.forEach((file, index) => {
-      // 파일 크기 체크 (5MB 제한)
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name}은(는) 5MB를 초과하여 업로드할 수 없습니다.`);
-        processedCount++;
-        if (processedCount === filesToProcess.length) {
-          setIsUploading(false);
-          if (newImages.length > 0) {
-            setImages(prevImages => [...prevImages, ...newImages.filter(img => img)]);
-          }
-        }
-        return;
+  // 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || "");
+        setUserId(user.id);
       }
+    };
+    fetchUserInfo();
+  }, []);
 
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
+  // 수정 모드일 때 기존 데이터 불러오기
+  useEffect(() => {
+    if (reviewId) {
+      const fetchReview = async () => {
+        setIsLoading(true);
+        const review = await getReviewById(reviewId);
+
+        if (review) {
+          setSelectedRegion(review.region);
+          setTitle(review.review_title);
+          setContent(review.review_content);
+          setRating(Math.round(review.rating)); // 정수로 변환
+
+          const images = review.images.map((img) => ({
+            id: img.review_image_id,
+            url: img.review_image,
+          }));
+          setExistingImages(images);
+        }
+
+        setIsLoading(false);
+      };
+
+      fetchReview();
+    }
+  }, [reviewId]);
+
+  // 이미지 클릭 핸들러
+  const handleImageClick = (images: string[], index: number) => {
+    setModalImages(images);
+    setModalIndex(index);
+    setModalOpen(true);
+  };
+
+  // 모달 네비게이션
+  const handleModalNext = () => {
+    setModalIndex((prev) => (prev + 1) % modalImages.length);
+  };
+
+  const handleModalPrev = () => {
+    setModalIndex((prev) => (prev - 1 + modalImages.length) % modalImages.length);
+  };
+
+  // 새 이미지 파일 선택 처리
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    const totalImages =
+      existingImages.length + newImageFiles.length + files.length;
+
+    if (totalImages > 5) {
+      alert("이미지는 최대 5개까지 업로드할 수 있습니다.");
+      return;
+    }
+
+    setNewImageFiles((prev) => [...prev, ...files]);
+
+    files.forEach((file) => {
       const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          newImages[index] = event.target.result as string;
-          processedCount++;
-          console.log(`이미지 ${processedCount}/${filesToProcess.length} 업로드 완료`);
-          
-          // 모든 파일 처리 완료 시
-          if (processedCount === filesToProcess.length) {
-            const validImages = newImages.filter(img => img); // undefined 제거
-            if (validImages.length > 0) {
-              setImages(prevImages => [...prevImages, ...validImages]);
-              console.log(`총 ${validImages.length}개 이미지 추가됨`);
-            }
-            setIsUploading(false);
-          }
-        }
+      reader.onloadend = () => {
+        setNewImagePreviews((prev) => [...prev, reader.result as string]);
       };
-
-      reader.onerror = (error) => {
-        console.error(`${file.name} 읽기 실패:`, error);
-        alert(`${file.name} 업로드 실패`);
-        processedCount++;
-        if (processedCount === filesToProcess.length) {
-          const validImages = newImages.filter(img => img);
-          if (validImages.length > 0) {
-            setImages(prevImages => [...prevImages, ...validImages]);
-          }
-          setIsUploading(false);
-        }
-      };
-
       reader.readAsDataURL(file);
     });
-
-    e.target.value = '';
   };
 
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+  // 기존 이미지 삭제
+  const handleRemoveExistingImage = async (
+    imageId: number,
+    imageUrl: string
+  ) => {
+    if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
+
+    const success = await deleteReviewImage(imageId, imageUrl);
+    if (success) {
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    } else {
+      alert("이미지 삭제에 실패했습니다.");
+    }
   };
 
-  const handleSubmit = () => {
+  // 새 이미지 삭제
+  const handleRemoveNewImage = (index: number) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // 별 클릭 (정수 단위)
+  const handleStarClick = (position: number) => {
+    setRating(position);
+  };
+
+  // 별 호버 (정수 단위)
+  const handleStarHover = (position: number) => {
+    setHoveredRating(position);
+  };
+
+  // 별 렌더링 (정수 단위)
+  const renderStar = (position: number, currentRating: number) => {
+    const isFilled = position <= currentRating;
+
+    return (
+      <button
+        key={position}
+        type="button"
+        onClick={() => handleStarClick(position)}
+        onMouseEnter={() => handleStarHover(position)}
+        onMouseLeave={() => setHoveredRating(0)}
+        className={`text-5xl cursor-pointer focus:outline-none transition-all hover:scale-110 ${
+          isFilled ? 'text-yellow-400' : 'text-gray-300'
+        }`}
+      >
+        ★
+      </button>
+    );
+  };
+
+  // 폼 제출
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 유효성 검사
+    if (!selectedRegion.trim()) {
+      alert("지역을 선택해주세요.");
+      return;
+    }
+    if (!title.trim()) {
+      alert("제목을 입력해주세요.");
+      return;
+    }
+    if (!content.trim()) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
     if (rating === 0) {
-      alert('별점을 선택해주세요!');
-      return;
-    }
-    
-    if (!title.trim() || !content.trim() || !author.trim()) {
-      alert('모든 항목을 입력해주세요!');
+      alert("별점을 선택해주세요.");
       return;
     }
 
-    const reviewData: ReviewData = {
-      placeId,
-      rating: parseFloat(rating.toFixed(1)),
-      title,
-      content,
-      author,
-      images
-    };
+    setIsSubmitting(true);
 
-    console.log('제출된 리뷰:', reviewData);
-    
-    setSubmitted(true);
-    
-    // 1.5초 후 부모 컴포넌트에 전달 (성공 메시지 보여주기)
-    setTimeout(() => {
-      onSubmit(reviewData);
-    }, 1500);
-  };
+    try {
+      if (reviewId) {
+        // 수정 모드
+        const updated = await updateReview(reviewId, {
+          region: selectedRegion,
+          review_title: title,
+          review_content: content,
+          rating: rating,
+        });
 
-  const renderStars = () => {
-    const currentRating = hoverRating || rating;
-    const stars = [];
+        if (!updated) {
+          alert("리뷰 수정에 실패했습니다.");
+          setIsSubmitting(false);
+          return;
+        }
 
-    for (let i = 1; i <= 5; i++) {
-      const isFilled = i <= Math.floor(currentRating);
-      const isHalfFilled = i === Math.ceil(currentRating) && currentRating % 1 !== 0;
+        // 새 이미지 업로드
+        if (newImageFiles.length > 0) {
+          const uploadedUrls: string[] = [];
 
-      stars.push(
-        <div key={i} className="relative inline-block">
-          <div className="flex">
-            {/* 왼쪽 반 */}
-            <button
-              type="button"
-              onClick={() => handleStarClick(i, true)}
-              onMouseEnter={() => handleStarHover(i, true)}
-              onMouseLeave={() => setHoverRating(0)}
-              className="relative w-4 overflow-hidden transition-transform hover:scale-110"
-            >
-              <Star
-                size={32}
-                className={`${
-                  isFilled || isHalfFilled
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-gray-300'
-                } transition-colors`}
-              />
-            </button>
-            {/* 오른쪽 반 */}
-            <button
-              type="button"
-              onClick={() => handleStarClick(i, false)}
-              onMouseEnter={() => handleStarHover(i, false)}
-              onMouseLeave={() => setHoverRating(0)}
-              className="relative w-4 overflow-hidden transition-transform hover:scale-110"
-            >
-              <Star
-                size={32}
-                className={`${
-                  isFilled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                } transition-colors -ml-4`}
-              />
-            </button>
-          </div>
-        </div>
-      );
+          for (const file of newImageFiles) {
+            const url = await uploadImage(file, reviewId);
+            if (url) uploadedUrls.push(url);
+          }
+
+          if (uploadedUrls.length > 0) {
+            const success = await saveReviewImages(reviewId, uploadedUrls);
+            if (!success) {
+              console.error("이미지 DB 저장 실패");
+            }
+          }
+        }
+
+        alert("리뷰가 수정되었습니다.");
+        router.push(`/review/${reviewId}`);
+      } else {
+        // 작성 모드
+        const uuid = crypto.randomUUID();
+
+        const savedReview = await saveReview({
+          place_id: uuid,
+          user_id: userId,
+          region: selectedRegion,
+          review_title: title,
+          review_content: content,
+          rating: rating,
+        });
+        
+        if (!savedReview) {
+          alert("리뷰 저장에 실패했습니다.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 이미지 업로드
+        if (newImageFiles.length > 0) {
+          const uploadedUrls: string[] = [];
+
+          for (const file of newImageFiles) {
+            const url = await uploadImage(file, savedReview.review_id);
+            if (url) uploadedUrls.push(url);
+          }
+
+          if (uploadedUrls.length > 0) {
+            const success = await saveReviewImages(
+              savedReview.review_id,
+              uploadedUrls
+            );
+            if (!success) {
+              console.error("이미지 DB 저장 실패");
+            }
+          }
+        }
+
+        alert("리뷰가 작성되었습니다.");
+        router.push("/review");
+      }
+    } catch (error) {
+      console.error("리뷰 제출 오류:", error);
+      alert("오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    return stars;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        {placeName} 리뷰 작성
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8">
+        {reviewId ? "리뷰 수정" : "리뷰 작성"}
       </h1>
-      <p className="text-gray-600 mb-8">소중한 의견을 들려주세요</p>
 
-      {submitted ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-green-600 mb-2">
-            리뷰가 등록되었습니다!
-          </h2>
-          <p className="text-gray-600">소중한 의견 감사합니다.</p>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 작성자 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            작성자
+          </label>
+          <input
+            type="text"
+            value={userEmail}
+            readOnly
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+          />
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* 별점 선택 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              별점을 선택해주세요 * (0.5점 단위)
-            </label>
-            <div className="flex gap-1">
-              {renderStars()}
-            </div>
+
+        {/* 지역 선택 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            지역 <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={!!reviewId}
+          >
+            <option value="">지역을 선택하세요</option>
+            {regions.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 제목 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            제목 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="리뷰 제목을 입력하세요"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            maxLength={100}
+          />
+        </div>
+
+        {/* 별점 (정수 단위) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            별점 <span className="text-red-500">*</span>
+          </label>
+
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((position) =>
+              renderStar(position, hoveredRating || rating)
+            )}
+
             {rating > 0 && (
-              <p className="text-sm text-gray-600 mt-2">
-                {rating.toFixed(1)}점을 선택하셨습니다
-              </p>
+              <span className="ml-4 text-2xl font-bold text-gray-800">
+                {rating}점
+              </span>
             )}
           </div>
 
-          {/* 제목 입력 */}
-          <div>
-            <label 
-              htmlFor="title" 
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              리뷰 제목 *
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="리뷰 제목을 입력해주세요"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              maxLength={100}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {title.length}/100
-            </p>
-          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            별을 클릭하여 1~5점 사이의 점수를 선택하세요
+          </p>
+        </div>
 
-          {/* 내용 입력 */}
-          <div>
-            <label 
-              htmlFor="content" 
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              리뷰 내용 *
-            </label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="상세한 리뷰를 작성해주세요"
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition"
-              maxLength={1000}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {content.length}/1000
-            </p>
-          </div>
+        {/* 내용 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            내용 <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="리뷰 내용을 입력하세요"
+            rows={8}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          />
+        </div>
 
-          {/* 이미지 업로드 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              이미지 첨부 (최대 5개)
-            </label>
-            
-            {/* 이미지 미리보기 */}
-            {images.length > 0 && (
-              <div className="grid grid-cols-5 gap-2 mb-3">
-                {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg border-2 border-gray-200"
+        {/* 이미지 업로드 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            이미지 (최대 5개)
+          </label>
+
+          {/* 기존 이미지 (수정 모드) */}
+          {existingImages.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">기존 이미지</p>
+              <div className="grid grid-cols-5 gap-2">
+                {existingImages.map((img, index) => (
+                  <div key={img.id} className="relative group">
+                    <img
+                      src={img.url}
+                      alt="기존 이미지"
+                      className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleImageClick(existingImages.map(i => i.url), index)}
                     />
                     <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      type="button"
+                      onClick={() => handleRemoveExistingImage(img.id, img.url)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={16} />
+                      ×
                     </button>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 업로드 버튼 */}
-            {images.length < 5 && (
-              <label className={`flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg ${isUploading ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-indigo-500 hover:bg-indigo-50'} transition-colors`}>
-                <div className="text-center">
-                  {isUploading ? (
-                    <>
-                      <div className="mx-auto mb-2 text-indigo-500 animate-spin">⏳</div>
-                      <p className="text-sm text-gray-600">업로드 중...</p>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-                      <p className="text-sm text-gray-600">
-                        클릭하여 이미지 업로드
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {images.length}/5 업로드됨 (최대 5MB)
-                      </p>
-                    </>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-              </label>
-            )}
-          </div>
+          {/* 새 이미지 미리보기 */}
+          {newImagePreviews.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">새 이미지</p>
+              <div className="grid grid-cols-5 gap-2">
+                {newImagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`미리 보기 ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleImageClick(newImagePreviews, index)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNewImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* 작성자 입력 */}
-          <div>
-            <label 
-              htmlFor="author" 
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              작성자 *
+          {/* 이미지 추가 버튼 */}
+          {existingImages.length + newImageFiles.length < 5 && (
+            <label className="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+              <span>이미지 추가</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageSelect}
+                className="hidden"
+              />
             </label>
-            <input
-              id="author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="이름을 입력해주세요"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              maxLength={50}
-            />
-          </div>
+          )}
 
-          {/* 버튼 그룹 */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={onCancel}
-              className="flex-1 bg-gray-200 text-gray-700 font-semibold py-4 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 bg-indigo-600 text-white font-semibold py-4 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              리뷰 등록하기
-            </button>
-          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            현재: {existingImages.length + newImageFiles.length} / 5
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            지원 형식: JPG, PNG, GIF, WebP, AVIF, SVG 등 모든 이미지 형식
+          </p>
         </div>
-      )}
 
-      {/* 안내 문구 */}
-      <div className="mt-6 text-center text-sm text-gray-600">
-        <p>* 표시된 항목은 필수 입력 항목입니다</p>
-      </div>
+        {/* 제출 버튼 */}
+        <div className="flex gap-4 pt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "처리 중..." : reviewId ? "수정하기" : "작성하기"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.back()}
+            disabled={isSubmitting}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            취소
+          </button>
+        </div>
+      </form>
+
+      {/* 이미지 모달 */}
+      {modalOpen && (
+        <ImageModal
+          images={modalImages}
+          currentIndex={modalIndex}
+          onClose={() => setModalOpen(false)}
+          onNext={handleModalNext}
+          onPrev={handleModalPrev}
+        />
+      )}
     </div>
   );
 }
