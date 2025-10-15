@@ -2,14 +2,13 @@
 
 // Link와 Backpack 아이콘을 새로 import 합니다.
 import Link from "next/link";
-import { Backpack } from "lucide-react";
 
 import { useAuth } from "@/hook/useAuth";
 import { useProfile } from "@/hook/useProfile";
 // [수정] 클라이언트 컴포넌트에 맞는 createBrowserClient를 import 합니다.
-import { createBrowserClient } from "@/lib/supabaseClient";
 import TravelCard from "@/component/place/TravelCard";
 import ReviewButton from "@/component/review/ReviewButton";
+import { createBrowserClient } from "@/lib/supabaseClient";
 import type { TravelSummary } from "@/type/travel";
 import { useEffect, useState } from "react";
 import styles from "./HomePage.module.css";
@@ -65,8 +64,9 @@ export default function Page() {
       <section className={styles["hero-section"]}>
         {user ? (
           <>
-            <h1>안녕하세요, {profile?.display_name || "사용자"}님!</h1>
-            
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-3">
+              안녕하세요, {profile?.display_name || "사용자"}님!
+            </h1>
           </>
         ) : (
           <>
@@ -75,11 +75,11 @@ export default function Page() {
           </>
         )}
 
-        {/* [수정] 기존 검색창 form을 삭제하고 아래 버튼 섹션으로 교체했습니다. */}
         <div className="mt-10 flex flex-col items-center gap-5 text-center">
-          <div className="flex items-center gap-3 text-xl font-semibold text-gray-800 animate-pulse">
-            <Backpack size={32} className="text-blue-600" />
-            <span>BackpackOR가 최고의 여행지를 알려드릴게요!</span>
+          <div className="flex items-center gap-3 text-xl font-semibold text-gray-800">
+            <p className="text-lg text-gray-600 mb-8">
+              취향에 맞는 테마로, 여행을 시작해보세요.
+            </p>
           </div>
           <Link
             href="/place"
