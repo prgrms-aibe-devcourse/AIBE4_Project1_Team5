@@ -27,8 +27,8 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Noto Sans KR', sans-serif;
-  background-color: #FFFFFF;
+  font-family: "Noto Sans KR", sans-serif;
+  background-color: #ffffff;
   color: #333;
   line-height: 1.5;
 }
@@ -82,6 +82,27 @@ p {
 /* Hover 시 남색 계열로 변경 */
 .btn-primary:hover {
   background-color: #3445cc; /* 짙은 남색 */
+  transform: translateY(-1px);
+}
+
+/* 흰색 반전 스타일 버튼 */
+.btn-outline {
+  background-color: white;
+  color: #4154ff;
+  padding: 12px 25px;
+  border: 2px solid #4154ff;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out,
+    transform 0.1s ease-in-out;
+}
+
+.btn-outline:hover {
+  background-color: #4154ff;
+  color: white;
   transform: translateY(-1px);
 }
 

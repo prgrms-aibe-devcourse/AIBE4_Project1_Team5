@@ -9,10 +9,19 @@ export function useSocialAuth() {
 
   const handleSocialLogin = async (provider: Provider) => {
     try {
+      // 현재 URL의 redirect 파라미터 추출
+      const params = new URLSearchParams(window.location.search);
+      const redirectParam = params.get("redirect");
+
+      // redirect 파라미터가 있으면 로그인 성공 후 해당 경로로 복귀
+      const redirectTo = redirectParam
+        ? `${window.location.origin}${redirectParam}`
+        : `${window.location.origin}/`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo,
         },
       });
 
