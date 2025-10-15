@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/hook/useAuth";
 import { getReviews, toggleLike, type Review } from "@/lib/reviewStore";
 import { supabase } from "@/lib/supabaseClient";
 import { Camera, Heart, Star } from "lucide-react";
@@ -9,42 +10,47 @@ import { useEffect, useState } from "react";
 
 export default function ReviewPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [regions, setRegions] = useState<string[]>(["전체"]);
   const [selectedRegion, setSelectedRegion] = useState("전체");
   const [showPhotoOnly, setShowPhotoOnly] = useState(false);
   const [sortBy, setSortBy] = useState<
     "latest" | "likes" | "rating-high" | "rating-low"
   >("latest");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // 로그인 확인 및 지역 목록 불러오기
+  // 로그인 확인 및 초기 데이터 로드
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      router.replace("/login?redirect=/review");
+      return;
+    }
+
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        setReviewsLoading(true);
 
-      if (!user) {
-        router.replace("/login?redirect=/review");
-        return;
+        const { data: regionData, error } = await supabase
+          .from("region")
+          .select("region_name")
+          .order("region_name", { ascending: true });
+
+        if (!error && regionData) {
+          const names = regionData.map((r) => r.region_name);
+          setRegions(["전체", ...names]);
+        }
+
+        loadReviews();
+      } catch (err) {
+        console.error("초기화 오류:", err);
+        loadReviews();
+      } finally {
+        setReviewsLoading(false);
       }
-
-      setCurrentUserId(user.id);
-
-      const { data: regionData, error } = await supabase
-        .from("region")
-        .select("region_name")
-        .order("region_name", { ascending: true });
-
-      if (!error && regionData) {
-        const names = regionData.map((r) => r.region_name);
-        setRegions(["전체", ...names]);
-      }
-
-      loadReviews();
     };
 
     const loadReviews = () => {
@@ -57,7 +63,6 @@ export default function ReviewPage() {
       }));
       setReviews(migrated);
       setFilteredReviews(migrated);
-      setIsLoading(false);
     };
 
     init();
@@ -73,7 +78,7 @@ export default function ReviewPage() {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [router]);
+  }, [authLoading, user, router]);
 
   // 필터 및 정렬 적용
   useEffect(() => {
@@ -111,19 +116,19 @@ export default function ReviewPage() {
   }, [reviews, selectedRegion, showPhotoOnly, sortBy]);
 
   const handleLike = (reviewId: string) => {
-    if (!currentUserId) {
+    if (!user) {
       router.push("/login?redirect=/review");
       return;
     }
 
-    const updated = toggleLike(reviewId, currentUserId);
+    const updated = toggleLike(reviewId, user.id);
     if (updated) {
       setReviews((prev) => prev.map((r) => (r.id === reviewId ? updated : r)));
     }
   };
 
   const hasUserLiked = (r: Review): boolean =>
-    r.likedBy?.includes(currentUserId ?? "") || false;
+    r.likedBy?.includes(user?.id ?? "") || false;
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => {
@@ -149,12 +154,70 @@ export default function ReviewPage() {
           filteredReviews.length
         ).toFixed(1);
 
-  if (isLoading)
+  // 인증 로딩 중
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        리뷰를 불러오는 중...
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* 헤더 스켈레톤 */}
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="space-y-4 mb-6">
+              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
+              <div className="h-10 bg-gray-200 rounded w-48 animate-pulse" />
+              <div className="h-5 bg-gray-200 rounded w-64 animate-pulse" />
+            </div>
+
+            {/* 통계 스켈레톤 */}
+            <div className="flex gap-8 pt-6 border-t border-gray-200">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="text-center">
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse mx-auto" />
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse mx-auto mt-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 필터 스켈레톤 */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="space-y-3">
+              <div className="h-6 bg-gray-200 rounded w-12 animate-pulse" />
+              <div className="flex gap-3">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-10 bg-gray-200 rounded-lg w-24 animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 리뷰 목록 스켈레톤 */}
+          <div className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl shadow-lg p-6 space-y-3"
+              >
+                <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                <div className="grid grid-cols-4 gap-3 mt-4">
+                  {[...Array(4)].map((_, j) => (
+                    <div
+                      key={j}
+                      className="aspect-square bg-gray-200 rounded-lg animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -253,7 +316,20 @@ export default function ReviewPage() {
 
         {/* 리뷰 목록 */}
         <div className="space-y-6">
-          {filteredReviews.length === 0 ? (
+          {reviewsLoading ? (
+            <div className="space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl shadow-lg p-6 space-y-3"
+                >
+                  <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : filteredReviews.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
                 조건에 맞는 리뷰가 없습니다

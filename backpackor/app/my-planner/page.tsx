@@ -1,6 +1,7 @@
 "use client";
 
 import PlanList from "@/component/my-planner/PlanList";
+import { useAuth } from "@/hook/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -17,28 +18,19 @@ interface TripPlan {
 export default function MyPlannerPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
   const [plans, setPlans] = useState<TripPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [plansLoading, setPlansLoading] = useState(false);
 
-  // 로그인 상태 확인 및 리다이렉트 처리
+  // 인증 상태 확인 및 리다이렉트 처리
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (authLoading) return; // 로딩 중이면 아무것도 하지 않음
 
-      if (!user) {
-        const redirectPath = encodeURIComponent("/my-planner");
-        router.replace(`/login?redirect=${redirectPath}`);
-        return;
-      }
-
-      setUser(user);
-    };
-
-    checkAuth();
-  }, [router]);
+    if (!user) {
+      const redirectPath = encodeURIComponent("/my-planner");
+      router.replace(`/login?redirect=${redirectPath}`);
+    }
+  }, [user, authLoading, router]);
 
   // 로그인된 경우 trip_plan 데이터 불러오기
   useEffect(() => {
@@ -46,6 +38,7 @@ export default function MyPlannerPage() {
 
     const fetchPlans = async () => {
       try {
+        setPlansLoading(true);
         const sortOrder =
           searchParams.get("sort") === "asc" ? "created_at" : "created_at";
         const isAscending = searchParams.get("sort") === "asc";
@@ -60,15 +53,46 @@ export default function MyPlannerPage() {
         setPlans(data || []);
       } catch (err) {
         console.error("데이터 로딩 실패:", err);
+        setPlans([]);
       } finally {
-        setLoading(false);
+        setPlansLoading(false);
       }
     };
 
     fetchPlans();
   }, [user, searchParams]);
 
-  if (loading) return <p className="text-center mt-20">불러오는 중...</p>;
+  // 인증 로딩 중
+  if (authLoading) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <div className="space-y-6">
+          {/* 헤더 스켈레톤 */}
+          <div className="space-y-3">
+            <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+          </div>
+
+          {/* 필터 스켈레톤 */}
+          <div className="flex gap-3">
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+          </div>
+
+          {/* 목록 스켈레톤 */}
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-20 bg-gray-200 rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -109,7 +133,18 @@ export default function MyPlannerPage() {
         </Link>
       </div>
 
-      <PlanList initialPlans={plans || []} />
+      {plansLoading ? (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="h-20 bg-gray-200 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <PlanList initialPlans={plans || []} />
+      )}
     </div>
   );
 }

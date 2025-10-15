@@ -1,10 +1,11 @@
+// app/api/my-page/route.ts
 import { createServerClient } from "@/lib/supabaseClient";
 import { NextRequest, NextResponse } from "next/server";
 
 // 프로필 조회
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 // 프로필 업데이트 (닉네임 또는 사진)
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -53,16 +54,13 @@ export async function PUT(request: NextRequest) {
 
     const contentType = request.headers.get("content-type") || "";
 
-    let updates: any = {};
-
     if (contentType.includes("application/json")) {
       // JSON 데이터 (닉네임 업데이트)
       const body = await request.json();
 
-      if (body.display_name) {
+      if (body.display_name !== undefined) {
         const trimmedName = body.display_name.trim();
 
-        // 길이 검증
         if (trimmedName.length < 2) {
           return NextResponse.json(
             { error: "닉네임은 최소 2글자 이상이어야 합니다." },
@@ -89,24 +87,31 @@ export async function PUT(request: NextRequest) {
           );
         }
 
-        updates.display_name = trimmedName;
+        // user_profile 테이블 업데이트
+        const { data, error } = await supabase
+          .from("user_profile")
+          .upsert({
+            user_id: user.id,
+            display_name: trimmedName,
+          })
+          .eq("user_id", user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({
+          success: true,
+          data,
+          message: "상세내역이 업데이트 되었습니다.",
+        });
       }
 
-      // user_profile 테이블 업데이트
-      const { data, error } = await supabase
-        .from("user_profile")
-        .upsert({
-          user_id: user.id,
-          ...updates,
-        })
-        .eq("user_id", user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return NextResponse.json(data);
-    } else if (contentType.includes("multipart/form-data")) {
+      return NextResponse.json(
+        { error: "업데이트할 내용이 없습니다." },
+        { status: 400 }
+      );
+    } else {
       // FormData (프로필 사진 업로드)
       const formData = await request.formData();
       const file = formData.get("file") as File;
@@ -180,13 +185,12 @@ export async function PUT(request: NextRequest) {
 
       if (error) throw error;
 
-      return NextResponse.json(data);
+      return NextResponse.json({
+        success: true,
+        data,
+        message: "프로필 사진이 변경되었습니다.",
+      });
     }
-
-    return NextResponse.json(
-      { error: "지원하지 않는 요청 형식입니다." },
-      { status: 400 }
-    );
   } catch (error) {
     console.error("프로필 업데이트 실패:", error);
     return NextResponse.json(
@@ -199,7 +203,7 @@ export async function PUT(request: NextRequest) {
 // 프로필 사진 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -253,7 +257,10 @@ export async function DELETE(request: NextRequest) {
 
     if (error && error.code !== "PGRST116") throw error;
 
-    return NextResponse.json({ message: "프로필 사진이 삭제되었습니다." });
+    return NextResponse.json({
+      success: true,
+      message: "프로필 사진이 삭제되었습니다.",
+    });
   } catch (error) {
     console.error("프로필 사진 삭제 실패:", error);
     return NextResponse.json(

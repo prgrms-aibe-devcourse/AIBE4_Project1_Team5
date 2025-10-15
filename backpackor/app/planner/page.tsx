@@ -1,41 +1,58 @@
 "use client";
 
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hook/useAuth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function PlannerStartPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const { user, loading } = useAuth();
 
-  // 로그인 상태 확인 → 로그인 안 되어 있으면 로그인 페이지로 이동
+  // 인증 상태 확인 및 리다이렉트 처리
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (loading) return; // 로딩 중이면 아무것도 하지 않음
 
-      if (!user) {
-        const redirectPath = encodeURIComponent("/planner");
-        router.replace(`/login?redirect=${redirectPath}`);
-        return;
-      }
+    if (!user) {
+      const redirectPath = encodeURIComponent("/planner");
+      router.replace(`/login?redirect=${redirectPath}`);
+    }
+  }, [user, loading, router]);
 
-      setUser(user);
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, [router]);
-
-  if (loading)
+  // 인증 로딩 중
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
-        불러오는 중...
+      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-50">
+        {/* 제목 스켈레톤 */}
+        <div className="mb-4 space-y-3 w-full max-w-2xl px-8">
+          <div className="h-10 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        {/* 설명 스켈레톤 */}
+        <div className="mb-12 space-y-2 w-full max-w-2xl px-8">
+          <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
+        </div>
+
+        {/* 카드 스켈레톤 */}
+        <div className="flex gap-8 w-full max-w-4xl px-8">
+          {[...Array(2)].map((_, i) => (
+            <div
+              key={i}
+              className="flex-1 p-8 bg-white border border-gray-200 rounded-lg"
+            >
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-50">
@@ -46,7 +63,7 @@ export default function PlannerStartPage() {
         두 가지 방법으로 당신만의 완벽한 여행을 만들 수 있습니다.
       </p>
 
-      <div className="flex gap-8 w-full max-w-4xl">
+      <div className="flex gap-8 w-full max-w-4xl px-8">
         {/* AI로 계획 짜기 */}
         <Link href="/planner/ai" className="flex-1">
           <div className="p-8 h-full bg-white border rounded-lg shadow-sm hover:shadow-md hover:border-blue-500 cursor-pointer transition-all">
