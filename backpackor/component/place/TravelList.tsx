@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import Sort from "./Sort"; // [수정] 방금 만든 Sort 컴포넌트를 import 합니다.
+import Sort from "./Sort";
+import { createBrowserClient } from "@/lib/supabaseClient";
 
 // Place 타입 인터페이스
 export interface Place {
@@ -37,10 +38,10 @@ const REGIONS = [
   "전라남도",
   "경상북도",
   "경상남도",
-  "제주특별자치_도",
+  "제주특별자치도",
 ];
 
-// TravelCard 컴포넌트
+// TravelCard 컴포넌트 (원래 UI로 복원)
 const TravelCard = ({ destination }: { destination: Place }) => {
   const [imgSrc, setImgSrc] = useState(destination.place_image);
   const region = destination.place_address?.split(" ")[0] || "지역 정보 없음";
@@ -97,6 +98,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
   );
 };
 
+// TravelList 컴포넌트
 export default function TravelList({
   initialPlaces,
 }: {
@@ -110,6 +112,39 @@ export default function TravelList({
   const currentSort = searchParams.get("sort") || "popularity_desc";
   const [visibleCount, setVisibleCount] = useState(18);
 
+  // '찜한 여행지' 필터링을 위한 state와 로직은 그대로 유지합니다.
+  const [userFavoritePlaceIds, setUserFavoritePlaceIds] = useState<string[]>(
+    []
+  );
+  const supabase = createBrowserClient();
+
+  useEffect(() => {
+    const fetchUserFavorites = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: favorites, error } = await supabase
+          .from("favorites")
+          .select("place_id")
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("찜 목록 조회 실패:", error);
+          return;
+        }
+
+        if (favorites) {
+          const favoriteIds = favorites.map((fav) => fav.place_id);
+          setUserFavoritePlaceIds(favoriteIds);
+        }
+      }
+    };
+
+    fetchUserFavorites();
+  }, [supabase]);
+
   const handleSortChange = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", sortValue);
@@ -120,7 +155,11 @@ export default function TravelList({
     const regionMatch =
       selectedRegion === "전체" ||
       (dest.place_address && dest.place_address.includes(selectedRegion));
-    const favoriteMatch = !showFavoritesOnly || dest.favorite_count > 0;
+
+    // 이 필터 로직은 '찜한 여행지' 체크박스 기능을 위해 필수입니다.
+    const favoriteMatch =
+      !showFavoritesOnly || userFavoritePlaceIds.includes(dest.place_id);
+
     return regionMatch && favoriteMatch;
   });
 
@@ -169,8 +208,6 @@ export default function TravelList({
             찜한 여행지
           </label>
         </div>
-
-        {/* [수정] 기존 정렬 버튼 UI를 Sort 컴포넌트로 교체 */}
         <Sort currentSort={currentSort} onSortChange={handleSortChange} />
       </div>
 
