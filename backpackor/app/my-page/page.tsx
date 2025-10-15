@@ -35,9 +35,9 @@ export default function Page() {
         display_name: displayName.trim(),
       });
       alert("프로필이 업데이트되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 업데이트 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -61,9 +61,9 @@ export default function Page() {
         profile_image: file,
       });
       alert("프로필 사진이 변경되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 사진 변경 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -79,9 +79,9 @@ export default function Page() {
     try {
       await deleteProfileImage();
       alert("프로필 사진이 삭제되었습니다.");
+      window.location.reload(); // 새로고침
     } catch (err) {
       alert("프로필 사진 삭제 중 오류가 발생했습니다.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -148,6 +148,9 @@ export default function Page() {
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               개인 정보
             </h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              정보를 업데이트하세요.
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -179,6 +182,9 @@ export default function Page() {
               <div className="p-2.5 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300">
                 {user?.email ?? "-"}
               </div>
+              <p className="text-gray-400 text-xs mt-1">
+                이메일은 변경할 수 없습니다.
+              </p>
             </div>
 
             {/* 변경사항 저장 버튼 */}

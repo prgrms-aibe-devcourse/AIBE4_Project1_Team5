@@ -11,9 +11,15 @@ interface UserProfile {
 
 export function useProfile(userId?: string) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const DEFAULT_PROFILE_URL =
     "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
+
+  // 프로필 강제 새로고침 함수
+  const refreshProfile = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -42,7 +48,35 @@ export function useProfile(userId?: string) {
     };
 
     fetchProfile();
-  }, [userId]);
+
+    // 실시간 구독 설정
+    const channel = supabase
+      .channel(`profile-${userId}-${refreshKey}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_profile",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log("Profile updated:", payload);
+          if (payload.new) {
+            setProfile({
+              display_name: (payload.new as any).display_name ?? null,
+              profile_image:
+                (payload.new as any).profile_image ?? DEFAULT_PROFILE_URL,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refreshKey]);
 
   // 프로필 업데이트 (닉네임 또는 사진)
   const updateProfile = async (
@@ -172,5 +206,11 @@ export function useProfile(userId?: string) {
 
   const profileUrl = profile?.profile_image ?? DEFAULT_PROFILE_URL;
 
-  return { profile, profileUrl, updateProfile, deleteProfileImage };
+  return {
+    profile,
+    profileUrl,
+    updateProfile,
+    deleteProfileImage,
+    refreshProfile,
+  };
 }
