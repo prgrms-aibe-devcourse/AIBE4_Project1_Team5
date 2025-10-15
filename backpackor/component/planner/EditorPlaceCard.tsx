@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 // PlannerEditor.tsx에서 사용하는 Place 타입을 가져옵니다.
+// 이 Place 타입 정의에 place_address?: string; 이 포함되어 있는지 확인해야 합니다.
 import type { Place } from "@/app/planner/edit/page";
 
 interface EditorPlaceCardProps {
@@ -15,6 +16,10 @@ export default function EditorPlaceCard({
   onAddPlace,
 }: EditorPlaceCardProps) {
   const [imgSrc, setImgSrc] = useState(place.place_image);
+  console.log(place);
+  // [수정된 핵심 로직]
+  // place 객체의 place_address 값을 기반으로 지역명을 추출합니다.
+  // place_address가 '서울 강남구 ...' 라면 '서울'을, 없다면 '지역 정보 없음'을 표시합니다.
   const region = place.place_address?.split(" ")[0] || "지역 정보 없음";
 
   // "추가" 버튼 클릭 시 부모로부터 받은 onAddPlace 함수를 호출합니다.
@@ -53,6 +58,7 @@ export default function EditorPlaceCard({
         <h3 className="text-base font-bold mb-1 truncate">
           {place.place_name}
         </h3>
+        {/* 추출된 지역명을 화면에 표시합니다. */}
         <p className="text-sm text-gray-600 mb-2">{region}</p>
         <div className="mt-auto flex justify-between items-center">
           <p className="flex items-center text-sm font-semibold">
