@@ -1,7 +1,7 @@
 // app/planner/edit/page.tsx
 import PlannerEditor from "@/component/planner/PlannerEditor";
 import { createServerClient } from "@/lib/supabaseClient";
-import type { Place, Plan } from "@/type/place"; // ✅ 외부 타입 사용
+import type { Place } from "@/type/place"; // ✅ 외부 타입 사용
 
 interface EditPlannerPageProps {
   searchParams: Promise<{
@@ -80,10 +80,8 @@ export default async function EditPlannerPage({
     }
 
     // ✅ 장소 데이터 조회 (주소, 좌표 포함)
-    let query = supabase
-      .from("place")
-      .select(
-        `
+    let query = supabase.from("place").select(
+      `
         place_id,
         place_name,
         place_address,
@@ -94,7 +92,7 @@ export default async function EditPlannerPage({
         favorite_count,
         region!inner(region_name)
       `
-      );
+    );
 
     if (regionNamesForFiltering.length > 0) {
       query = query.in("region.region_name", regionNamesForFiltering);
@@ -204,7 +202,7 @@ export default async function EditPlannerPage({
   return (
     <PlannerEditor
       initialPlaces={places}
-      regionOptions={regionNamesForFiltering}
+      initialRegion={regionNamesForFiltering}
     />
   );
 }
