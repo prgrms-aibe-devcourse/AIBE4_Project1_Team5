@@ -14,6 +14,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TravelListContainer from "@/component/place/TravelListContainer";
+import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 
 export interface Place {
   place_id: string;
@@ -54,6 +55,9 @@ export default function PlannerEditor({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // 모달 상태 추가
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+
   // 날짜 정보 계산
   let days: DayInfo[] = [];
   if (startDateStr && endDateStr) {
@@ -66,7 +70,6 @@ export default function PlannerEditor({
     }));
   }
 
-  // 👇 디버깅을 위한 console.log
   console.log("시작일:", startDateStr);
   console.log("종료일:", endDateStr);
   console.log("계산된 여행 기간(days):", days);
@@ -133,6 +136,16 @@ export default function PlannerEditor({
       ...prev,
       [day]: prev[day].filter((p) => p.place_id !== placeId),
     }));
+  };
+
+  // 장소 클릭 (모달 열기)
+  const handlePlaceClick = (placeId: string) => {
+    setSelectedPlaceId(placeId);
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setSelectedPlaceId(null);
   };
 
   // 드래그 앤 드롭
@@ -207,8 +220,18 @@ export default function PlannerEditor({
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
           >
-            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+            <svg
+              className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             <span className="font-medium">뒤로가기</span>
           </button>
@@ -238,8 +261,18 @@ export default function PlannerEditor({
           {startDateStr && endDateStr && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <div>
@@ -253,7 +286,7 @@ export default function PlannerEditor({
           )}
         </div>
 
-        {/* ===== 레이아웃 스왑: 왼쪽=Day+일정, 오른쪽=여행지 ===== */}
+        {/* 레이아웃: 왼쪽=Day+일정, 오른쪽=여행지 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* 왼쪽: Day 탭 + 일정(DnD) */}
           <div className="lg:col-span-7">
@@ -302,14 +335,30 @@ export default function PlannerEditor({
                           onRemove={() =>
                             handleRemovePlace(activeDay, place.place_id)
                           }
+                          onClick={() => handlePlaceClick(place.place_id)}
                         />
                       ))}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                      <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <svg
+                        className="w-16 h-16 mb-4 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
                       <p className="text-lg font-medium text-gray-500 mb-1">
                         아직 선택한 장소가 없어요
@@ -329,6 +378,7 @@ export default function PlannerEditor({
             <TravelListContainer
               places={initialPlaces}
               onAddPlace={handleAddPlace}
+              onPlaceClick={handlePlaceClick}
             />
           </div>
         </div>
@@ -347,12 +397,30 @@ export default function PlannerEditor({
             className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSaving ? "처리 중..." : "일정 미리보기"}
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </button>
         </div>
       </div>
+
+      {/* 모달 */}
+      {selectedPlaceId && (
+        <PlaceDetailModal
+          placeId={selectedPlaceId}
+          onClose={handleCloseModal}
+        />
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

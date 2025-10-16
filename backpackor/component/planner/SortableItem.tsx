@@ -1,83 +1,118 @@
-// 파일 경로: component/planner/SortableItem.tsx (수정)
-
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
-import { Place } from "./PlannerEditor"; // Place 타입을 가져옵니다.
+
+// Place 타입 정의 (PlannerEditor에서 export된 것을 사용하거나 여기서 재정의)
+interface Place {
+  place_id: string;
+  place_name: string;
+  place_image: string;
+  average_rating: number;
+  favorite_count: number;
+  review_count?: number;
+}
 
 interface SortableItemProps {
   place: Place;
   onRemove: () => void;
+  onClick?: () => void;
 }
 
-export function SortableItem({ place, onRemove }: SortableItemProps) {
-  // dnd-kit의 useSortable 훅을 사용해 드래그 기능을 구현합니다.
+export function SortableItem({ place, onRemove, onClick }: SortableItemProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging, // 드래그 중인지 여부를 알 수 있습니다.
+    isDragging,
   } = useSortable({ id: place.place_id });
 
-  // 드래그 시 필요한 스타일
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1, // 드래그 중에 반투명 효과
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    // ref, style, attributes를 div에 적용해야 드래그가 정상적으로 동작합니다.
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm"
+      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all group"
     >
-      <div className="flex items-center gap-3">
-        {/* 드래그 핸들: 이 아이콘을 잡고 드래그할 수 있습니다. */}
-        <div {...listeners} className="cursor-grab touch-none text-gray-400 hover:text-gray-600">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+      <div className="flex items-center gap-4">
+        {/* 드래그 핸들 */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8h16M4 16h16"
+            />
           </svg>
-        </div>
+        </button>
 
         {/* 장소 이미지 */}
         {place.place_image && (
-          <div className="relative w-14 h-14 flex-shrink-0">
+          <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
             <Image
               src={place.place_image}
               alt={place.place_name}
               fill
-              className="rounded-lg object-cover"
+              className="object-cover"
             />
           </div>
         )}
 
-        {/* 장소 이름 및 정보 */}
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-800 truncate">
+        {/* 장소 정보 (클릭 가능) */}
+        <button
+          onClick={onClick}
+          className="flex-1 text-left hover:opacity-80 transition-opacity"
+        >
+          <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-1">
             {place.place_name}
-          </div>
-          <div className="text-xs text-gray-500 flex items-center gap-3 mt-1">
+          </h3>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
             <span className="flex items-center gap-1">
               ⭐ {place.average_rating?.toFixed(1) ?? "-"}
             </span>
+            <span className="text-gray-400">•</span>
             <span className="flex items-center gap-1">
               ❤️ {place.favorite_count ?? 0}
             </span>
           </div>
-        </div>
+        </button>
 
         {/* 삭제 버튼 */}
         <button
-          onClick={onRemove}
-          className="ml-auto p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
