@@ -190,7 +190,57 @@ export default function ReviewListPage() {
           <Sort currentSort={currentSort} onSortChange={setCurrentSort} />
         </div>
       </div>
-      
+
+      {/* 통계 */}
+      <div className="mb-6 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* 평균 평점 */}
+          <div className="flex flex-col items-center justify-center md:w-1/3 md:border-r border-gray-200 md:pr-8">
+            <p className="text-sm text-gray-500 mb-2">평균 평점</p>
+            <p className="text-5xl font-bold text-gray-900 mb-3">
+              {stats.averageRating.toFixed(1)}
+            </p>
+            <div className="flex mb-3">
+              {[1, 2, 3, 4, 5].map((position) => {
+                const roundedAvg = Math.round(stats.averageRating);
+                return (
+                  <span key={position} className={`text-3xl ${position <= roundedAvg ? 'text-yellow-400' : 'text-gray-300'}`}>
+                    ★
+                  </span>
+                );
+              })}
+            </div>
+            <p className="text-sm text-gray-500">
+              총 리뷰 수 <span className="font-semibold text-gray-700 text-base">{stats.totalReviews}</span>개
+            </p>
+          </div>
+
+          {/* 별점 분포 (5점 ~ 1점만) */}
+          <div className="flex-1">
+            <p className="text-sm text-gray-700 font-semibold mb-4">별점 분포</p>
+            <div className="space-y-3">
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = stats.ratingCounts[rating] || 0;
+                const percentage = stats.totalReviews > 0 ? (count / stats.totalReviews) * 100 : 0;
+                
+                return (
+                  <div key={rating} className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 w-10">{rating}점</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-yellow-400 h-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-500 w-12 text-right">{count}개</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 리뷰 목록 */}
       {sortedReviews.length === 0 ? (
         <div className="text-center py-12">
