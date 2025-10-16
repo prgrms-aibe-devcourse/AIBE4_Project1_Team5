@@ -13,8 +13,8 @@ interface TravelListContainerProps {
   places: Place[];
   onAddPlace: (place: Place) => void;
   onPlaceClick: (placeId: string) => void;
-  regionOptions: string[];
-  initialRegion?: string; // 이전 페이지에서 선택한 지역을 받을 prop
+  regionOptions?: string[];
+  initialRegion?: string[];
 }
 
 const INITIAL_ITEM_COUNT = 10;
@@ -25,7 +25,7 @@ export default function TravelListContainer({
   onAddPlace,
   onPlaceClick,
   regionOptions = [],
-  initialRegion, // ✅ 2. prop 받기
+  initialRegion,
 }: TravelListContainerProps) {
   const router = useRouter();
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
@@ -34,9 +34,8 @@ export default function TravelListContainer({
   const [sortOrder, setSortOrder] = useState("popularity_desc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ITEM_COUNT);
 
-  // ✅ 3. selectedRegion 상태의 초기값을 initialRegion prop으로 설정
   const [selectedRegion, setSelectedRegion] = useState(initialRegion || "전체");
-  
+
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritePlaceIds, setFavoritePlaceIds] = useState<Set<string>>(
     new Set()
@@ -81,7 +80,7 @@ export default function TravelListContainer({
         favoritePlaceIds.has(place.place_id)
       );
     }
-    
+
     // (place as any) 부분은 실제 Place 타입에 region 속성이 있는지에 따라 조정이 필요할 수 있습니다.
     if (selectedRegion !== "전체") {
       filteredPlaces = filteredPlaces.filter(
@@ -136,7 +135,7 @@ export default function TravelListContainer({
       <div className="flex items-center gap-4 mb-4">
         {/* 이 select의 value가 props로 받은 초기값으로 설정됩니다. */}
         <select
-          value={selectedRegion} 
+          value={selectedRegion}
           onChange={(e) => setSelectedRegion(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
