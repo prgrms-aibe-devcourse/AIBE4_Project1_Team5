@@ -11,12 +11,13 @@ import {
   saveReviewImages,
   getReviewById,
   deleteReviewImage,
+  getRegions,
 } from "@/lib/reviewStoreSupabase";
 import ImageModal from "./ImageModal";
 
 interface ReviewFormProps {
-  reviewId?: string; // 수정 모드일 때 전달
-  placeId?: string; // 작성 모드일 때 전달
+  reviewId?: string;
+  placeId?: string;
 }
 
 export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
@@ -25,6 +26,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   // 폼 상태
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
+  const [regions, setRegions] = useState<string[]>([]); // 지역 목록
   const [selectedRegion, setSelectedRegion] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -61,6 +63,36 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     fetchUserInfo();
   }, []);
 
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
+  // 지역 목록 가져오기
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const regionList = await getRegions();
+      setRegions(regionList);
+    };
+    
+    fetchRegions();
+  }, []);
+
   // 수정 모드일 때 기존 데이터 불러오기
   useEffect(() => {
     if (reviewId) {
@@ -72,9 +104,8 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           setSelectedRegion(review.region);
           setTitle(review.review_title);
           setContent(review.review_content);
-          setRating(review.rating);
+          setRating(Math.round(review.rating)); // 정수로 변환
 
-          // 기존 이미지 설정
           const images = review.images.map((img) => ({
             id: img.review_image_id,
             url: img.review_image,
@@ -89,7 +120,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     }
   }, [reviewId]);
 
-  // 이미지 클릭 핸들러 (모달 열기)
+  // 이미지 클릭 핸들러
   const handleImageClick = (images: string[], index: number) => {
     setModalImages(images);
     setModalIndex(index);
@@ -109,7 +140,6 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
-    // 현재 이미지 개수 체크 (기존 + 새로운)
     const totalImages =
       existingImages.length + newImageFiles.length + files.length;
 
@@ -118,10 +148,8 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
       return;
     }
 
-    // 파일 추가
     setNewImageFiles((prev) => [...prev, ...files]);
 
-    // 미리보기 생성
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -146,66 +174,38 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     }
   };
 
-  // 새 이미지 삭제 (업로드 전)
+  // 새 이미지 삭제
   const handleRemoveNewImage = (index: number) => {
     setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
     setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 별 클릭 이벤트 처리 (0.5 단위)
-  const handleStarClick = (
-    position: number,
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const width = rect.width;
-
-    // 클릭 위치가 왼쪽 절반이면 0.5, 오른쪽 절반이면 1.0
-    const value = clickX < width / 2 ? position - 0.5 : position;
-    setRating(value);
+  // 별 클릭 (정수 단위)
+  const handleStarClick = (position: number) => {
+    setRating(position);
   };
 
-  // 별 호버 이벤트 처리 (0.5 단위)
-  const handleStarHover = (
-    position: number,
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const hoverX = event.clientX - rect.left;
-    const width = rect.width;
-
-    // 호버 위치가 왼쪽 절반이면 0.5, 오른쪽 절반이면 1.0
-    const value = hoverX < width / 2 ? position - 0.5 : position;
-    setHoveredRating(value);
+  // 별 호버 (정수 단위)
+  const handleStarHover = (position: number) => {
+    setHoveredRating(position);
   };
 
-  // 별 하나 렌더링 (0~1 사이의 채우기 비율)
+  // 별 렌더링 (정수 단위)
   const renderStar = (position: number, currentRating: number) => {
-    const fillPercentage = Math.min(
-      Math.max((currentRating - (position - 1)) * 100, 0),
-      100
-    );
+    const isFilled = position <= currentRating;
 
     return (
       <button
         key={position}
         type="button"
-        onClick={(e) => handleStarClick(position, e)}
-        onMouseMove={(e) => handleStarHover(position, e)}
+        onClick={() => handleStarClick(position)}
+        onMouseEnter={() => handleStarHover(position)}
         onMouseLeave={() => setHoveredRating(0)}
-        className="relative text-5xl cursor-pointer focus:outline-none transition-transform hover:scale-110"
+        className={`text-5xl cursor-pointer focus:outline-none transition-all hover:scale-110 ${
+          isFilled ? 'text-yellow-400' : 'text-gray-300'
+        }`}
       >
-        {/* 빈 별 (회색) */}
-        <span className="text-gray-300">★</span>
-
-        {/* 채워진 별 (노란색) */}
-        <span
-          className="absolute left-0 top-0 overflow-hidden text-yellow-400"
-          style={{ width: `${fillPercentage}%` }}
-        >
-          ★
-        </span>
+        ★
       </button>
     );
   };
@@ -236,7 +236,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
     try {
       if (reviewId) {
-        // === 수정 모드 ===
+        // 수정 모드
         const updated = await updateReview(reviewId, {
           region: selectedRegion,
           review_title: title,
@@ -250,7 +250,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           return;
         }
 
-        // 새 이미지 업로드 및 DB 저장
+        // 새 이미지 업로드
         if (newImageFiles.length > 0) {
           const uploadedUrls: string[] = [];
 
@@ -270,17 +270,18 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
         alert("리뷰가 수정되었습니다.");
         router.push(`/review/${reviewId}`);
       } else {
-        // === 작성 모드 ===
-        const uuid = crypto.randomUUID(); // UUID 생성
+        // 작성 모드
+        const uuid = crypto.randomUUID();
 
         const savedReview = await saveReview({
-          place_id: uuid, // 생성한 UUID
+          place_id: uuid,
           user_id: userId,
           region: selectedRegion,
           review_title: title,
           review_content: content,
           rating: rating,
         });
+        
         if (!savedReview) {
           alert("리뷰 저장에 실패했습니다.");
           setIsSubmitting(false);
@@ -358,23 +359,11 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
             disabled={!!reviewId}
           >
             <option value="">지역을 선택하세요</option>
-            <option value="서울">서울</option>
-            <option value="부산">부산</option>
-            <option value="대구">대구</option>
-            <option value="인천">인천</option>
-            <option value="광주">광주</option>
-            <option value="대전">대전</option>
-            <option value="울산">울산</option>
-            <option value="세종">세종</option>
-            <option value="경기도">경기도</option>
-            <option value="강원도">강원도</option>
-            <option value="충청북도">충청북도</option>
-            <option value="충청남도">충청남도</option>
-            <option value="전라북도">전라북도</option>
-            <option value="전라남도">전라남도</option>
-            <option value="경상북도">경상북도</option>
-            <option value="경상남도">경상남도</option>
-            <option value="제주도">제주도</option>
+            {regions.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -393,7 +382,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           />
         </div>
 
-        {/* 별점 */}
+        {/* 별점 (정수 단위) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             별점 <span className="text-red-500">*</span>
@@ -406,13 +395,13 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
             {rating > 0 && (
               <span className="ml-4 text-2xl font-bold text-gray-800">
-                {rating.toFixed(1)}
+                {rating}점
               </span>
             )}
           </div>
 
           <p className="text-sm text-gray-500 mt-2">
-            별의 왼쪽을 클릭하면 0.5점, 오른쪽을 클릭하면 1점씩 증가합니다
+            별을 클릭하여 1~5점 사이의 점수를 선택하세요
           </p>
         </div>
 
@@ -504,6 +493,9 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
           <p className="text-sm text-gray-500 mt-2">
             현재: {existingImages.length + newImageFiles.length} / 5
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            지원 형식: JPG, PNG, GIF, WebP, AVIF, SVG 등 모든 이미지 형식
           </p>
         </div>
 

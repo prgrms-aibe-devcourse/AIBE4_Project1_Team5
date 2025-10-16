@@ -1,14 +1,11 @@
-// app/detail/[reviewid]/page.tsx
-// 리뷰 상세 조회 페이지
-// 리뷰 메인 홈페이지에서 한개의 리뷰를 클릭했을때 나오는 페이지.
 // app/review/detail/[id]/page.tsx
 'use client';
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getReviewById, type ReviewWithImages } from '@/lib/reviewStoreSupabase';
-import { useAuth } from '@/hook/useAuth'; // 사용자 인증 훅 임포트
-// import { ReviewActionButtons } from '@/component/review/ReviewButton'; // ReviewButton 컴포넌트에서 ReviewActionButtons를 명시적으로 임포트
+import { useAuth } from '@/hook/useAuth';
+import { ReviewActionButtons } from '@/component/review/ReviewButton';
 import ImageModal from '@/component/review/ImageModal';
 
 interface PageProps {
@@ -35,8 +32,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
     const fetchReview = async () => {
       setIsLoading(true);
       const data = await getReviewById(id);
-      console.log('리뷰 데이터:', data);
-      console.log('이미지 데이터:', data?.images);
       setReview(data);
       setIsLoading(false);
     };
@@ -127,22 +122,22 @@ export default function ReviewDetailPage({ params }: PageProps) {
           ← 뒤로 가기
         </button>
 
-        {/* <div className="flex justify-between items-start"> */}
-          {/* <div> */}
-            {/* <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-3"> */}
-              {/* {review.region} */}
-            {/* </span> */}
-            {/* <h1 className="text-3xl font-bold mb-2">{review.review_title}</h1> */}
-          {/* </div> */}
+        <div className="flex justify-between items-start">
+          <div>
+            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-3">
+              {review.region}
+            </span>
+            <h1 className="text-3xl font-bold mb-2">{review.review_title}</h1>
+          </div>
 
           {/* 본인 리뷰인 경우 수정/삭제 버튼 */}
-          {/* {user && user.id === review.user_id && ( */}
-            {/* <ReviewActionButtons // ReviewActionButtons 컴포넌트 사용 */}
-              {/* reviewId={review.review_id} // 리뷰 ID 전달 */}
-              {/* onDelete={handleDeleteCallback} */}
-            {/* /> */}
-          {/* )} */}
-        {/* </div> */}
+          {user && user.id === review.user_id && (
+            <ReviewActionButtons
+              reviewId={review.review_id}
+              onDelete={handleDeleteCallback}
+            />
+          )}
+        </div>
 
         {/* 별점 */}
         <div className="flex items-center gap-3 mt-4">
@@ -175,30 +170,23 @@ export default function ReviewDetailPage({ params }: PageProps) {
             {review.images.map((image, index) => (
               <div
                 key={image.review_image_id}
-                className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg bg-gray-200"
+                className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg"
                 onClick={() => handleImageClick(index)}
               >
                 <img
                   src={image.review_image}
                   alt={`리뷰 이미지 ${index + 1}`}
                   className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                  loading="lazy"
-                  onLoad={(e) => {
-                    console.log('이미지 로드 성공:', image.review_image);
-                    e.currentTarget.style.opacity = '1';
-                  }}
                   onError={(e) => {
                     console.error('이미지 로드 실패:', image.review_image);
-                    const img = e.currentTarget;
-                    img.style.display = 'none';
-                    const parent = img.parentElement;
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
                     if (parent) {
-                      parent.innerHTML = '<div class="flex items-center justify-center h-full bg-gray-200"><span class="text-gray-400 text-sm">이미지 로드 실패</span></div>';
+                      parent.innerHTML = '<div class="flex items-center justify-center h-full bg-gray-200"><span class="text-gray-400">이미지 로드 실패</span></div>';
                     }
                   }}
-                  style={{ opacity: 0, transition: 'opacity 0.3s' }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity" />
               </div>
             ))}
           </div>
