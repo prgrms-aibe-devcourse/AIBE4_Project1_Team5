@@ -1,10 +1,10 @@
-// app/review/detail/[id]/page.tsx
 'use client';
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getReviewById, type ReviewWithImages } from '@/lib/reviewStoreSupabase';
 import { useAuth } from '@/hook/useAuth';
+import { useProfile } from '@/hook/useProfile';
 import { ReviewActionButtons } from '@/component/review/ReviewButton';
 import ImageModal from '@/component/review/ImageModal';
 
@@ -21,6 +21,9 @@ export default function ReviewDetailPage({ params }: PageProps) {
 
   const [review, setReview] = useState<ReviewWithImages | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 작성자 프로필 정보 가져오기 (review가 로드된 후에만 실행)
+  const { profile: authorProfile } = useProfile(review?.user_id);
 
   // 이미지 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -152,6 +155,9 @@ export default function ReviewDetailPage({ params }: PageProps) {
         {/* 작성 정보 */}
         <div className="mt-4 text-sm text-gray-500 space-y-1">
           <p>
+            <span className="font-medium">작성자:</span> {authorProfile?.display_name || '익명 사용자'}
+          </p>
+          <p>
             <span className="font-medium">작성:</span> {formatDate(review.created_at)}
           </p>
           {review.updated_at && review.updated_at !== review.created_at && (
@@ -213,7 +219,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
         </button>
         {user && user.id === review.user_id && (
           <button
-            onClick={() => router.push(`/review/edit/${review.review_id}`)}
+            onClick={() => router.push(`/review/write?edit=${review.review_id}`)}
             className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
             수정하기

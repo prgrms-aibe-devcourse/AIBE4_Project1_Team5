@@ -1,8 +1,10 @@
+// component/review/ReviewCard.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { useProfile } from "@/hook/useProfile";
 import type { Review } from "@/type/travel";
 
 const getLoggedInUserId = async (): Promise<string | null> => {
@@ -102,6 +104,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 작성자 프로필 정보 가져오기
+  const { profile: authorProfile } = useProfile(review.user_id);
+
   useEffect(() => {
     const checkStatus = async () => {
       const currentUserId = await getLoggedInUserId();
@@ -148,12 +153,16 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
     : `도움돼요 (${helpfulCount})`;
   const buttonClassName = `helpful-button ${isHelpful ? "helpful-active" : ""}`;
 
+  // 작성자 닉네임 표시 (프로필이 없거나 display_name이 없으면 "익명 사용자")
+  const authorNickname = authorProfile?.display_name || "익명 사용자";
+
   return (
     <div className="review-card">
       <div className="review-content-placeholder">
         <h3>{review.review_title}</h3>
         <p>{review.review_content.substring(0, 100)}...</p>
         <div className="review-meta">
+          <span className="author-info">작성자: {authorNickname}</span> |
           <span>⭐ {review.rating}</span> |
           <span>
             작성일: {new Date(review.created_at).toLocaleDateString()}
@@ -187,6 +196,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         .review-meta {
           font-size: 14px;
           color: #6b7280;
+        }
+        .author-info {
+          font-weight: 500;
+          color: #374151;
         }
         .helpful-container {
           text-align: right;

@@ -37,7 +37,8 @@ export function EditButton({ reviewId, className = '', onClick }: EditButtonProp
     if (onClick) {
       onClick(e);
     } else {
-      router.push(`/review/edit/${reviewId}`);
+      // 올바른 수정 페이지 경로로 이동
+      router.push(`/review/write?edit=${reviewId}`);
     }
   };
 
