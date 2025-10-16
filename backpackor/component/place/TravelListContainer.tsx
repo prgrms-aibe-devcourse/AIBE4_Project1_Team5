@@ -2,10 +2,10 @@
 
 "use client";
 
-import Image from "next/image";
-import { useMemo, useState, useEffect } from "react";
-import { Place } from "@/component/planner/PlannerEditor";
 import { createBrowserClient } from "@/lib/supabaseClient";
+import type { Place } from "@/type/place";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 
 interface TravelListContainerProps {
   places: Place[];
@@ -21,7 +21,7 @@ export default function TravelListContainer({
   places,
   onAddPlace,
   onPlaceClick,
-  regionOptions,
+  regionOptions = [],
 }: TravelListContainerProps) {
   const supabase = createBrowserClient();
 
@@ -35,7 +35,6 @@ export default function TravelListContainer({
     new Set()
   );
 
-  // ✅ 수정: showFavoritesOnly가 true일 때만 fetch
   useEffect(() => {
     if (!showFavoritesOnly) return; // false면 아무것도 안 함
 
