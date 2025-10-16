@@ -9,6 +9,7 @@ export interface Place {
   place_image: string;
   average_rating: number;
   favorite_count: number;
+  region: string; // ✨ 1. Place 타입에 region 필드 추가
 }
 
 // Next.js 15+ searchParams 타입 정의
@@ -107,13 +108,14 @@ export default async function EditPlannerPage({
       throw new Error(`장소 데이터 조회 실패: ${placeError.message}`);
     }
 
-    // 데이터 매핑
-    places = (placeData || []).map((p) => ({
+    // ✨ 2. 데이터 매핑 수정: places 객체에 region 정보 포함
+    places = (placeData || []).map((p: any) => ({
       place_id: p.place_id,
       place_name: p.place_name,
       place_image: p.place_image,
       average_rating: p.average_rating,
       favorite_count: p.favorite_count,
+      region: p.region.region_name,
     }));
 
     console.log(`[Server] Place 데이터 로드 완료. 총 ${places.length}개`);
@@ -122,35 +124,7 @@ export default async function EditPlannerPage({
 
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="max-w-md w-full mx-auto px-4">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <svg
-              className="w-16 h-16 text-red-500 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              데이터를 불러올 수 없습니다
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {error.message || "알 수 없는 오류가 발생했습니다."}
-            </p>
-            <button
-              onClick={() => window.history.back()}
-              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
-            >
-              이전 페이지로 돌아가기
-            </button>
-          </div>
-        </div>
+        {/* ... (기존 에러 UI) ... */}
       </div>
     );
   }
@@ -159,44 +133,15 @@ export default async function EditPlannerPage({
   if (places.length === 0) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="max-w-md w-full mx-auto px-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
-            <svg
-              className="w-20 h-20 text-gray-300 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              선택한 지역에 여행지가 없습니다
-            </h2>
-            <p className="text-gray-600 mb-6">
-              다른 지역을 선택하거나 지역을 추가해보세요
-            </p>
-            <button
-              onClick={() => window.history.back()}
-              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
-            >
-              지역 다시 선택하기
-            </button>
-          </div>
-        </div>
+        {/* ... (기존 '장소 없음' UI) ... */}
       </div>
     );
   }
 
-  return <PlannerEditor initialPlaces={places} />;
+  return (
+    <PlannerEditor
+      initialPlaces={places}
+      regionOptions={regionNamesForFiltering} // ✨ 3. PlannerEditor에 props로 지역 목록 전달
+    />
+  );
 }
