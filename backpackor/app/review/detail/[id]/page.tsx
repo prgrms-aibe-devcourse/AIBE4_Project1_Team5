@@ -34,6 +34,11 @@ export default function ReviewDetailPage({ params }: PageProps) {
       const data = await getReviewById(id);
       setReview(data);
       setIsLoading(false);
+      if (!data) {
+        console.error('리뷰를 찾을 수 없습니다:', id);
+      } else {
+        console.log('리뷰 데이터:', data);
+      } 
     };
 
     fetchReview();

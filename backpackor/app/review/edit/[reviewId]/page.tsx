@@ -15,3 +15,4 @@ export default function ReviewEditPage({ params }: PageProps) {
 
   return <ReviewForm reviewId={id} />;
 }
+
