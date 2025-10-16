@@ -8,7 +8,7 @@ import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getReviewById, type ReviewWithImages } from '@/lib/reviewStoreSupabase';
 import { useAuth } from '@/hook/useAuth'; // 사용자 인증 훅 임포트
-import { ReviewActionButtons } from '@/component/review/ReviewButton'; // ReviewButton 컴포넌트에서 ReviewActionButtons를 명시적으로 임포트
+// import { ReviewActionButtons } from '@/component/review/ReviewButton'; // ReviewButton 컴포넌트에서 ReviewActionButtons를 명시적으로 임포트
 import ImageModal from '@/component/review/ImageModal';
 
 interface PageProps {
@@ -127,22 +127,22 @@ export default function ReviewDetailPage({ params }: PageProps) {
           ← 뒤로 가기
         </button>
 
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-3">
-              {review.region}
-            </span>
-            <h1 className="text-3xl font-bold mb-2">{review.review_title}</h1>
-          </div>
+        {/* <div className="flex justify-between items-start"> */}
+          {/* <div> */}
+            {/* <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-3"> */}
+              {/* {review.region} */}
+            {/* </span> */}
+            {/* <h1 className="text-3xl font-bold mb-2">{review.review_title}</h1> */}
+          {/* </div> */}
 
           {/* 본인 리뷰인 경우 수정/삭제 버튼 */}
-          {user && user.id === review.user_id && (
-            <ReviewActionButtons // ReviewActionButtons 컴포넌트 사용
-              reviewId={review.review_id} // 리뷰 ID 전달
-              onDelete={handleDeleteCallback}
-            />
-          )}
-        </div>
+          {/* {user && user.id === review.user_id && ( */}
+            {/* <ReviewActionButtons // ReviewActionButtons 컴포넌트 사용 */}
+              {/* reviewId={review.review_id} // 리뷰 ID 전달 */}
+              {/* onDelete={handleDeleteCallback} */}
+            {/* /> */}
+          {/* )} */}
+        {/* </div> */}
 
         {/* 별점 */}
         <div className="flex items-center gap-3 mt-4">

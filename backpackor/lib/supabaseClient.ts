@@ -18,5 +18,5 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // (선택) 브라우저용 클라이언트도 유지
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_KEY!;
 export const createBrowserClient = () => {
-  return createClient(supabaseUrl, supabaseKey);
+  return createClient(supabaseUrl, supabaseAnonKey);
 };
