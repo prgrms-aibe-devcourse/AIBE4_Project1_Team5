@@ -95,7 +95,7 @@ export default function Navbar() {
 
             {/* ▼ 드롭다운 메뉴 */}
             {isMenuOpen && (
-              <div className="absolute top-12 right-0 bg-gray-50 border border-gray-200 rounded-md shadow-md w-28 text-sm">
+              <div className="absolute top-12 right-0 z-50 bg-gray-50 border border-gray-200 rounded-md shadow-md w-28 text-sm">
                 <Link
                   href="/my-page"
                   className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-center"

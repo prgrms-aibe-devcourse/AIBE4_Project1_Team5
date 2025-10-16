@@ -1,8 +1,12 @@
-// component/my-planner/PlanList.tsx
 "use client";
 
-import TripPlanCard from "@/component/my-planner/TripPlanCard";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  differenceInCalendarDays,
+  isAfter,
+  isBefore,
+  isWithinInterval,
+} from "date-fns";
 import { useEffect, useState } from "react";
 
 interface TripPlan {
@@ -20,7 +24,6 @@ interface PlanListProps {
 export default function PlanList({ initialPlans }: PlanListProps) {
   const [plans, setPlans] = useState<TripPlan[]>(initialPlans);
 
-  // initialPlans가 변경되면 plans도 업데이트
   useEffect(() => {
     setPlans(initialPlans);
   }, [initialPlans]);
@@ -29,28 +32,21 @@ export default function PlanList({ initialPlans }: PlanListProps) {
     const isConfirmed = confirm(
       "정말 이 일정을 삭제하시겠습니까? 관련된 모든 상세 일정이 함께 삭제됩니다."
     );
-    if (!isConfirmed) {
-      return;
-    }
+    if (!isConfirmed) return;
 
     try {
-      // 상세 일정(trip_plan_detail) 먼저 삭제
       const { error: detailError } = await supabase
         .from("trip_plan_detail")
         .delete()
         .eq("trip_id", tripId);
-
       if (detailError) throw detailError;
 
-      // 메인 일정(trip_plan) 삭제
       const { error: planError } = await supabase
         .from("trip_plan")
         .delete()
         .eq("trip_id", tripId);
-
       if (planError) throw planError;
 
-      // 로컬 상태에서 삭제된 항목 제거 (새로고침 없이)
       setPlans((prevPlans) =>
         prevPlans.filter((plan) => plan.trip_id !== tripId)
       );
@@ -62,24 +58,190 @@ export default function PlanList({ initialPlans }: PlanListProps) {
     }
   };
 
-  // plans 배열이 비어있으면 빈 상태 표시
+  // 상태 및 태그 계산 함수
+  const getTripInfo = (start: string, end: string) => {
+    const today = new Date();
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // 상태 계산
+    let status = "";
+    let statusColor = "";
+
+    if (isBefore(today, startDate)) {
+      status = "여행예정";
+      statusColor = "bg-blue-100 text-blue-700";
+    } else if (isAfter(today, endDate)) {
+      status = "여행종료";
+      statusColor = "bg-gray-100 text-gray-600";
+    } else if (isWithinInterval(today, { start: startDate, end: endDate })) {
+      status = "여행중";
+      statusColor = "bg-green-100 text-green-700";
+    }
+
+    // 숙박일 계산
+    const nights = differenceInCalendarDays(endDate, startDate);
+    const days = nights + 1;
+    const duration = `${nights}박 ${days}일`;
+
+    return { status, statusColor, duration };
+  };
+
   if (plans.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg">일정이 없습니다.</p>
+      <div className="flex flex-col items-center justify-center py-20 text-gray-500 bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
+        <svg
+          className="w-12 h-12 mb-3 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+        <p className="text-lg font-medium">등록된 여행 일정이 없습니다.</p>
+        <p className="text-sm text-gray-400 mt-1">
+          새로운 여행 계획을 만들어보세요.
+        </p>
       </div>
     );
   }
 
   return (
-    <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {plans.map((plan) => (
-        <TripPlanCard
-          key={plan.trip_id}
-          plan={plan}
-          onDelete={() => handleDelete(plan.trip_id)}
-        />
-      ))}
+    <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {plans.map((plan) => {
+        const { status, statusColor, duration } = getTripInfo(
+          plan.trip_start_date,
+          plan.trip_end_date
+        );
+
+        return (
+          <div
+            key={plan.trip_id}
+            className="relative flex flex-col justify-between bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-300"
+          >
+            {/* 상태 태그 */}
+            <div className="absolute top-4 right-4">
+              <span
+                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm
+      ${
+        status === "여행예정"
+          ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
+          : status === "여행중"
+          ? "bg-gradient-to-r from-green-100 to-emerald-200 text-emerald-800"
+          : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700"
+      }`}
+              >
+                {status === "여행예정" && (
+                  <svg
+                    className="w-3 h-3 text-blue-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 4h2v6H9V4zm0 8h2v2H9v-2z" />
+                  </svg>
+                )}
+                {status === "여행중" && (
+                  <svg
+                    className="w-3 h-3 text-green-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 4H9v5h2V6zm0 6H9v2h2v-2z" />
+                  </svg>
+                )}
+                {status === "여행종료" && (
+                  <svg
+                    className="w-3 h-3 text-gray-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-1 4h2v6H9V6zm0 8h2v2H9v-2z" />
+                  </svg>
+                )}
+                {status}
+              </span>
+            </div>
+
+            {/* 제목 */}
+            <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
+              {plan.trip_title}
+            </h2>
+
+            {/* 날짜 */}
+            <p className="text-sm text-gray-600 mb-2">
+              {new Date(plan.trip_start_date).toLocaleDateString("ko-KR", {
+                month: "long",
+                day: "numeric",
+              })}{" "}
+              ~{" "}
+              {new Date(plan.trip_end_date).toLocaleDateString("ko-KR", {
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+
+            {/* 기간 태그 */}
+            <span
+              className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full border shadow-sm
+    ${
+      status === "여행예정"
+        ? "bg-white border-blue-100 text-gray-700"
+        : status === "여행중"
+        ? "bg-white border-green-100 text-gray-700"
+        : "bg-white border-gray-100 text-gray-700"
+    }`}
+              style={{
+                minWidth: "fit-content",
+                maxWidth: "fit-content",
+                marginBottom: "1rem", // 👈 여백 추가
+              }}
+            >
+              {duration}
+            </span>
+
+            {/* 버튼 영역 */}
+            <div className="flex items-center justify-between">
+              <a
+                href={`/my-planner/${plan.trip_id}`}
+                className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 transition"
+              >
+                보기
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5-5 5M6 12h12"
+                  />
+                </svg>
+              </a>
+
+              <button
+                onClick={() => handleDelete(plan.trip_id)}
+                className="px-4 py-2 text-sm text-red-600 font-semibold hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </main>
   );
 }
