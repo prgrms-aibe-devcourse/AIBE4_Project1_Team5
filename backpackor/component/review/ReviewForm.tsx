@@ -1,4 +1,3 @@
-// component/review/ReviewForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,6 +12,7 @@ import {
   deleteReviewImage,
   getRegions,
 } from "@/lib/reviewStoreSupabase";
+import { useProfile } from "@/hook/useProfile";
 import ImageModal from "./ImageModal";
 
 interface ReviewFormProps {
@@ -24,7 +24,6 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const router = useRouter();
 
   // 폼 상태
-  const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [regions, setRegions] = useState<string[]>([]); // 지역 목록
   const [selectedRegion, setSelectedRegion] = useState("");
@@ -49,6 +48,9 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 프로필 훅 사용
+  const { profile } = useProfile(userId);
+
   // 사용자 정보 가져오기
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -56,31 +58,10 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        setUserEmail(user.email || "");
         setUserId(user.id);
       }
     };
     fetchUserInfo();
-  }, []);
-
-  // 지역 목록 가져오기
-  useEffect(() => {
-    const fetchRegions = async () => {
-      const regionList = await getRegions();
-      setRegions(regionList);
-    };
-    
-    fetchRegions();
-  }, []);
-
-  // 지역 목록 가져오기
-  useEffect(() => {
-    const fetchRegions = async () => {
-      const regionList = await getRegions();
-      setRegions(regionList);
-    };
-    
-    fetchRegions();
   }, []);
 
   // 지역 목록 가져오기
@@ -334,14 +315,14 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 작성자 */}
+        {/* 닉네임 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            작성자
+            닉네임
           </label>
           <input
             type="text"
-            value={userEmail}
+            value={profile?.display_name || "사용자"}
             readOnly
             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
           />
