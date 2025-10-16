@@ -1,114 +1,270 @@
 // app/planner/new/region/page.tsx
-'use client';
+"use client";
 
-import { useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@/lib/supabaseClient';
-import Link from 'next/link';
+import { createBrowserClient } from "@/lib/supabaseClient";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 // Region 타입 정의
 interface Region {
-    region_id: number;
-    region_name: string;
+  region_id: number;
+  region_name: string;
 }
 
 /**
  * 직접 여행 계획 생성을 위한 지역 선택 페이지 컴포넌트입니다.
  */
 export default function RegionSelectPage() {
-    const searchParams = useSearchParams();
-    const supabase = createBrowserClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const supabase = createBrowserClient();
 
-    const [regions, setRegions] = useState<Region[]>([]); // DB에서 가져온 전체 지역 목록
-    const [isLoading, setIsLoading] = useState(true); // 로딩 상태
-    const [selectedRegions, setSelectedRegions] = useState<string[]>([]); // 사용자가 선택한 지역 목록 (다중 선택)
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
 
-    // 컴포넌트가 처음 렌더링될 때 Supabase에서 지역 목록을 가져옵니다.
-    useEffect(() => {
-        const fetchRegions = async () => {
-            const { data, error } = await supabase
-                .from('region')
-                .select('*')
-                .order('region_id', { ascending: true });
+  // 날짜 정보 가져오기
+  const startDate = searchParams.get("start");
+  const endDate = searchParams.get("end");
 
-            if (data) {
-                setRegions(data);
-            } else if (error) {
-                console.error("지역 정보 로딩 실패:", error);
-                alert("지역 정보를 불러오는 데 실패했습니다.");
-            }
-            setIsLoading(false);
-        };
+  // 컴포넌트가 처음 렌더링될 때 Supabase에서 지역 목록을 가져옵니다.
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const { data, error } = await supabase
+        .from("region")
+        .select("*")
+        .order("region_id", { ascending: true });
 
-        fetchRegions();
-    }, []); // 빈 배열을 전달하여 한 번만 실행되도록 합니다.
-
-    // 지역 버튼 클릭 시, 선택 목록에 추가하거나 제거하는 함수
-    const handleSelectRegion = (regionName: string) => {
-        setSelectedRegions(prev =>
-            prev.includes(regionName)
-                ? prev.filter(r => r !== regionName) // 이미 선택된 지역이면 배열에서 제거
-                : [...prev, regionName] // 선택되지 않은 지역이면 배열에 추가
-        );
+      if (data) {
+        setRegions(data);
+      } else if (error) {
+        console.error("지역 정보 로딩 실패:", error);
+        alert("지역 정보를 불러오는 데 실패했습니다.");
+      }
+      setIsLoading(false);
     };
 
-    // 이전, 다음 단계로 이동할 URL을 생성하는 함수
-    const createUrl = (isNext: boolean) => {
-        // 이전 페이지에서 받아온 날짜 정보를 가져옵니다.
-        const startDate = searchParams.get('start');
-        const endDate = searchParams.get('end');
-        const params = new URLSearchParams();
+    fetchRegions();
+  }, [supabase]);
 
-        if (startDate) params.append('start', startDate);
-        if (endDate) params.append('end', endDate);
+  // 지역 버튼 클릭 시, 선택 목록에 추가하거나 제거하는 함수
+  const handleSelectRegion = (regionName: string) => {
+    setSelectedRegions((prev) =>
+      prev.includes(regionName)
+        ? prev.filter((r) => r !== regionName)
+        : [...prev, regionName]
+    );
+  };
 
-        if (isNext) {
-            // '다음 단계'일 경우, 선택된 모든 지역 정보를 파라미터에 추가합니다.
-            selectedRegions.forEach(region => params.append('region', region));
-            return `/planner/edit?${params.toString()}`;
-        } else {
-            // '이전 단계'일 경우, 날짜 선택 페이지로 돌아갑니다.
-            return `/planner/new`;
-        }
-    };
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center min-h-screen">로딩 중...</div>;
+  // 다음 단계로 이동
+  const handleNext = () => {
+    if (selectedRegions.length === 0) {
+      alert("최소 1개의 지역을 선택해주세요.");
+      return;
     }
 
+    const params = new URLSearchParams();
+    if (startDate) params.append("start", startDate);
+    if (endDate) params.append("end", endDate);
+    selectedRegions.forEach((region) => params.append("region", region));
+
+    router.push(`/planner/edit?${params.toString()}`);
+  };
+
+  if (isLoading) {
     return (
-        <div className="w-full min-h-screen bg-gray-50 flex flex-col items-center pt-24">
-            <div className="w-full max-w-2xl mx-auto text-center">
-                <h1 className="text-3xl font-bold mb-2">어디로 여행을 떠나시나요?</h1>
-                <p className="text-gray-500 mb-8">여행하고 싶은 지역을 모두 선택해주세요.</p>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
-                    {regions.map((region) => (
-                        <button
-                            key={region.region_id}
-                            onClick={() => handleSelectRegion(region.region_name)}
-                            // 선택된 지역인지 확인하여 다른 스타일을 적용합니다.
-                            className={`px-6 py-3 bg-white border rounded-lg text-gray-700 font-semibold hover:border-blue-500 transition-colors duration-200 shadow-sm ${selectedRegions.includes(region.region_name) ? 'border-blue-500 border-2' : 'border-gray-200'}`}
-                        >
-                            {region.region_name}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="w-full max-w-2xl mx-auto mt-10 flex justify-between items-center">
-                    <Link href={createUrl(false)} className="px-6 py-3 text-gray-600 font-semibold rounded-lg hover:bg-gray-200">
-                        이전 단계
-                    </Link>
-                    <Link
-                        href={createUrl(true)}
-                        // 선택된 지역이 하나도 없으면 버튼을 비활성화합니다.
-                        className={`px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 ${selectedRegions.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (selectedRegions.length === 0) e.preventDefault(); }}
-                    >
-                        일정 만들러 가기
-                    </Link>
-                </div>
-            </div>
+      <div className="flex justify-center items-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">
+            지역 정보를 불러오는 중...
+          </p>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* 헤더 */}
+        <div className="mb-8">
+          <Link
+            href={`/planner/new${
+              startDate && endDate ? `?start=${startDate}&end=${endDate}` : ""
+            }`}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
+          >
+            <svg
+              className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span className="font-medium">뒤로가기</span>
+          </Link>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            어디로 여행을 떠나시나요?
+          </h1>
+          <p className="text-lg text-gray-600">
+            여행하고 싶은 지역을 선택해주세요 (여러 개 선택 가능)
+          </p>
+        </div>
+
+        {/* 선택된 여행 정보 */}
+        {startDate && endDate && (
+          <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 mb-8 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">여행 기간</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {format(new Date(startDate), "M월 d일", { locale: ko })} -{" "}
+                    {format(new Date(endDate), "M월 d일", { locale: ko })}
+                  </p>
+                </div>
+              </div>
+              {selectedRegions.length > 0 && (
+                <div className="bg-gray-100 px-3 py-1.5 rounded-full">
+                  <span className="text-sm font-bold text-gray-700">
+                    {selectedRegions.length}개 선택
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 지역 선택 그리드 */}
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">지역 선택</h2>
+
+          <div className="flex flex-wrap gap-3">
+            {regions.map((region) => {
+              const isSelected = selectedRegions.includes(region.region_name);
+              return (
+                <button
+                  key={region.region_id}
+                  onClick={() => handleSelectRegion(region.region_name)}
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-200 ${
+                    isSelected
+                      ? "bg-gray-900 text-white shadow-md"
+                      : "bg-white text-gray-700 border border-gray-300 hover:border-gray-900"
+                  }`}
+                >
+                  {region.region_name}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedRegions.length === 0 && (
+            <div className="mt-6 text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+              <p className="text-gray-500 font-medium">지역을 선택해주세요</p>
+              <p className="text-sm text-gray-400 mt-1">
+                여러 지역을 선택할 수 있어요
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 선택된 지역 태그 */}
+        {selectedRegions.length > 0 && (
+          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 mb-8">
+            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span>선택한 지역</span>
+              <span className="text-sm font-normal text-gray-500">
+                ({selectedRegions.length}개)
+              </span>
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {selectedRegions.map((region) => (
+                <div
+                  key={region}
+                  className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-300 shadow-sm"
+                >
+                  <span className="font-medium text-gray-900">{region}</span>
+                  <button
+                    onClick={() => handleSelectRegion(region)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 하단 버튼 */}
+        <div className="flex justify-end gap-3">
+          <Link
+            href={`/planner/new${
+              startDate && endDate ? `?start=${startDate}&end=${endDate}` : ""
+            }`}
+            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
+          >
+            이전 단계
+          </Link>
+          <button
+            onClick={handleNext}
+            disabled={selectedRegions.length === 0}
+            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
+          >
+            일정 만들러 가기
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
