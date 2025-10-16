@@ -77,7 +77,11 @@ const TravelDetailPage = async ({
         <div className={styles.overlayInfo}>
           <h2>[ {data.place_category} ]</h2>
           <h1>{data.place_name}</h1>
-          <div className={styles.subtitleRatingLine}></div>
+          <div className={styles.subtitleRatingLine}>
+            <span className={styles.rating}>
+              ⭐ {data.average_rating.toFixed(1)}
+            </span>
+          </div>
         </div>
       </div>
 
