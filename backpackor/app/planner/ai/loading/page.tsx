@@ -1,7 +1,7 @@
 // app/planner/ai/loading/page.tsx
 'use client';
 
-import { useEffect, useState, useRef } from 'react'; // useRef import 추가
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 /**
@@ -12,18 +12,16 @@ export default function AiLoadingPage() {
     const searchParams = useSearchParams();
     const [progress, setProgress] = useState(10);
 
-    // API 요청이 이미 시작되었는지 추적하기 위한 플래그
-    const isFetching = useRef(false);
-
     useEffect(() => {
         const timer = setInterval(() => {
             const randomIncrement = Math.random() * 6 + 4;
             setProgress(prev => (prev < 90 ? prev + randomIncrement : prev));
-        }, 1500);
+        }, 800);
 
         const generatePlan = async () => {
             try {
                 // 1. 백엔드 API에 모든 파라미터를 그대로 넘겨 요청을 보냅니다.
+                // searchParams.toString()이 'region=서울&region=강릉' 과 같은 형태로 만들어줍니다.
                 const response = await fetch(`/api/planner?${searchParams.toString()}`);
                 if (!response.ok) {
                     throw new Error('AI 추천 생성에 실패했습니다.');
@@ -34,14 +32,16 @@ export default function AiLoadingPage() {
                 clearInterval(timer);
                 setProgress(100);
 
-                // --- 편집 페이지로 이동 ---
+                // --- 편집 페이지로 이동할 때 모든 지역 정보를 넘겨줍니다. ---
                 setTimeout(() => {
                     const params = new URLSearchParams();
+                    // 기본 정보 추가
                     params.append('start', searchParams.get('start') || '');
                     params.append('end', searchParams.get('end') || '');
                     params.append('aiPlan', JSON.stringify(data.plan));
                     params.append('aiTitle', data.title || 'AI 추천 여행');
 
+                    // .getAll()로 모든 지역 정보를 가져와서 params에 추가합니다.
                     const regionNames = searchParams.getAll('region');
                     regionNames.forEach(region => params.append('region', region));
 
@@ -54,17 +54,9 @@ export default function AiLoadingPage() {
                 router.back();
             }
         };
-
-        // 아직 API 요청을 보낸 적이 없을 때만 generatePlan 함수를 실행
-        if (!isFetching.current) {
-            // 플래그를 true로 설정하여, 다음에 이 코드가 다시 실행되더라도
-            // API 요청을 또 보내지 않도록 막습니다.
-            isFetching.current = true;
-            generatePlan();
-        }
+        generatePlan();
 
         return () => clearInterval(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -72,12 +64,14 @@ export default function AiLoadingPage() {
             <h2 className="text-2xl font-bold mb-8 text-gray-800">
                 AI가 최적의 여행 코스를 만들고 있어요!
             </h2>
+
             <div className="w-full max-w-md bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                 <div
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-800 ease-in-out"
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-1200 ease-in-out"
                     style={{ width: `${progress}%` }}
                 ></div>
             </div>
+
             <p className="mt-4 text-lg font-semibold text-gray-600">{Math.round(progress)}%</p>
             <p className="mt-2 text-sm text-gray-500">
                 잠시만 기다려주세요...

@@ -1,3 +1,4 @@
+// component/review/ReviewSort.tsx
 "use client";
 
 // props의 타입을 정의합니다.
@@ -29,7 +30,7 @@ export default function Sort({ currentSort, onSortChange }: SortProps) {
         }
       >
       
-        리뷰많은순
+        이미지 많은 순
       </button>
       <span className="text-gray-300">|</span>
       <button
@@ -40,7 +41,19 @@ export default function Sort({ currentSort, onSortChange }: SortProps) {
             : "cursor-pointer hover:text-black"
         }
       >
-        별점높은순
+        별점 높은 순
+      </button>
+      
+      <span className="text-gray-300">|</span>
+      <button
+        onClick={() => onSortChange("rating_asc")}
+        className={
+          currentSort === "rating_asc"
+            ? "font-bold text-black"
+            : "cursor-pointer hover:text-black"
+        }
+      >
+        별점 낮은 순
       </button>
     </div>
   );
