@@ -120,21 +120,7 @@ export default function PlannerEditor({ initialPlaces }: PlannerEditorProps) {
 
     // --- 핸들러 함수 ---
     const handleAddPlace = (place: Place) => {
-        // 1. 현재 'plan' 상태를 기준으로 중복 여부를 먼저 확인
-        const currentDayPlaces = plan[activeDay] || [];
-        const isDuplicate = currentDayPlaces.some(p => p.place_id === place.place_id);
-        // 2. 만약 중복이라면, alert를 띄우고 함수를 즉시 종료
-        if (isDuplicate) {
-            alert('이미 해당 날짜에 추가된 장소입니다.');
-            return;
-        }
-        // 3. 중복이 아닐 경우에만, setPlan을 호출하여 상태를 안전하게 업데이트
-        setPlan(prevPlan => {
-            return {
-                ...prevPlan,
-                [activeDay]: [...(prevPlan[activeDay] || []), place]
-            };
-        });
+        setPlan(prevPlan => ({ ...prevPlan, [activeDay]: [...(prevPlan[activeDay] || []), place] }));
     };
 
     const handleRemovePlace = (day: number, placeId: string) => {
