@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
   saveReview,
@@ -22,6 +22,12 @@ interface ReviewFormProps {
 
 export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // URL에서 edit 파라미터 확인 (쿼리 파라미터 방식)
+  const editReviewId = searchParams.get('edit');
+  // editReviewId가 있으면 사용, 없으면 props의 reviewId 사용
+  const currentReviewId = editReviewId || reviewId;
 
   // 폼 상태
   const [userId, setUserId] = useState("");
@@ -76,10 +82,10 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
   // 수정 모드일 때 기존 데이터 불러오기
   useEffect(() => {
-    if (reviewId) {
+    if (currentReviewId) {
       const fetchReview = async () => {
         setIsLoading(true);
-        const review = await getReviewById(reviewId);
+        const review = await getReviewById(currentReviewId);
 
         if (review) {
           setSelectedRegion(review.region);
@@ -99,7 +105,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
       fetchReview();
     }
-  }, [reviewId]);
+  }, [currentReviewId]);
 
   // 이미지 클릭 핸들러
   const handleImageClick = (images: string[], index: number) => {
@@ -216,9 +222,9 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     setIsSubmitting(true);
 
     try {
-      if (reviewId) {
+      if (currentReviewId) {
         // 수정 모드
-        const updated = await updateReview(reviewId, {
+        const updated = await updateReview(currentReviewId, {
           region: selectedRegion,
           review_title: title,
           review_content: content,
@@ -236,12 +242,12 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           const uploadedUrls: string[] = [];
 
           for (const file of newImageFiles) {
-            const url = await uploadImage(file, reviewId);
+            const url = await uploadImage(file, currentReviewId);
             if (url) uploadedUrls.push(url);
           }
 
           if (uploadedUrls.length > 0) {
-            const success = await saveReviewImages(reviewId, uploadedUrls);
+            const success = await saveReviewImages(currentReviewId, uploadedUrls);
             if (!success) {
               console.error("이미지 DB 저장 실패");
             }
@@ -249,7 +255,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
         }
 
         alert("리뷰가 수정되었습니다.");
-        router.push(`/review/${reviewId}`);
+        router.push("/review");
       } else {
         // 작성 모드
         const uuid = crypto.randomUUID();
@@ -311,7 +317,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">
-        {reviewId ? "리뷰 수정" : "리뷰 작성"}
+        {currentReviewId ? "리뷰 수정" : "리뷰 작성"}
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -337,7 +343,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={!!reviewId}
+            disabled={!!currentReviewId}
           >
             <option value="">지역을 선택하세요</option>
             {regions.map((region) => (
@@ -487,7 +493,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
             disabled={isSubmitting}
             className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "처리 중..." : reviewId ? "수정하기" : "작성하기"}
+            {isSubmitting ? "처리 중..." : currentReviewId ? "수정하기" : "작성하기"}
           </button>
 
           <button

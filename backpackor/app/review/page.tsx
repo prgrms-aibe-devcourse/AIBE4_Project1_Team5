@@ -5,8 +5,141 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getReviews, getReviewsByRegion, deleteReview, getRegions, type ReviewWithImages } from '@/lib/reviewStoreSupabase';
 import { useAuth } from '@/hook/useAuth';
+import { useProfile } from '@/hook/useProfile';
 import { WriteButton, ReviewActionButtons } from '@/component/review/ReviewButton';
 import Sort from '@/component/review/ReviewSort';
+
+// 개별 리뷰 카드 컴포넌트 (닉네임 표시 포함)
+function ReviewCard({ review, user, onEdit, onDelete }: {
+  review: ReviewWithImages;
+  user: any;
+  onEdit: (reviewId: string, e: React.MouseEvent) => void;
+  onDelete: (reviewId: string) => void;
+}) {
+  const router = useRouter();
+  const { profile } = useProfile(review.user_id);
+
+  // 별점 렌더링 (정수만)
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const roundedRating = Math.round(rating); // 정수로 반올림
+    
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span key={i} className={`text-xl ${i <= roundedRating ? 'text-yellow-400' : 'text-gray-300'}`}>
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
+  // 날짜 포맷팅
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div
+      onClick={() => router.push(`/review/detail/${review.review_id}`)}
+      className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-white"
+    >
+      {/* 썸네일 이미지 */}
+      {review.images.length > 0 ? (
+        <div className="w-full h-48 bg-gray-200 relative">
+          <img
+            src={review.images[0].review_image}
+            alt={review.review_title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('이미지 로드 실패:', review.images[0].review_image);
+              e.currentTarget.style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                parent.innerHTML = '<div class="flex items-center justify-center h-full"><span class="text-gray-400">이미지 로드 실패</span></div>';
+              }
+            }}
+          />
+          {/* 이미지 개수 표시 */}
+          {review.images.length > 1 && (
+            <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+              📷 {review.images.length}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+          <span className="text-gray-400">이미지 없음</span>
+        </div>
+      )}
+
+      {/* 내용 */}
+      <div className="p-4">
+        {/* 지역 뱃지 */}
+        <div className="mb-2">
+          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+            {review.region}
+          </span>
+        </div>
+
+        {/* 제목 */}
+        <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+          {review.review_title}
+        </h3>
+
+        {/* 별점 */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex">
+            {renderStars(review.rating)}
+          </div>
+          <span className="text-sm font-semibold text-gray-700">
+            {review.rating.toFixed(1)}
+          </span>
+        </div>
+
+        {/* 내용 미리보기 */}
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {review.review_content}
+        </p>
+
+        {/* 작성자 정보 */}
+        <div className="mb-3 pb-3 border-b border-gray-100">
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">작성자:</span> {profile?.display_name || '익명 사용자'}
+          </p>
+        </div>
+
+        {/* 날짜 정보 */}
+        <div className="flex flex-col gap-1 mb-3 pb-3 border-b border-gray-100">
+          <p className="text-xs text-gray-500">
+            <span className="font-medium">작성:</span> {formatDate(review.created_at)}
+          </p>
+          {review.updated_at && review.updated_at !== review.created_at && (
+            <p className="text-xs text-orange-600">
+              <span className="font-medium">수정됨:</span> {formatDate(review.updated_at)}
+            </p>
+          )}
+        </div>
+
+        {/* 본인 리뷰인 경우에만 수정/삭제 버튼 표시 */}
+        {user && user.id === review.user_id && (
+          <ReviewActionButtons
+            reviewId={review.review_id}
+            onEdit={(e) => onEdit(review.review_id, e)}
+            onDelete={() => onDelete(review.review_id)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ReviewListPage() {
   const router = useRouter();
@@ -84,7 +217,7 @@ export default function ReviewListPage() {
   // 리뷰 수정
   const handleEdit = (reviewId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/review/edit/${reviewId}`);
+    router.push(`/review/write?edit=${reviewId}`);
   };
 
   // 별점 렌더링 (정수만)
@@ -137,18 +270,6 @@ export default function ReviewListPage() {
   };
 
   const stats = calculateStats();
-
-  // 날짜 포맷팅
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (isLoading) {
     return (
@@ -256,91 +377,13 @@ export default function ReviewListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedReviews.map((review) => (
-            <div
+            <ReviewCard
               key={review.review_id}
-              onClick={() => router.push(`/review/detail/${review.review_id}`)}
-              className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-white"
-            >
-              {/* 썸네일 이미지 */}
-              {review.images.length > 0 ? (
-                <div className="w-full h-48 bg-gray-200 relative">
-                  <img
-                    src={review.images[0].review_image}
-                    alt={review.review_title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('이미지 로드 실패:', review.images[0].review_image);
-                      e.currentTarget.style.display = 'none';
-                      const parent = e.currentTarget.parentElement;
-                      if (parent) {
-                        parent.innerHTML = '<div class="flex items-center justify-center h-full"><span class="text-gray-400">이미지 로드 실패</span></div>';
-                      }
-                    }}
-                  />
-                  {/* 이미지 개수 표시 */}
-                  {review.images.length > 1 && (
-                    <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                      📷 {review.images.length}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-400">이미지 없음</span>
-                </div>
-              )}
-
-              {/* 내용 */}
-              <div className="p-4">
-                {/* 지역 뱃지 */}
-                <div className="mb-2">
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                    {review.region}
-                  </span>
-                </div>
-
-                {/* 제목 */}
-                <h3 className="text-lg font-semibold mb-2 line-clamp-1">
-                  {review.review_title}
-                </h3>
-
-                {/* 별점 */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex">
-                    {renderStars(review.rating)}
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {review.rating.toFixed(1)}
-                  </span>
-                </div>
-
-                {/* 내용 미리보기 */}
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                  {review.review_content}
-                </p>
-
-                {/* 날짜 정보 */}
-                <div className="flex flex-col gap-1 mb-3 pb-3 border-b border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    <span className="font-medium">작성:</span> {formatDate(review.created_at)}
-                  </p>
-                  {review.updated_at && review.updated_at !== review.created_at && (
-                    <p className="text-xs text-orange-600">
-                      <span className="font-medium">수정됨:</span> {formatDate(review.updated_at)}
-                    </p>
-                  )}
-                </div>
-
-                {/* 본인 리뷰인 경우에만 수정/삭제 버튼 표시 */}
-                {user && user.id === review.user_id && (
-                  <ReviewActionButtons
-                    reviewId={review.review_id}
-                    onEdit={(e) => handleEdit(review.review_id, e)}
-                    onDelete={() => handleDeleteCallback(review.review_id)}
-                  />
-                )}
-              </div>
-            </div>
+              review={review}
+              user={user}
+              onEdit={handleEdit}
+              onDelete={handleDeleteCallback}
+            />
           ))}
         </div>
       )}
