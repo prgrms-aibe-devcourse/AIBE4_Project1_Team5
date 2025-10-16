@@ -1,7 +1,7 @@
 // app/planner/edit/page.tsx
 import PlannerEditor from "@/component/planner/PlannerEditor";
 import { createServerClient } from "@/lib/supabaseClient";
-import type { Place, Plan } from "@/type/place"; // ✅ 외부 타입 사용
+import type { Place, Plan } from "@/type/place";
 
 interface EditPlannerPageProps {
   searchParams: Promise<{
@@ -25,16 +25,51 @@ export default async function EditPlannerPage({
 
   let places: Place[] = [];
   let regionNamesForFiltering: string[] = [];
+  let existingTripTitle = "";
+  let existingPlan: Plan = {};
 
   try {
     if (trip_id) {
       // ✅ 수정 모드
       console.log(`[Server] 기존 일정 수정 모드 (trip_id: ${trip_id})`);
 
+      // 1. 기존 여행 제목 가져오기
+      const { data: tripData, error: tripError } = await supabase
+        .from("trip_plan")
+        .select("trip_title")
+        .eq("trip_id", trip_id)
+        .single();
+
+      if (tripError) {
+        throw new Error(`여행 정보를 가져오지 못했습니다: ${tripError.message}`);
+      }
+
+      existingTripTitle = tripData?.trip_title || "";
+
+      // 2. 기존 일정 상세 정보 가져오기
       const { data: detailData, error: detailError } = await supabase
         .from("trip_plan_detail")
-        .select("place_id")
-        .eq("trip_id", trip_id);
+        .select(
+          `
+          day_number,
+          visit_order,
+          place_id,
+          place:place_id (
+            place_id,
+            place_name,
+            place_address,
+            latitude,
+            longitude,
+            place_image,
+            average_rating,
+            favorite_count,
+            region!inner(region_name)
+          )
+        `
+        )
+        .eq("trip_id", trip_id)
+        .order("day_number", { ascending: true })
+        .order("visit_order", { ascending: true });
 
       if (detailError) {
         throw new Error(
@@ -43,7 +78,35 @@ export default async function EditPlannerPage({
       }
 
       if (detailData && detailData.length > 0) {
-        const placeIds = detailData.map((item) => item.place_id);
+        // 3. 기존 일정을 Plan 형태로 변환
+        existingPlan = detailData.reduce((acc: Plan, item: any) => {
+          const day = item.day_number;
+          if (!acc[day]) acc[day] = [];
+
+          acc[day].push({
+            place_id: item.place.place_id,
+            place_name: item.place.place_name,
+            place_address: item.place.place_address,
+            latitude: item.place.latitude,
+            longitude: item.place.longitude,
+            place_image: item.place.place_image,
+            average_rating: item.place.average_rating,
+            favorite_count: item.place.favorite_count,
+            region: item.place.region?.region_name || null,
+            visit_order: item.visit_order,
+            day_number: item.day_number,
+            review_count: null,
+            place_description: null,
+            place_detail_image: null,
+            region_id: null,
+            place_category: null,
+          });
+
+          return acc;
+        }, {});
+
+        // 4. 지역 정보 추출
+        const placeIds = detailData.map((item: any) => item.place_id);
         const { data: regionData, error: regionError } = await supabase
           .from("place")
           .select("region!inner(region_name)")
@@ -62,6 +125,7 @@ export default async function EditPlannerPage({
         console.log(
           `[Server] 필터링할 지역: ${regionNamesForFiltering.join(", ")}`
         );
+        console.log(`[Server] 기존 일정 로드 완료:`, existingPlan);
       }
     } else {
       // ✅ 새 일정 생성 모드
@@ -117,6 +181,11 @@ export default async function EditPlannerPage({
       average_rating: p.average_rating,
       favorite_count: p.favorite_count,
       region: p.region.region_name,
+      review_count: null,
+      place_description: null,
+      place_detail_image: null,
+      region_id: null,
+      place_category: null,
     }));
 
     console.log(`[Server] Place 데이터 로드 완료. 총 ${places.length}개`);
@@ -159,7 +228,7 @@ export default async function EditPlannerPage({
   }
 
   // ✅ 장소 없음 처리
-  if (places.length === 0) {
+  if (places.length === 0 && !trip_id) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="max-w-md w-full mx-auto px-4">
@@ -205,6 +274,8 @@ export default async function EditPlannerPage({
     <PlannerEditor
       initialPlaces={places}
       regionOptions={regionNamesForFiltering}
+      existingTripTitle={existingTripTitle}
+      existingPlan={existingPlan}
     />
   );
 }

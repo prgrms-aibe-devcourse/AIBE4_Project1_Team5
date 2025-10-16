@@ -7,7 +7,6 @@ import { SortableItem } from "@/component/planner/SortableItem";
 import { savePlanToSession, validatePlan } from "@/lib/service/plannerService";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place, Plan } from "@/type/place";
-
 import { closestCenter, DndContext, DragEndEvent } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -24,10 +23,11 @@ interface DayInfo {
   date: string;
 }
 
-// ✅ 1. Props 인터페이스에 initialRegion 추가
 type PlannerEditorProps = {
   initialPlaces: Place[];
-  initialRegion?: string; // 페이지 URL로부터 전달받을 초기 지역
+  regionOptions?: string[];
+  existingTripTitle?: string;
+  existingPlan?: Plan;
 };
 
 const toNumOrNull = (v: unknown): number | null => {
@@ -40,7 +40,6 @@ const toNumOrNull = (v: unknown): number | null => {
 const coercePlace = (raw: any): Place => {
   const place_id =
     raw?.place_id ?? raw?.id ?? raw?.place?.place_id ?? raw?.place?.id ?? "";
-
   const place_name =
     raw?.place_name ??
     raw?.name ??
@@ -62,7 +61,6 @@ const coercePlace = (raw: any): Place => {
     review_count: (raw?.review_count as number | null) ?? null,
     place_description: null,
     place_detail_image: null,
-    region: (raw as any).region ?? null, // region 정보 추가
     region_id: null,
     place_category: null,
     visit_order: raw?.visit_order ?? undefined,
@@ -96,7 +94,9 @@ async function fetchPlaceWithCoords(place_id: string) {
 
 export default function PlannerEditor({
   initialPlaces = [],
-  initialRegion, // ✅ 2. prop 받기
+  regionOptions = [],
+  existingTripTitle = "",
+  existingPlan = {},
 }: PlannerEditorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,18 +105,11 @@ export default function PlannerEditor({
   const startDateStr = searchParams.get("start");
   const endDateStr = searchParams.get("end");
 
-  const [tripTitle, setTripTitle] = useState("");
-  const [plan, setPlan] = useState<Plan>({});
+  const [tripTitle, setTripTitle] = useState(existingTripTitle);
+  const [plan, setPlan] = useState<Plan>(existingPlan);
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-
-  // ✅ 3. 전달받은 장소 목록에서 중복을 제거한 지역 목록 생성
-  const regionOptions = useMemo(() => {
-    // initialPlaces에서 'region' 속성을 가져와 Set으로 중복을 제거 후 배열로 변환
-    const regions = new Set(initialPlaces.map(p => (p as any).region).filter(Boolean));
-    return Array.from(regions);
-  }, [initialPlaces]);
 
   const days: DayInfo[] = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -129,62 +122,71 @@ export default function PlannerEditor({
     }));
   }, [startDateStr, endDateStr]);
 
+  // ✅ 새 일정 모드에서만 빈 day 배열 초기화
   useEffect(() => {
+    if (tripIdToEdit) return; // 수정 모드에서는 실행하지 않음
+    if (days.length === 0) return;
+
     setPlan((prev) => {
-      const next: Plan = { ...prev };
-      for (const d of days) if (!next[d.day]) next[d.day] = [];
-      for (const k of Object.keys(next)) {
-        const dn = Number(k);
-        if (!days.some((d) => d.day === dn)) delete next[dn];
+      // 이미 데이터가 있으면 건드리지 않음
+      if (Object.keys(prev).length > 0) return prev;
+
+      const next: Plan = {};
+      for (const d of days) {
+        next[d.day] = [];
       }
       return next;
     });
-    if (days.length > 0 && (activeDay < 1 || activeDay > days.length))
-      setActiveDay(1);
-  }, [days]);
 
-    // AI 추천 계획을 처리하기 위한 useEffect
-    useEffect(() => {
-        const aiGeneratedPlanStr = searchParams.get("aiPlan");
-        const aiGeneratedTitle = searchParams.get("aiTitle");
-        // URL에 aiPlan 데이터가 있을 경우에만 이 로직을 실행합니다.
-        if (aiGeneratedPlanStr) {
-            console.log("[PlannerEditor] AI가 생성한 계획을 적용합니다.");
-            if (aiGeneratedTitle) {
-                setTripTitle(aiGeneratedTitle);
-            }
-            const aiPlanData = JSON.parse(aiGeneratedPlanStr);
-            const newPlan: Plan = {};
-            for (const day in aiPlanData) {
-                const dayNumber = parseInt(day, 10);
-                if (!newPlan[dayNumber]) {
-                    newPlan[dayNumber] = [];
-                }
-                const placesForDay = aiPlanData[day]
-                    .map((p: { place_name: string }, index: number) => {
-                        const fullPlaceInfo = initialPlaces.find(ip => ip.place_name === p.place_name);
-                        if (fullPlaceInfo) {
-                            return {
-                                ...coercePlace(fullPlaceInfo),
-                                visit_order: index + 1,
-                                day_number: dayNumber
-                            };
-                        }
-                        return null;
-                    })
-                    .filter((p: Place | null): p is Place => p !== null);
-                newPlan[dayNumber] = placesForDay;
-            }
-            setPlan(newPlan);
+    if (activeDay < 1 || activeDay > days.length) {
+      setActiveDay(1);
+    }
+  }, [days.length, tripIdToEdit, activeDay]);
+
+  // AI 추천 계획을 처리하기 위한 useEffect
+  useEffect(() => {
+    const aiGeneratedPlanStr = searchParams.get("aiPlan");
+    const aiGeneratedTitle = searchParams.get("aiTitle");
+    // URL에 aiPlan 데이터가 있을 경우에만 이 로직을 실행합니다.
+    if (aiGeneratedPlanStr) {
+      console.log("[PlannerEditor] AI가 생성한 계획을 적용합니다.");
+      if (aiGeneratedTitle) {
+        setTripTitle(aiGeneratedTitle);
+      }
+      const aiPlanData = JSON.parse(aiGeneratedPlanStr);
+      const newPlan: Plan = {};
+      for (const day in aiPlanData) {
+        const dayNumber = parseInt(day, 10);
+        if (!newPlan[dayNumber]) {
+          newPlan[dayNumber] = [];
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const placesForDay = aiPlanData[day]
+          .map((p: { place_name: string }, index: number) => {
+            const fullPlaceInfo = initialPlaces.find(
+              (ip) => ip.place_name === p.place_name
+            );
+            if (fullPlaceInfo) {
+              return {
+                ...coercePlace(fullPlaceInfo),
+                visit_order: index + 1,
+                day_number: dayNumber,
+              };
+            }
+            return null;
+          })
+          .filter((p: Place | null): p is Place => p !== null);
+        newPlan[dayNumber] = placesForDay;
+      }
+      setPlan(newPlan);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** 장소 추가 */
   const handleAddPlace = async (rawPlace: Place, targetDay?: number) => {
     if (!days.length) return;
-    const day = targetDay ?? activeDay;
 
+    const day = targetDay ?? activeDay;
     let place = coercePlace(rawPlace);
 
     if (place.latitude == null || place.longitude == null) {
@@ -202,6 +204,7 @@ export default function PlannerEditor({
     setPlan((prev) => {
       const curr = prev[day] ?? [];
       if (curr.some((p) => p.place_id === place.place_id)) return prev;
+
       const nextDayList = [
         ...curr,
         { ...place, visit_order: curr.length + 1, day_number: day },
@@ -233,11 +236,13 @@ export default function PlannerEditor({
       const oldIndex = list.findIndex((p) => p.place_id === active.id);
       const newIndex = list.findIndex((p) => p.place_id === over.id);
       if (oldIndex < 0 || newIndex < 0) return prev;
+
       const reordered = arrayMove(list, oldIndex, newIndex).map((p, i) => ({
         ...p,
         visit_order: i + 1,
         day_number: activeDay,
       }));
+
       return { ...prev, [activeDay]: reordered };
     });
   };
@@ -248,6 +253,7 @@ export default function PlannerEditor({
       alert(validation.message);
       return;
     }
+
     setIsSaving(true);
     try {
       savePlanToSession({
@@ -265,6 +271,7 @@ export default function PlannerEditor({
     }
   };
 
+  // ✅ 로딩 중이 아니므로 바로 렌더링
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -430,13 +437,11 @@ export default function PlannerEditor({
 
           {/* 오른쪽 (장소 목록) */}
           <div className="lg:col-span-5">
-            {/* ✅ 4. TravelListContainer에 prop 전달 */}
             <TravelListContainer
               places={initialPlaces}
               onAddPlace={handleAddPlace}
               onPlaceClick={setSelectedPlaceId}
               regionOptions={regionOptions}
-              initialRegion={initialRegion}
             />
           </div>
         </div>
