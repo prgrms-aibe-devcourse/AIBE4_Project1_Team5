@@ -124,7 +124,7 @@ export default function PlannerEditor({
       setIsLoading(false);
     };
     initializePlan();
-  }, [aiGeneratedPlanStr, tripIdToEdit, initialPlaces, supabase]);
+  }, [aiGeneratedPlanStr, tripIdToEdit, initialPlaces]);
 
   const handleAddPlace = (place: Place) => {
     const isDuplicate = plan[activeDay]?.some(
@@ -160,8 +160,12 @@ export default function PlannerEditor({
     if (over && active.id !== over.id) {
       setPlan((prev) => {
         const activeDayPlaces = prev[activeDay] || [];
-        const oldIndex = activeDayPlaces.findIndex((p) => p.place_id === active.id);
-        const newIndex = activeDayPlaces.findIndex((p) => p.place_id === over.id);
+        const oldIndex = activeDayPlaces.findIndex(
+          (p) => p.place_id === active.id
+        );
+        const newIndex = activeDayPlaces.findIndex(
+          (p) => p.place_id === over.id
+        );
         return {
           ...prev,
           [activeDay]: arrayMove(activeDayPlaces, oldIndex, newIndex),
@@ -217,8 +221,18 @@ export default function PlannerEditor({
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
           >
-            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+            <svg
+              className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             <span className="font-medium">뒤로가기</span>
           </button>
@@ -246,8 +260,18 @@ export default function PlannerEditor({
           {startDateStr && endDateStr && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <div>
@@ -287,27 +311,54 @@ export default function PlannerEditor({
                   {plan[activeDay]?.length || 0}개 장소
                 </span>
               </div>
-              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={(plan[activeDay] || []).map((p) => p.place_id)} strategy={verticalListSortingStrategy}>
+              <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={(plan[activeDay] || []).map((p) => p.place_id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   {plan[activeDay] && plan[activeDay].length > 0 ? (
                     <div className="space-y-3">
                       {plan[activeDay].map((place) => (
                         <SortableItem
                           key={place.place_id}
                           place={place}
-                          onRemove={() => handleRemovePlace(activeDay, place.place_id)}
+                          onRemove={() =>
+                            handleRemovePlace(activeDay, place.place_id)
+                          }
                           onClick={() => handlePlaceClick(place.place_id)}
                         />
                       ))}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                      <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <svg
+                        className="w-16 h-16 mb-4 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
-                      <p className="text-lg font-medium text-gray-500 mb-1">아직 선택한 장소가 없어요</p>
-                      <p className="text-sm text-gray-400">오른쪽에서 원하는 장소를 추가해보세요</p>
+                      <p className="text-lg font-medium text-gray-500 mb-1">
+                        아직 선택한 장소가 없어요
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        오른쪽에서 원하는 장소를 추가해보세요
+                      </p>
                     </div>
                   )}
                 </SortableContext>
@@ -325,7 +376,10 @@ export default function PlannerEditor({
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pb-8">
-          <button onClick={() => router.back()} className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all">
+          <button
+            onClick={() => router.back()}
+            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
+          >
             취소
           </button>
           <button
@@ -334,8 +388,18 @@ export default function PlannerEditor({
             className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300"
           >
             {isSaving ? "처리 중..." : "일정 미리보기"}
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            <svg
+              className="w-5 h-5 ml-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </button>
         </div>
@@ -349,10 +413,20 @@ export default function PlannerEditor({
       )}
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
       `}</style>
     </div>
   );
