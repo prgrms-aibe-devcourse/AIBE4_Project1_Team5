@@ -92,7 +92,7 @@ export default function Page() {
 
       {/* 인기 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>인기 여행지 TOP3</h2>
+        <h2>인기 여행지</h2>
         <div className={styles["card-container"]}>
           {popularPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />
@@ -102,7 +102,7 @@ export default function Page() {
 
       {/* 베스트 여행지 */}
       <section className={styles["travel-section"]}>
-        <h2>베스트 여행지 TOP3</h2>
+        <h2>베스트 여행지</h2>
         <div className={styles["card-container"]}>
           {bestPlaces.map((place) => (
             <TravelCard key={place.place_id} place={place} />
