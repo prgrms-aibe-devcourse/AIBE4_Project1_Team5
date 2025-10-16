@@ -237,9 +237,9 @@ export default function TripDetailClient({
             <div key={day}>
               <h2 className="text-2xl font-semibold mb-3">Day {day}</h2>
               <div className="space-y-4">
-                {groupedDetails[Number(day)].map((detail) => (
+                {groupedDetails[Number(day)].map((detail, index) => (
                   <button
-                    key={detail.visit_order}
+                    key={`${day}-${detail.place.place_id}-${index}`}
                     onClick={() => handlePlaceClick(detail.place.place_id)}
                     className="w-full flex items-center gap-4 p-3 bg-white rounded-lg shadow hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-left"
                   >
