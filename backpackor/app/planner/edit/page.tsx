@@ -1,92 +1,202 @@
 // app/planner/edit/page.tsx
 
-import { createServerClient } from "@/lib/supabaseClient";
 import PlannerEditor from "@/component/planner/PlannerEditor";
+import { createServerClient } from "@/lib/supabaseClient";
 
 export interface Place {
-    place_id: string;
-    place_name: string;
-    place_image: string;
-    average_rating: number;
-    favorite_count: number;
+  place_id: string;
+  place_name: string;
+  place_image: string;
+  average_rating: number;
+  favorite_count: number;
 }
 
-// 페이지 컴포넌트가 URL의 searchParams를 통해 어떤 값들을 받을 수 있는지 정의
+// Next.js 15+ searchParams 타입 정의
 interface EditPlannerPageProps {
-    searchParams: {
-        region?: string | string[];
-        aiPlan?: string;
-        trip_id?: string;
-    }
+  searchParams: Promise<{
+    region?: string | string[];
+    aiPlan?: string;
+    trip_id?: string;
+    start?: string;
+    end?: string;
+  }>;
 }
 
 /**
  * 새로운 일정을 생성하거나 기존 일정을 수정하는 페이지입니다.
  * '생성'과 '수정' 경로를 분기하여, 각 상황에 맞는 장소 목록을 불러옵니다.
  */
-export default async function EditPlannerPage({ searchParams }: EditPlannerPageProps) {
-    const supabase = createServerClient();
-    const { trip_id } = searchParams;
+export default async function EditPlannerPage({
+  searchParams,
+}: EditPlannerPageProps) {
+  // searchParams는 Promise이므로 await 필요
+  const params = await searchParams;
+  const supabase = createServerClient();
+  const { trip_id, region } = params;
 
-    let places: Place[] = [];
-    let regionNamesForFiltering: string[] = [];
+  let places: Place[] = [];
+  let regionNamesForFiltering: string[] = [];
 
-    try {
-        if (trip_id) {
-            // [수정 경로 로직]
-            const { data: detailData, error: detailError } = await supabase
-                .from('trip_plan_detail')
-                .select('place_id')
-                .eq('trip_id', trip_id);
-            if (detailError) throw new Error(`상세 일정 정보를 가져오지 못했습니다: ${detailError.message}`);
+  try {
+    if (trip_id) {
+      // [수정 경로 로직]
+      console.log(`[Server] 기존 일정 수정 모드 (trip_id: ${trip_id})`);
 
-            if (detailData && detailData.length > 0) {
-                const placeIds = detailData.map(item => item.place_id);
-                const { data: regionData, error: regionError } = await supabase
-                    .from('place')
-                    .select('region!inner(region_name)')
-                    .in('place_id', placeIds);
-                if (regionError) throw new Error(`장소의 지역 정보를 가져오지 못했습니다: ${regionError.message}`);
+      const { data: detailData, error: detailError } = await supabase
+        .from("trip_plan_detail")
+        .select("place_id")
+        .eq("trip_id", trip_id);
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                regionNamesForFiltering = [...new Set(regionData.map((item: any) => item.region.region_name))];
-            }
-        } else {
-            // [생성 경로 로직]
-            const selectedRegions = Array.isArray(searchParams.region)
-                ? searchParams.region
-                : searchParams.region ? [searchParams.region] : [];
-            regionNamesForFiltering = selectedRegions;
+      if (detailError) {
+        throw new Error(
+          `상세 일정 정보를 가져오지 못했습니다: ${detailError.message}`
+        );
+      }
+
+      if (detailData && detailData.length > 0) {
+        const placeIds = detailData.map((item) => item.place_id);
+        const { data: regionData, error: regionError } = await supabase
+          .from("place")
+          .select("region!inner(region_name)")
+          .in("place_id", placeIds);
+
+        if (regionError) {
+          throw new Error(
+            `장소의 지역 정보를 가져오지 못했습니다: ${regionError.message}`
+          );
         }
 
-        // --- 데이터 조회 시 실제 DB 컬럼명으로 요청. ---
-        let query = supabase
-            .from('place')
-            .select('place_id, place_name, place_image, average_rating, favorite_count, region!inner(region_name)');
+        regionNamesForFiltering = [
+          ...new Set(regionData.map((item: any) => item.region.region_name)),
+        ];
 
-        if (regionNamesForFiltering.length > 0) {
-            query = query.in('region.region_name', regionNamesForFiltering);
-        }
+        console.log(
+          `[Server] 필터링할 지역: ${regionNamesForFiltering.join(", ")}`
+        );
+      }
+    } else {
+      // [생성 경로 로직]
+      console.log("[Server] 새 일정 생성 모드");
 
-        const { data: placeData, error: placeError } = await query;
-        if (placeError) throw placeError;
+      const selectedRegions = Array.isArray(region)
+        ? region
+        : region
+        ? [region]
+        : [];
+      regionNamesForFiltering = selectedRegions;
 
-        // --- 받아온 데이터를 PlannerEditor로 전달 ---
-        places = placeData.map(p => ({
-            place_id: p.place_id,
-            place_name: p.place_name,
-            place_image: p.place_image,
-            average_rating: p.average_rating,
-            favorite_count: p.favorite_count
-        }));
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-        console.error("장소 데이터를 불러오는 데 실패했습니다:", error.message);
-        return <div>에러가 발생했습니다: 장소 목록을 불러올 수 없습니다.</div>;
+      console.log(
+        `[Server] 선택된 지역: ${regionNamesForFiltering.join(", ")}`
+      );
     }
 
-    console.log(`[Server] Place 데이터 로드 완료. 총 ${places.length}개.`);
+    // 장소 데이터 조회
+    let query = supabase
+      .from("place")
+      .select(
+        "place_id, place_name, place_image, average_rating, favorite_count, region!inner(region_name)"
+      );
 
-    return <PlannerEditor initialPlaces={places} />;
+    if (regionNamesForFiltering.length > 0) {
+      query = query.in("region.region_name", regionNamesForFiltering);
+    }
+
+    const { data: placeData, error: placeError } = await query;
+
+    if (placeError) {
+      throw new Error(`장소 데이터 조회 실패: ${placeError.message}`);
+    }
+
+    // 데이터 매핑
+    places = (placeData || []).map((p) => ({
+      place_id: p.place_id,
+      place_name: p.place_name,
+      place_image: p.place_image,
+      average_rating: p.average_rating,
+      favorite_count: p.favorite_count,
+    }));
+
+    console.log(`[Server] Place 데이터 로드 완료. 총 ${places.length}개`);
+  } catch (error: any) {
+    console.error("[Server] 장소 데이터 로드 실패:", error.message);
+
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <svg
+              className="w-16 h-16 text-red-500 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              데이터를 불러올 수 없습니다
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {error.message || "알 수 없는 오류가 발생했습니다."}
+            </p>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
+            >
+              이전 페이지로 돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 장소가 없을 때 처리
+  if (places.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
+            <svg
+              className="w-20 h-20 text-gray-300 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              선택한 지역에 여행지가 없습니다
+            </h2>
+            <p className="text-gray-600 mb-6">
+              다른 지역을 선택하거나 지역을 추가해보세요
+            </p>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
+            >
+              지역 다시 선택하기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <PlannerEditor initialPlaces={places} />;
 }
