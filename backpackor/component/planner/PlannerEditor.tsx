@@ -110,7 +110,7 @@ export default function PlannerEditor({
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-  
+
   // ✅ 3. 전달받은 장소 목록에서 중복을 제거한 지역 목록 생성
   const regionOptions = useMemo(() => {
     // initialPlaces에서 'region' 속성을 가져와 Set으로 중복을 제거 후 배열로 변환
@@ -142,6 +142,43 @@ export default function PlannerEditor({
     if (days.length > 0 && (activeDay < 1 || activeDay > days.length))
       setActiveDay(1);
   }, [days]);
+
+    // AI 추천 계획을 처리하기 위한 useEffect
+    useEffect(() => {
+        const aiGeneratedPlanStr = searchParams.get("aiPlan");
+        const aiGeneratedTitle = searchParams.get("aiTitle");
+        // URL에 aiPlan 데이터가 있을 경우에만 이 로직을 실행합니다.
+        if (aiGeneratedPlanStr) {
+            console.log("[PlannerEditor] AI가 생성한 계획을 적용합니다.");
+            if (aiGeneratedTitle) {
+                setTripTitle(aiGeneratedTitle);
+            }
+            const aiPlanData = JSON.parse(aiGeneratedPlanStr);
+            const newPlan: Plan = {};
+            for (const day in aiPlanData) {
+                const dayNumber = parseInt(day, 10);
+                if (!newPlan[dayNumber]) {
+                    newPlan[dayNumber] = [];
+                }
+                const placesForDay = aiPlanData[day]
+                    .map((p: { place_name: string }, index: number) => {
+                        const fullPlaceInfo = initialPlaces.find(ip => ip.place_name === p.place_name);
+                        if (fullPlaceInfo) {
+                            return {
+                                ...coercePlace(fullPlaceInfo),
+                                visit_order: index + 1,
+                                day_number: dayNumber
+                            };
+                        }
+                        return null;
+                    })
+                    .filter((p: Place | null): p is Place => p !== null);
+                newPlan[dayNumber] = placesForDay;
+            }
+            setPlan(newPlan);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   /** 장소 추가 */
   const handleAddPlace = async (rawPlace: Place, targetDay?: number) => {
