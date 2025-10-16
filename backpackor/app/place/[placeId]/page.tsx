@@ -1,125 +1,57 @@
 // app/place/[placeId]/page.tsx
-import RelatedPlacesSection from "@/component/place/RelatedPlacesSection";
-import TravelReviewSection from "@/component/review/TravelReviewSection";
-import FavoriteButton from "@/component/place/FavoriteButton";
-import TravelInfoSection from "@/component/place/TravelInfoSection";
-import { notFound } from "next/navigation";
-import { createServerClient } from "@/lib/supabaseClient";
-import { TravelDetail } from "@/type/travel";
-import styles from "./page.module.css"; // ⭐ 이 줄 추가!
+// 특정 placeId에 해당하는 여행지 상세 페이지 서버 컴포넌트
+// Supabase에서 place 데이터와 사용자 찜 상태를 조회 후 PlaceDetailContent 컴포넌트에 전달해 렌더링
 
-interface TravelDetailPageProps {
-  params: {
-    placeId: string;
-  };
+import { createServerClient } from "@/lib/supabaseClient";
+import { notFound } from "next/navigation";
+import PlaceDetailContent from "@/component/place/PlaceDetailContent";
+import { TravelDetail } from "@/type/travel";
+
+interface PageProps {
+  params: { placeId: string };
 }
 
-const TravelDetailPage = async ({
-  params,
-}: {
-  params: { placeId: string } | Promise<{ placeId: string }>;
-}) => {
-  const { placeId } = await params;
+export default async function PlaceDetailPage({ params }: PageProps) {
   const supabase = createServerClient();
+  const { placeId } = await params;
 
-  const fetchDetail = async (id: string): Promise<TravelDetail> => {
-    const { data: dbData, error: dbError } = await supabase
-      .from("place")
-      .select("*")
-      .eq("place_id", id)
-      .single();
+  // Supabase에서 placeId에 해당하는 여행지 상세 데이터 조회
+  const { data, error } = await supabase
+    .from("place")
+    .select("*")
+    .eq("place_id", placeId)
+    .single();
 
-    if (dbError || !dbData) {
-      notFound();
-    }
+  // 데이터 없거나 에러 발생 시 404 페이지로 이동
+  if (error || !data) {
+    notFound();
+  }
 
-    return dbData as TravelDetail;
-  };
+  // 현재 로그인한 사용자 정보 조회
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // 사용자의 찜 상태 확인
-  const checkUserFavorite = async (id: string): Promise<boolean> => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  // 사용자 찜 상태 초기값 false
+  let initialIsFavorite = false;
 
-    if (!user) return false;
-
-    const { data } = await supabase
+  // 로그인 상태면 사용자 찜 여부 조회
+  if (user) {
+    const { data: favData } = await supabase
       .from("user_favorite_place")
       .select("place_id")
       .eq("user_id", user.id)
-      .eq("place_id", id)
+      .eq("place_id", placeId)
       .single();
 
-    return !!data;
-  };
+    initialIsFavorite = !!favData;
+  }
 
-  const data = await fetchDetail(placeId);
-  const initialIsFavorite = await checkUserFavorite(placeId);
-
+  // PlaceDetailContent 컴포넌트에 place 데이터와 찜 상태 전달해 렌더링
   return (
-    <div className={styles.travelAppContainer}>
-      {/* 1. 커버 이미지 섹션 및 오버레이 정보 */}
-      <div
-        className={styles.coverSection}
-        style={{
-          backgroundImage: `url(${data.place_detail_image})`,
-        }}
-      >
-        {/* 찜 버튼 */}
-        <FavoriteButton
-          initialIsFavorite={initialIsFavorite}
-          initialFavoriteCount={data.favorite_count}
-          placeId={data.place_id}
-        />
-
-        {/* 제목, 주소, 평점 정보 */}
-        <div className={styles.overlayInfo}>
-          <h2>[ {data.place_category} ]</h2>
-          <h1>{data.place_name}</h1>
-          <div className={styles.subtitleRatingLine}>
-            <span className={styles.rating}>
-              ⭐ {data.average_rating.toFixed(1)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. 상세 소개, 리뷰, 추천 장소 / 여행 정보 (2단 Grid 레이아웃) */}
-      <div className={styles.detailContentLayout}>
-        {/* 2-A: 왼쪽 섹션 (소개, 리뷰, 추천) */}
-        <div className={styles.detailLeftSection}>
-          {/* 여행 소개 섹션 */}
-          <div className={styles.travelIntro}>
-            <h2>여행 소개</h2>
-            <p>{data.place_description}</p>
-          </div>
-
-          {/* 여행 리뷰 섹션 */}
-          <TravelReviewSection
-            placeId={data.place_id}
-            averageRating={data.average_rating}
-            reviewCount={data.favorite_count}
-          />
-
-          {/* 같이 가보면 좋을 장소 섹션 */}
-          <RelatedPlacesSection
-            regionId={data.region_id}
-            currentPlaceId={data.place_id}
-          />
-        </div>
-
-        {/* 2-B: 오른쪽 섹션 (여행 정보) */}
-        <div className={styles.detailRightSection}>
-          <TravelInfoSection
-            placeAddress={data.place_address}
-            travelPeriod="2박 3일 ~ 3박 4일"
-            flightInfo="인천/김포 공항"
-          />
-        </div>
-      </div>
-    </div>
+    <PlaceDetailContent
+      place={data as TravelDetail}
+      initialIsFavorite={initialIsFavorite}
+    />
   );
-};
-
-export default TravelDetailPage;
+}
