@@ -1,4 +1,6 @@
-// app/review/detail/[id]/page.tsx
+// app/review/detail/[id]/page.tsx 
+
+
 'use client';
 
 import { use, useState, useEffect } from 'react';
