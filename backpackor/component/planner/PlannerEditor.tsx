@@ -1,3 +1,4 @@
+// component/planner/PlannerEditor.tsx
 "use client";
 
 import PlaceDetailModal from "@/component/place/PlaceDetailModal";
@@ -23,9 +24,10 @@ interface DayInfo {
   date: string;
 }
 
+// ✅ 1. Props 인터페이스에 initialRegion 추가
 type PlannerEditorProps = {
   initialPlaces: Place[];
-  initialRegion?: string[];
+  initialRegion?: string; // 페이지 URL로부터 전달받을 초기 지역
 };
 
 const toNumOrNull = (v: unknown): number | null => {
@@ -94,7 +96,7 @@ async function fetchPlaceWithCoords(place_id: string) {
 
 export default function PlannerEditor({
   initialPlaces = [],
-  initialRegion,
+  initialRegion, // ✅ 2. prop 받기
 }: PlannerEditorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,12 +110,11 @@ export default function PlannerEditor({
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-
-  // ✅ 전달받은 장소 목록에서 지역 목록 생성 (중복 제거)
+  
+  // ✅ 3. 전달받은 장소 목록에서 중복을 제거한 지역 목록 생성
   const regionOptions = useMemo(() => {
-    const regions = new Set(
-      initialPlaces.map((p) => (p as any).region).filter(Boolean)
-    );
+    // initialPlaces에서 'region' 속성을 가져와 Set으로 중복을 제거 후 배열로 변환
+    const regions = new Set(initialPlaces.map(p => (p as any).region).filter(Boolean));
     return Array.from(regions);
   }, [initialPlaces]);
 
@@ -392,6 +393,7 @@ export default function PlannerEditor({
 
           {/* 오른쪽 (장소 목록) */}
           <div className="lg:col-span-5">
+            {/* ✅ 4. TravelListContainer에 prop 전달 */}
             <TravelListContainer
               places={initialPlaces}
               onAddPlace={handleAddPlace}
