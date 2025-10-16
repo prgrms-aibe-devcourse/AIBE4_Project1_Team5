@@ -1,3 +1,5 @@
+// component/planner/PlannerEditor.tsx
+
 "use client";
 
 import { SortableItem } from "@/component/planner/SortableItem";
@@ -10,7 +12,6 @@ import {
 } from "@dnd-kit/sortable";
 import { addDays, differenceInDays, format } from "date-fns";
 import { ko } from "date-fns/locale";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TravelListContainer from "@/component/place/TravelListContainer";
@@ -23,6 +24,7 @@ export interface Place {
   average_rating: number;
   favorite_count: number;
   review_count?: number;
+  region: string;
 }
 
 interface DayInfo {
@@ -34,10 +36,12 @@ type Plan = Record<number, Place[]>;
 
 type PlannerEditorProps = {
   initialPlaces: Place[];
+  regionOptions: string[];
 };
 
 export default function PlannerEditor({
   initialPlaces = [],
+  regionOptions = [],
 }: PlannerEditorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,11 +58,8 @@ export default function PlannerEditor({
   const [activeDay, setActiveDay] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-
-  // 모달 상태 추가
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
-  // 날짜 정보 계산
   let days: DayInfo[] = [];
   if (startDateStr && endDateStr) {
     const start = new Date(startDateStr);
@@ -69,10 +70,6 @@ export default function PlannerEditor({
       date: format(addDays(start, i), "yyyy. MM. dd"),
     }));
   }
-
-  console.log("시작일:", startDateStr);
-  console.log("종료일:", endDateStr);
-  console.log("계산된 여행 기간(days):", days);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -98,14 +95,29 @@ export default function PlannerEditor({
           .single();
         if (planData) setTripTitle(planData.trip_title);
 
-        const { data: details } = await supabase
+        // ✨ 쿼리 수정: place(*) 대신 place(*, region(region_name))으로 변경
+        const { data: details, error } = await supabase
           .from("trip_plan_detail")
-          .select("day_number, place(*)")
+          .select("day_number, place(*, region(region_name))")
           .eq("trip_id", tripIdToEdit);
+
+        if (error) {
+          console.error("상세 일정 로딩 실패:", error);
+          setIsLoading(false);
+          return;
+        }
+
         const newPlan: Plan = {};
         ((details as any[]) || []).forEach((detail) => {
-          if (!newPlan[detail.day_number]) newPlan[detail.day_number] = [];
-          newPlan[detail.day_number].push(detail.place);
+          if (!newPlan[detail.day_number]) {
+            newPlan[detail.day_number] = [];
+          }
+          // ✨ 데이터 가공: place 객체에 region 정보 추가
+          const placeWithRegion = {
+            ...detail.place,
+            region: detail.place.region?.region_name || "지역 정보 없음",
+          };
+          newPlan[detail.day_number].push(placeWithRegion);
         });
         setPlan(newPlan);
       }
@@ -114,7 +126,6 @@ export default function PlannerEditor({
     initializePlan();
   }, [aiGeneratedPlanStr, tripIdToEdit, initialPlaces, supabase]);
 
-  // 장소 추가
   const handleAddPlace = (place: Place) => {
     const isDuplicate = plan[activeDay]?.some(
       (p) => p.place_id === place.place_id
@@ -123,14 +134,12 @@ export default function PlannerEditor({
       alert("이미 추가된 장소입니다.");
       return;
     }
-
     setPlan((prev) => ({
       ...prev,
       [activeDay]: [...(prev[activeDay] || []), place],
     }));
   };
 
-  // 장소 제거
   const handleRemovePlace = (day: number, placeId: string) => {
     setPlan((prev) => ({
       ...prev,
@@ -138,28 +147,21 @@ export default function PlannerEditor({
     }));
   };
 
-  // 장소 클릭 (모달 열기)
   const handlePlaceClick = (placeId: string) => {
     setSelectedPlaceId(placeId);
   };
 
-  // 모달 닫기
   const handleCloseModal = () => {
     setSelectedPlaceId(null);
   };
 
-  // 드래그 앤 드롭
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setPlan((prev) => {
         const activeDayPlaces = prev[activeDay] || [];
-        const oldIndex = activeDayPlaces.findIndex(
-          (p) => p.place_id === active.id
-        );
-        const newIndex = activeDayPlaces.findIndex(
-          (p) => p.place_id === over.id
-        );
+        const oldIndex = activeDayPlaces.findIndex((p) => p.place_id === active.id);
+        const newIndex = activeDayPlaces.findIndex((p) => p.place_id === over.id);
         return {
           ...prev,
           [activeDay]: arrayMove(activeDayPlaces, oldIndex, newIndex),
@@ -168,19 +170,16 @@ export default function PlannerEditor({
     }
   };
 
-  // 미리보기로 이동
   const handlePreviewPlan = () => {
     if (!tripTitle.trim()) {
       alert("여행 제목을 입력해주세요.");
       return;
     }
-
     const hasPlaces = Object.values(plan).some((places) => places.length > 0);
     if (!hasPlaces) {
       alert("최소 1개 이상의 장소를 추가해주세요.");
       return;
     }
-
     const draft = {
       tripIdToEdit: tripIdToEdit ?? null,
       tripTitle,
@@ -188,7 +187,6 @@ export default function PlannerEditor({
       endDateStr,
       plan,
     };
-
     try {
       sessionStorage.setItem("planner_draft", JSON.stringify(draft));
       router.push("/planner/preview");
@@ -214,24 +212,13 @@ export default function PlannerEditor({
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 헤더 */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
           >
-            <svg
-              className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
+            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
             </svg>
             <span className="font-medium">뒤로가기</span>
           </button>
@@ -243,7 +230,6 @@ export default function PlannerEditor({
           </p>
         </div>
 
-        {/* 여행 제목 & 날짜 */}
         <div className="bg-white rounded-2xl p-6 mb-8 border-2 border-gray-200 shadow-sm">
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -257,22 +243,11 @@ export default function PlannerEditor({
               className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-medium"
             />
           </div>
-
           {startDateStr && endDateStr && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
               </div>
               <div>
@@ -286,11 +261,8 @@ export default function PlannerEditor({
           )}
         </div>
 
-        {/* 레이아웃: 왼쪽=Day+일정, 오른쪽=여행지 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 왼쪽: Day 탭 + 일정(DnD) */}
           <div className="lg:col-span-7">
-            {/* Day 탭 */}
             <div className="flex gap-2 mb-6 flex-wrap">
               {days.map((dayInfo) => (
                 <button
@@ -306,8 +278,6 @@ export default function PlannerEditor({
                 </button>
               ))}
             </div>
-
-            {/* 일정 카드 */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm min-h-[500px]">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">
@@ -317,104 +287,60 @@ export default function PlannerEditor({
                   {plan[activeDay]?.length || 0}개 장소
                 </span>
               </div>
-
-              <DndContext
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={(plan[activeDay] || []).map((p) => p.place_id)}
-                  strategy={verticalListSortingStrategy}
-                >
+              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={(plan[activeDay] || []).map((p) => p.place_id)} strategy={verticalListSortingStrategy}>
                   {plan[activeDay] && plan[activeDay].length > 0 ? (
                     <div className="space-y-3">
                       {plan[activeDay].map((place) => (
                         <SortableItem
                           key={place.place_id}
                           place={place}
-                          onRemove={() =>
-                            handleRemovePlace(activeDay, place.place_id)
-                          }
+                          onRemove={() => handleRemovePlace(activeDay, place.place_id)}
                           onClick={() => handlePlaceClick(place.place_id)}
                         />
                       ))}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                      <svg
-                        className="w-16 h-16 mb-4 text-gray-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
+                      <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                       </svg>
-                      <p className="text-lg font-medium text-gray-500 mb-1">
-                        아직 선택한 장소가 없어요
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        오른쪽에서 원하는 장소를 추가해보세요
-                      </p>
+                      <p className="text-lg font-medium text-gray-500 mb-1">아직 선택한 장소가 없어요</p>
+                      <p className="text-sm text-gray-400">오른쪽에서 원하는 장소를 추가해보세요</p>
                     </div>
                   )}
                 </SortableContext>
               </DndContext>
             </div>
           </div>
-
-          {/* 오른쪽: 여행지(정렬/검색/목록) */}
           <div className="lg:col-span-5">
             <TravelListContainer
               places={initialPlaces}
               onAddPlace={handleAddPlace}
               onPlaceClick={handlePlaceClick}
+              regionOptions={regionOptions}
             />
           </div>
         </div>
 
-        {/* 하단 버튼 */}
         <div className="mt-8 flex justify-end gap-3 pb-8">
-          <button
-            onClick={() => router.back()}
-            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
-          >
+          <button onClick={() => router.back()} className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all">
             취소
           </button>
           <button
             onClick={handlePreviewPlan}
             disabled={isSaving}
-            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300"
           >
             {isSaving ? "처리 중..." : "일정 미리보기"}
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
             </svg>
           </button>
         </div>
       </div>
 
-      {/* 모달 */}
       {selectedPlaceId && (
         <PlaceDetailModal
           placeId={selectedPlaceId}
@@ -423,20 +349,10 @@ export default function PlannerEditor({
       )}
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
     </div>
   );
