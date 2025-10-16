@@ -5,13 +5,16 @@
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/type/place";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+// ✅ 1. Props 인터페이스에 initialRegion 추가
 interface TravelListContainerProps {
   places: Place[];
   onAddPlace: (place: Place) => void;
   onPlaceClick: (placeId: string) => void;
   regionOptions: string[];
+  initialRegion?: string; // 이전 페이지에서 선택한 지역을 받을 prop
 }
 
 const INITIAL_ITEM_COUNT = 10;
@@ -22,60 +25,70 @@ export default function TravelListContainer({
   onAddPlace,
   onPlaceClick,
   regionOptions = [],
+  initialRegion, // ✅ 2. prop 받기
 }: TravelListContainerProps) {
-  const supabase = createBrowserClient();
+  const router = useRouter();
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState("popularity_desc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ITEM_COUNT);
 
-  const [selectedRegion, setSelectedRegion] = useState("전체");
+  // ✅ 3. selectedRegion 상태의 초기값을 initialRegion prop으로 설정
+  const [selectedRegion, setSelectedRegion] = useState(initialRegion || "전체");
+  
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritePlaceIds, setFavoritePlaceIds] = useState<Set<string>>(
     new Set()
   );
 
   useEffect(() => {
-    if (!showFavoritesOnly) return; // false면 아무것도 안 함
-
     const fetchFavorites = async () => {
-      // ⚠️ 실제 사용자의 ID를 가져오는 로직이 필요합니다.
-      const userId = "USER_ID_PLACEHOLDER";
-      if (!userId) return;
+      setIsLoadingFavorites(true);
+      const supabase = createBrowserClient();
 
-      const { data, error } = await supabase
-        .from("user_favorite_place")
-        .select("place_id")
-        .eq("user_id", userId);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (error) {
-        console.error("찜 목록 조회 실패:", error);
-      } else if (data) {
-        setFavoritePlaceIds(new Set(data.map((item) => item.place_id)));
+        if (user) {
+          const { data, error } = await supabase
+            .from("user_favorite_place")
+            .select("place_id")
+            .eq("user_id", user.id);
+
+          if (error) throw error;
+          if (data) {
+            setFavoritePlaceIds(new Set(data.map((item) => item.place_id)));
+          }
+        }
+      } catch (error) {
+        console.error("🚨 찜 목록 조회 중 에러:", error);
+      } finally {
+        setIsLoadingFavorites(false);
       }
     };
 
     fetchFavorites();
-  }, [showFavoritesOnly, supabase]);
+  }, []);
 
   const displayPlaces = useMemo(() => {
     let filteredPlaces = [...places];
 
-    // ✅ 찜한 여행지 필터링
-    if (showFavoritesOnly && favoritePlaceIds.size > 0) {
+    if (showFavoritesOnly) {
       filteredPlaces = filteredPlaces.filter((place) =>
         favoritePlaceIds.has(place.place_id)
       );
     }
-
-    // 지역 필터링
+    
+    // (place as any) 부분은 실제 Place 타입에 region 속성이 있는지에 따라 조정이 필요할 수 있습니다.
     if (selectedRegion !== "전체") {
       filteredPlaces = filteredPlaces.filter(
-        (place) => place.region === selectedRegion
+        (place) => (place as any).region === selectedRegion
       );
     }
 
-    // 정렬
     const sorted = filteredPlaces.sort((a, b) => {
       switch (sortOrder) {
         case "review_desc":
@@ -88,7 +101,6 @@ export default function TravelListContainer({
       }
     });
 
-    // 검색 필터링
     if (!searchKeyword) return sorted;
     return sorted.filter((place) =>
       place.place_name.toLowerCase().includes(searchKeyword.toLowerCase())
@@ -122,8 +134,9 @@ export default function TravelListContainer({
       </div>
 
       <div className="flex items-center gap-4 mb-4">
+        {/* 이 select의 value가 props로 받은 초기값으로 설정됩니다. */}
         <select
-          value={selectedRegion}
+          value={selectedRegion} 
           onChange={(e) => setSelectedRegion(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
@@ -140,11 +153,14 @@ export default function TravelListContainer({
             id="favorites-checkbox"
             checked={showFavoritesOnly}
             onChange={(e) => setShowFavoritesOnly(e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            disabled={isLoadingFavorites}
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
           />
           <label
             htmlFor="favorites-checkbox"
-            className="ml-2 text-sm font-medium text-gray-900"
+            className={`ml-2 text-sm font-medium text-gray-900 ${
+              isLoadingFavorites ? "text-gray-400" : ""
+            }`}
           >
             찜한 여행지
           </label>
@@ -175,7 +191,11 @@ export default function TravelListContainer({
       </div>
 
       <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        {displayPlaces.length > 0 ? (
+        {isLoadingFavorites ? (
+          <div className="text-center py-12 text-gray-500">
+            찜 목록을 확인하는 중...
+          </div>
+        ) : displayPlaces.length > 0 ? (
           <>
             {displayPlaces.slice(0, visibleCount).map((place) => (
               <div
@@ -190,6 +210,7 @@ export default function TravelListContainer({
                         src={place.place_image}
                         alt={place.place_name}
                         fill
+                        sizes="56px"
                         className="rounded-lg object-cover"
                       />
                     </div>
@@ -199,7 +220,7 @@ export default function TravelListContainer({
                       {place.place_name}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {place.region}
+                      {(place as any).region}
                     </div>
                     <div className="text-xs text-gray-500 flex items-center gap-3 mt-1">
                       <span>⭐ {place.average_rating?.toFixed(1) ?? "-"}</span>

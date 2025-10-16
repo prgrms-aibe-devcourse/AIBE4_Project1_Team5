@@ -24,11 +24,11 @@ interface DayInfo {
   date: string;
 }
 
-type PlannerEditorProps = { 
+// ✅ 1. Props 인터페이스에 initialRegion 추가
+type PlannerEditorProps = {
   initialPlaces: Place[];
-  regionOptions?: string[];
-
- };
+  initialRegion?: string; // 페이지 URL로부터 전달받을 초기 지역
+};
 
 const toNumOrNull = (v: unknown): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -62,6 +62,7 @@ const coercePlace = (raw: any): Place => {
     review_count: (raw?.review_count as number | null) ?? null,
     place_description: null,
     place_detail_image: null,
+    region: (raw as any).region ?? null, // region 정보 추가
     region_id: null,
     place_category: null,
     visit_order: raw?.visit_order ?? undefined,
@@ -93,7 +94,10 @@ async function fetchPlaceWithCoords(place_id: string) {
   }
 }
 
-export default function PlannerEditor({ initialPlaces = [] }: PlannerEditorProps) {
+export default function PlannerEditor({
+  initialPlaces = [],
+  initialRegion, // ✅ 2. prop 받기
+}: PlannerEditorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -106,6 +110,13 @@ export default function PlannerEditor({ initialPlaces = [] }: PlannerEditorProps
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  
+  // ✅ 3. 전달받은 장소 목록에서 중복을 제거한 지역 목록 생성
+  const regionOptions = useMemo(() => {
+    // initialPlaces에서 'region' 속성을 가져와 Set으로 중복을 제거 후 배열로 변환
+    const regions = new Set(initialPlaces.map(p => (p as any).region).filter(Boolean));
+    return Array.from(regions);
+  }, [initialPlaces]);
 
   const days: DayInfo[] = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -382,10 +393,13 @@ export default function PlannerEditor({ initialPlaces = [] }: PlannerEditorProps
 
           {/* 오른쪽 (장소 목록) */}
           <div className="lg:col-span-5">
+            {/* ✅ 4. TravelListContainer에 prop 전달 */}
             <TravelListContainer
               places={initialPlaces}
               onAddPlace={handleAddPlace}
               onPlaceClick={setSelectedPlaceId}
+              regionOptions={regionOptions}
+              initialRegion={initialRegion}
             />
           </div>
         </div>
