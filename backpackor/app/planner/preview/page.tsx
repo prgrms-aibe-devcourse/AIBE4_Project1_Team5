@@ -1,18 +1,13 @@
 // app/planner/preview/page.tsx
 "use client";
 
+import KakaoMultiRouteMap from "@/component/map/KakaoMultiRouteMap";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
-declare global {
-  interface Window {
-    kakao: any;
-  }
-}
 
 /** DB place 스키마와 맞춤 */
 type Place = {
@@ -39,197 +34,6 @@ type Draft = {
   plan: Plan;
 };
 
-const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
-
-/* Kakao SDK 로더 */
-function useKakaoLoader() {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.kakao?.maps) {
-      setLoaded(true);
-      return;
-    }
-    if (!KAKAO_KEY) {
-      console.warn("NEXT_PUBLIC_KAKAO_MAP_API_KEY가 없습니다.");
-      return;
-    }
-    const id = "kakao-sdk";
-    if (document.getElementById(id)) return;
-
-    const s = document.createElement("script");
-    s.id = id;
-    s.async = true;
-    s.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
-    s.onload = () => window.kakao.maps.load(() => setLoaded(true));
-    document.head.appendChild(s);
-  }, []);
-
-  return loaded;
-}
-
-/* Day별 고정 팔레트 */
-const routeColors = [
-  "#2563EB", // blue-600
-  "#10B981", // emerald-500
-  "#F59E0B", // amber-500
-  "#EF4444", // red-500
-  "#8B5CF6", // violet-500
-  "#14B8A6", // teal-500
-  "#F97316", // orange-500
-  "#22C55E", // green-500
-  "#06B6D4", // cyan-500
-  "#E11D48", // rose-600
-];
-const colorForIndex = (i: number) => routeColors[i % routeColors.length];
-
-/** 하나의 지도에 모든 Day 경로를 색 다르게 그리기 */
-function KakaoMultiRouteMap({ plan }: { plan: Plan }) {
-  const loaded = useKakaoLoader();
-  const dayKeys = useMemo(
-    () =>
-      Object.keys(plan)
-        .map((n) => parseInt(n, 10))
-        .sort((a, b) => a - b),
-    [plan]
-  );
-
-  useEffect(() => {
-    if (!loaded) return;
-    const container = document.getElementById("kakao-map");
-    if (!container) return;
-
-    const kakao = window.kakao;
-    const map = new kakao.maps.Map(container, {
-      center: new kakao.maps.LatLng(37.5665, 126.978), // 기본(서울 시청)
-      level: 7,
-    });
-
-    const allBounds = new kakao.maps.LatLngBounds();
-
-    // Day별로 그리기
-    dayKeys.forEach((day, idx) => {
-      const places = plan[day] || [];
-      // 위경도 있는 것만 사용
-      const coords = places
-        .filter(
-          (p) =>
-            typeof p.latitude === "number" && typeof p.longitude === "number"
-        )
-        .map((p) => ({
-          p,
-          latlng: new kakao.maps.LatLng(
-            Number(p.latitude),
-            Number(p.longitude)
-          ),
-        }));
-
-      if (coords.length === 0) return;
-
-      const color = colorForIndex(idx);
-      const dayBounds = new kakao.maps.LatLngBounds();
-
-      // 마커 + 넘버 오버레이
-      coords.forEach((c, i) => {
-        new kakao.maps.Marker({
-          position: c.latlng,
-          map,
-        });
-
-        // D{day}-{i+1} 라벨
-        const el = document.createElement("div");
-        el.style.cssText =
-          "display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:9999px;color:#fff;font-weight:700;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.15);";
-        el.style.background = color;
-        el.innerText = `D${day}-${i + 1}`;
-
-        new kakao.maps.CustomOverlay({
-          content: el,
-          position: c.latlng,
-          yAnchor: 1.6,
-          map,
-        });
-
-        dayBounds.extend(c.latlng);
-        allBounds.extend(c.latlng);
-      });
-
-      // Polyline (해당 Day 색)
-      const path = coords.map((c) => c.latlng);
-      if (path.length > 1) {
-        new kakao.maps.Polyline({
-          map,
-          path,
-          strokeWeight: 5,
-          strokeColor: color,
-          strokeOpacity: 0.9,
-          strokeStyle: "solid",
-        });
-      }
-
-      // Day 라벨
-      const center = dayBounds.getCenter();
-      const label = document.createElement("div");
-      label.style.cssText =
-        "padding:4px 8px;border-radius:9999px;background:#ffffff;border:1px solid rgba(0,0,0,0.08);color:#111827;font-size:12px;font-weight:600;";
-      label.innerText = `Day ${day}`;
-      new kakao.maps.CustomOverlay({
-        content: label,
-        position: center,
-        yAnchor: -0.2,
-        map,
-      });
-    });
-
-    if (!allBounds.isEmpty()) {
-      map.setBounds(allBounds);
-    }
-  }, [loaded, plan, dayKeys]);
-
-  // 범례
-  const hasAny = dayKeys.some((d) => (plan[d] || []).length > 0);
-
-  return (
-    <div className="w-full h-full">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">
-          전체 경로 미리보기
-        </h3>
-        <div className="flex gap-2 flex-wrap">
-          {dayKeys.map((day, idx) => (
-            <span
-              key={day}
-              className="inline-flex items-center gap-2 text-xs font-medium text-gray-700 bg-white border rounded-full px-2 py-1"
-            >
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ background: colorForIndex(idx) }}
-              />
-              Day {day}
-            </span>
-          ))}
-        </div>
-      </div>
-      <div
-        id="kakao-map"
-        className="w-full h-[520px] rounded-xl border border-gray-200"
-      />
-      {!hasAny && (
-        <p className="mt-3 text-sm text-gray-500">
-          표시할 좌표가 없습니다. (장소에 위·경도가 필요)
-        </p>
-      )}
-      {!KAKAO_KEY && (
-        <p className="mt-3 text-sm text-amber-600">
-          NEXT_PUBLIC_KAKAO_MAP_API_KEY가 설정되지 않았습니다. (카카오 JS 키
-          필요)
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function PreviewPage() {
   const router = useRouter();
   const supabase = createBrowserClient();
@@ -237,6 +41,7 @@ export default function PreviewPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [activeDay, setActiveDay] = useState<number>(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [mapFocusDay, setMapFocusDay] = useState<number | null>(null);
 
   // sessionStorage에서 불러오기
   useEffect(() => {
@@ -559,7 +364,23 @@ export default function PreviewPage() {
           {/* 우측: 지도(전체 Day 경로 색상 구분) */}
           <div className="lg:col-span-7">
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <KakaoMultiRouteMap plan={draft.plan} />
+              <KakaoMultiRouteMap
+                plan={
+                  Object.fromEntries(
+                    Object.entries(draft.plan).map(([day, places]) => [
+                      day,
+                      places.map((p, idx) => ({
+                        order: idx + 1,
+                        id: p.place_id,
+                        name: p.place_name,
+                        latitude: Number(p.latitude),
+                        longitude: Number(p.longitude),
+                      })),
+                    ])
+                  ) as any
+                }
+                kakaoApiKey={process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}
+              />
             </div>
           </div>
         </div>

@@ -1,11 +1,10 @@
-// component/my-planner/TripDetailClient.tsx
 "use client";
 
 import { createBrowserClient } from "@/lib/supabaseClient";
+import type { Place } from "@/type/place";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 
 interface TripPlan {
   trip_id: number;
@@ -13,11 +12,7 @@ interface TripPlan {
   trip_start_date: string;
   trip_end_date: string;
 }
-interface Place {
-  place_id: string;
-  place_name: string;
-  place_image: string;
-}
+
 interface TripPlanDetail {
   day_number: number;
   visit_order: number;
@@ -40,9 +35,6 @@ export default function TripDetailClient({
   // 리뷰 작성 관련 상태
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedPlaces, setSelectedPlaces] = useState<Place[]>([]);
-
-  // 모달 상태 추가
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   const handleDelete = async () => {
     const isConfirmed = confirm(
@@ -114,16 +106,6 @@ export default function TripDetailClient({
     );
   };
 
-  // 장소 클릭 핸들러 (모달 열기)
-  const handlePlaceClick = (placeId: string) => {
-    setSelectedPlaceId(placeId);
-  };
-
-  // 모달 닫기 핸들러
-  const handleCloseModal = () => {
-    setSelectedPlaceId(null);
-  };
-
   // 모든 여행지 리스트 (중복 제거)
   const allPlaces = Array.from(
     new Map(
@@ -149,7 +131,7 @@ export default function TripDetailClient({
               {plan.trip_start_date} ~ {plan.trip_end_date}
             </p>
           </div>
-          {/* 버튼들을 담을 div */}
+          {/* 버튼 묶음 */}
           <div className="flex flex-col gap-2">
             <Link
               href={`/planner/edit?trip_id=${plan.trip_id}&start=${plan.trip_start_date}&end=${plan.trip_end_date}`}
@@ -157,14 +139,12 @@ export default function TripDetailClient({
             >
               수정하기 ✏️
             </Link>
-            {/* 삭제 버튼 */}
             <button
               onClick={handleDelete}
               className="px-4 py-2 bg-red-100 text-red-600 font-semibold rounded-lg text-sm hover:bg-red-200"
             >
               삭제하기 🗑️
             </button>
-            {/* 리뷰 작성 버튼 */}
             <button
               onClick={handleReviewClick}
               className="px-4 py-2 bg-green-100 text-green-600 font-semibold rounded-lg text-sm hover:bg-green-200"
@@ -192,20 +172,12 @@ export default function TripDetailClient({
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   onChange={(e) => handlePlaceSelect(place, e.target.checked)}
                 />
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePlaceClick(place.place_id);
-                  }}
-                  className="flex items-center gap-3 flex-1"
-                >
-                  <img
-                    src={place.place_image}
-                    alt={place.place_name}
-                    className="w-12 h-12 object-cover rounded-md"
-                  />
-                  <span className="font-medium">{place.place_name}</span>
-                </button>
+                <img
+                  src={place.place_image ?? "/default-image.jpg"} // ✅ null-safe 처리
+                  alt={place.place_name}
+                  className="w-12 h-12 object-cover rounded-md"
+                />
+                <span className="font-medium">{place.place_name}</span>
               </label>
             ))}
           </div>
@@ -231,28 +203,28 @@ export default function TripDetailClient({
         </div>
       )}
 
+      {/* 일정 상세 */}
       <main className="space-y-6">
         {Object.keys(groupedDetails).length > 0 ? (
           Object.keys(groupedDetails).map((day) => (
             <div key={day}>
               <h2 className="text-2xl font-semibold mb-3">Day {day}</h2>
               <div className="space-y-4">
-                {groupedDetails[Number(day)].map((detail, index) => (
-                  <button
-                    key={`${day}-${detail.place.place_id}-${index}`}
-                    onClick={() => handlePlaceClick(detail.place.place_id)}
-                    className="w-full flex items-center gap-4 p-3 bg-white rounded-lg shadow hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-left"
+                {groupedDetails[Number(day)].map((detail) => (
+                  <div
+                    key={`${detail.day_number}-${detail.place.place_id}`}
+                    className="flex items-center gap-4 p-3 bg-white rounded-lg shadow"
                   >
                     <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white font-bold rounded-full flex items-center justify-center">
                       {detail.visit_order}
                     </span>
                     <img
-                      src={detail.place.place_image}
+                      src={detail.place.place_image ?? "/default-image.jpg"}
                       alt={detail.place.place_name}
                       className="w-20 h-20 object-cover rounded-md"
                     />
                     <h3 className="font-semibold">{detail.place.place_name}</h3>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -261,14 +233,6 @@ export default function TripDetailClient({
           <p className="text-gray-500">아직 등록된 상세 일정이 없습니다.</p>
         )}
       </main>
-
-      {/* 모달 */}
-      {selectedPlaceId && (
-        <PlaceDetailModal
-          placeId={selectedPlaceId}
-          onClose={handleCloseModal}
-        />
-      )}
     </div>
   );
 }
