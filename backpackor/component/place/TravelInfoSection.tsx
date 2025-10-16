@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
-import styles from "@/app/place/[placeId]/page.module.css";
+import styles from "./PlaceDetailContent.module.css";
 
 interface TravelInfoSectionProps {
   placeAddress: string;
