@@ -31,14 +31,17 @@ export default function TravelListContainer({
 
   const [selectedRegion, setSelectedRegion] = useState("전체");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [favoritePlaceIds, setFavoritePlaceIds] = useState<Set<string>>(new Set());
+  const [favoritePlaceIds, setFavoritePlaceIds] = useState<Set<string>>(
+    new Set()
+  );
 
+  // ✅ 수정: showFavoritesOnly가 true일 때만 fetch
   useEffect(() => {
+    if (!showFavoritesOnly) return; // false면 아무것도 안 함
+
     const fetchFavorites = async () => {
       // ⚠️ 실제 사용자의 ID를 가져오는 로직이 필요합니다.
-      // 예: const { data: { user } } = await supabase.auth.getUser();
-      // const userId = user?.id;
-      const userId = "USER_ID_PLACEHOLDER"; // 이 부분은 실제 로직으로 교체해야 합니다.
+      const userId = "USER_ID_PLACEHOLDER";
       if (!userId) return;
 
       const { data, error } = await supabase
@@ -48,34 +51,32 @@ export default function TravelListContainer({
 
       if (error) {
         console.error("찜 목록 조회 실패:", error);
-        setFavoritePlaceIds(new Set());
       } else if (data) {
         setFavoritePlaceIds(new Set(data.map((item) => item.place_id)));
       }
     };
 
-    if (showFavoritesOnly) {
-      fetchFavorites();
-    } else {
-      setFavoritePlaceIds(new Set());
-    }
+    fetchFavorites();
   }, [showFavoritesOnly, supabase]);
 
   const displayPlaces = useMemo(() => {
     let filteredPlaces = [...places];
 
-    if (showFavoritesOnly) {
+    // ✅ 찜한 여행지 필터링
+    if (showFavoritesOnly && favoritePlaceIds.size > 0) {
       filteredPlaces = filteredPlaces.filter((place) =>
         favoritePlaceIds.has(place.place_id)
       );
     }
 
+    // 지역 필터링
     if (selectedRegion !== "전체") {
       filteredPlaces = filteredPlaces.filter(
         (place) => place.region === selectedRegion
       );
     }
 
+    // 정렬
     const sorted = filteredPlaces.sort((a, b) => {
       switch (sortOrder) {
         case "review_desc":
@@ -88,11 +89,19 @@ export default function TravelListContainer({
       }
     });
 
+    // 검색 필터링
     if (!searchKeyword) return sorted;
     return sorted.filter((place) =>
       place.place_name.toLowerCase().includes(searchKeyword.toLowerCase())
     );
-  }, [places, sortOrder, searchKeyword, selectedRegion, showFavoritesOnly, favoritePlaceIds]);
+  }, [
+    places,
+    sortOrder,
+    searchKeyword,
+    selectedRegion,
+    showFavoritesOnly,
+    favoritePlaceIds,
+  ]);
 
   const handleLoadMore = () => {
     setVisibleCount((prevCount) => prevCount + LOAD_MORE_COUNT);
@@ -203,7 +212,8 @@ export default function TravelListContainer({
                       e.stopPropagation();
                       onAddPlace(place);
                     }}
-                    className="p-2 rounded-full hover:bg-blue-100"
+                    className="p-2 rounded-full hover:bg-blue-100 transition-colors"
+                    title="일정에 추가"
                   >
                     <svg
                       className="w-5 h-5 text-gray-400 group-hover:text-blue-500"
