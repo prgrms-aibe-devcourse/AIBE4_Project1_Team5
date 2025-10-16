@@ -20,15 +20,13 @@ export default function MyPlannerPage() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [plans, setPlans] = useState<TripPlan[]>([]);
-  const [plansLoading, setPlansLoading] = useState(true); // 초기값 true로 변경
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  // searchParams에서 정렬 값만 추출 (깜박임 방지)
   const sortOrder = useMemo(
     () => searchParams.get("sort") || "desc",
     [searchParams]
   );
 
-  // 인증 상태 확인 및 리다이렉트 처리
   useEffect(() => {
     if (authLoading) return;
 
@@ -38,7 +36,6 @@ export default function MyPlannerPage() {
     }
   }, [user, authLoading, router]);
 
-  // 로그인된 경우 trip_plan 데이터 불러오기
   useEffect(() => {
     if (!user) return;
 
@@ -66,32 +63,32 @@ export default function MyPlannerPage() {
     fetchPlans();
   }, [user, sortOrder]);
 
-  // 인증 로딩 중
   if (authLoading) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
-        <div className="space-y-6">
-          {/* 헤더 스켈레톤 */}
-          <div className="space-y-3">
-            <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
-            <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="p-6 sm:p-8 max-w-6xl mx-auto">
+          <div className="space-y-8">
+            {/* 헤더 스켈레톤 */}
+            <div className="space-y-4">
+              <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl w-48 animate-pulse" />
+              <div className="h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg w-64 animate-pulse" />
+            </div>
 
-          {/* 필터 스켈레톤 */}
-          <div className="flex gap-3">
-            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
-            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
-            <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
-          </div>
+            {/* 필터 스켈레톤 */}
+            <div className="flex flex-wrap gap-3">
+              <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full w-24 animate-pulse" />
+              <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full w-24 animate-pulse" />
+            </div>
 
-          {/* 목록 스켈레톤 */}
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-20 bg-gray-200 rounded-lg animate-pulse"
-              />
-            ))}
+            {/* 목록 스켈레톤 */}
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-32 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl animate-pulse"
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -99,52 +96,85 @@ export default function MyPlannerPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <header className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">내 일정</h1>
-          <p className="text-gray-500">나의 여행 계획들을 관리해보세요.</p>
-        </div>
-        <Link
-          href="/planner"
-          className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
-        >
-          + 새 일정 만들기
-        </Link>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="p-6 sm:p-8 max-w-6xl mx-auto">
+        {/* 헤더 */}
+        <header className="mb-8 sm:mb-10">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                내 여행 일정
+              </h1>
+              <p className="text-gray-600 text-lg">
+                나만의 특별한 여행 계획을 관리하세요
+              </p>
+            </div>
+            <Link
+              href="/planner"
+              className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              <span className="text-xl mr-2">+</span>새 일정 만들기
+            </Link>
+          </div>
+        </header>
 
-      <div className="flex items-center gap-4 mb-4">
-        <p className="font-semibold">필터:</p>
-        <Link
-          href="/my-planner?sort=desc"
-          className={`px-3 py-1 rounded-full text-sm ${
-            sortOrder === "desc" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          최신순
-        </Link>
-        <Link
-          href="/my-planner?sort=asc"
-          className={`px-3 py-1 rounded-full text-sm ${
-            sortOrder === "asc" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          오래된순
-        </Link>
+        {/* 필터 */}
+        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-gray-700 font-semibold text-sm">정렬:</span>
+            <Link
+              href="/my-planner?sort=desc"
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                sortOrder === "desc"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              최신순
+            </Link>
+            <Link
+              href="/my-planner?sort=asc"
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                sortOrder === "asc"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              오래된순
+            </Link>
+          </div>
+        </div>
+
+        {/* 일정 목록 */}
+        {plansLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl animate-pulse"
+              />
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="text-6xl mb-4">🗺️</div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              아직 여행 계획이 없습니다
+            </h3>
+            <p className="text-gray-500 mb-6">
+              첫 번째 여행 계획을 만들어보세요!
+            </p>
+            <Link
+              href="/planner"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              <span className="text-xl mr-2">+</span>새 일정 만들기
+            </Link>
+          </div>
+        ) : (
+          <PlanList initialPlans={plans} />
+        )}
       </div>
-
-      {plansLoading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="h-20 bg-gray-200 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-      ) : (
-        <PlanList initialPlans={plans || []} />
-      )}
     </div>
   );
 }

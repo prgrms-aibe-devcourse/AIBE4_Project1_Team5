@@ -1,4 +1,3 @@
-// app/planner/preview/page.tsx
 "use client";
 
 import KakaoMultiRouteMap from "@/component/map/KakaoMultiRouteMap";
@@ -33,6 +32,20 @@ type Draft = {
   endDateStr: string; // yyyy-MM-dd
   plan: Plan;
 };
+
+// ✅ 지도 색상 팔레트 (index 맞춤)
+const ROUTE_COLORS = [
+  "#2563EB", // blue
+  "#10B981", // emerald
+  "#F59E0B", // amber
+  "#EF4444", // red
+  "#8B5CF6", // violet
+  "#14B8A6", // teal
+  "#F97316", // orange
+  "#22C55E", // green
+  "#06B6D4", // cyan
+  "#E11D48", // rose
+];
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -90,22 +103,19 @@ export default function PreviewPage() {
     try {
       setIsSaving(true);
 
-      // 로그인 사용자 (있다면 저장)
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id ?? null;
 
-      // trip_plan upsert (수정 또는 신규)
       let tripId: number | null = draft.tripIdToEdit
         ? Number(draft.tripIdToEdit)
         : null;
 
       if (!tripId) {
-        // 신규 생성
         const { data: inserted, error: planInsErr } = await supabase
           .from("trip_plan")
           .insert([
             {
-              user_id: userId, // RLS/NULL 허용에 맞춰 사용
+              user_id: userId,
               trip_title: draft.tripTitle,
               trip_start_date: draft.startDateStr,
               trip_end_date: draft.endDateStr,
@@ -117,7 +127,6 @@ export default function PreviewPage() {
         if (planInsErr) throw planInsErr;
         tripId = inserted?.trip_id as number;
       } else {
-        // 수정
         const { error: planUpdErr } = await supabase
           .from("trip_plan")
           .update({
@@ -128,7 +137,6 @@ export default function PreviewPage() {
           .eq("trip_id", tripId);
         if (planUpdErr) throw planUpdErr;
 
-        // 기존 상세 삭제 후 다시 삽입(간단하고 안전)
         const { error: delErr } = await supabase
           .from("trip_plan_detail")
           .delete()
@@ -138,15 +146,11 @@ export default function PreviewPage() {
 
       if (!tripId) throw new Error("trip_id 생성에 실패했습니다.");
 
-      // trip_plan_detail 일괄 삽입
-      // visit_order 는 DB가 자동(1,2,3,...) 처리한다는 요구사항에 맞춰 보내지 않음.
       const rows = dayKeys.flatMap((day) =>
         (draft.plan[day] || []).map((p) => ({
           trip_id: tripId!,
           day_number: day,
           place_id: p.place_id,
-          // visit_order: X (DB에서 자동)
-          // duration_minute: null (필요 시만)
         }))
       );
 
@@ -157,7 +161,6 @@ export default function PreviewPage() {
         if (detailInsErr) throw detailInsErr;
       }
 
-      // 저장 완료 → 내 일정 상세로 리다이렉트
       router.replace(`/my-planner/${tripId}`);
     } catch (e: any) {
       console.error(e);
@@ -193,7 +196,6 @@ export default function PreviewPage() {
               <span className="font-medium">편집으로 돌아가기</span>
             </button>
 
-            {/* 확정하기 버튼 */}
             <button
               onClick={handleConfirm}
               disabled={isSaving}
@@ -244,29 +246,39 @@ export default function PreviewPage() {
           )}
         </div>
 
-        {/* 레이아웃: 좌 = 일정, 우 = 지도(모든 Day 경로) */}
+        {/* 좌측 Day 리스트 & 지도 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 좌측: 일정(선택 Day 상세) */}
           <div className="lg:col-span-5">
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-6">
-              {/* Day 탭 */}
+              {/* ✅ Day 탭 색상 일치 */}
               <div className="flex gap-2 mb-6 flex-wrap">
-                {dayKeys.map((day) => (
-                  <button
-                    key={day}
-                    onClick={() => setActiveDay(day)}
-                    className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
-                      activeDay === day
-                        ? "bg-blue-500 text-white shadow-md"
-                        : "bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Day {day}
-                  </button>
-                ))}
+                {dayKeys.map((day, idx) => {
+                  const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setActiveDay(day)}
+                      style={{
+                        backgroundColor: activeDay === day ? color : "white",
+                        color: activeDay === day ? "white" : "#374151",
+                        border:
+                          activeDay === day
+                            ? `2px solid ${color}`
+                            : "2px solid #E5E7EB",
+                        boxShadow:
+                          activeDay === day
+                            ? "0 0 6px rgba(0,0,0,0.15)"
+                            : "none",
+                      }}
+                      className="px-5 py-2.5 rounded-xl font-semibold transition-all"
+                    >
+                      Day {day}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* 선택 Day 리스트 */}
+              {/* ✅ 동그라미 색상 일치 */}
               <div className="space-y-3">
                 {activePlaces.length > 0 ? (
                   activePlaces.map((place, idx) => (
@@ -274,7 +286,13 @@ export default function PreviewPage() {
                       key={place.place_id}
                       className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-all"
                     >
-                      <div className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full font-bold text-base shadow-sm flex-shrink-0">
+                      <div
+                        className="w-10 h-10 flex items-center justify-center text-white rounded-full font-bold text-base shadow-sm flex-shrink-0"
+                        style={{
+                          backgroundColor:
+                            ROUTE_COLORS[(activeDay - 1) % ROUTE_COLORS.length],
+                        }}
+                      >
                         {idx + 1}
                       </div>
 
@@ -299,59 +317,12 @@ export default function PreviewPage() {
                               {place.place_address}
                             </span>
                           )}
-                          {typeof place.average_rating === "number" && (
-                            <span className="flex items-center gap-1">
-                              <svg
-                                className="w-4 h-4 text-yellow-500"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                              {place.average_rating?.toFixed(1)}
-                            </span>
-                          )}
-                          {typeof place.favorite_count === "number" && (
-                            <span className="flex items-center gap-1">
-                              <svg
-                                className="w-4 h-4 text-rose-500"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              {place.favorite_count}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                    <svg
-                      className="w-16 h-16 mb-4 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
                     <p className="text-lg font-medium">
                       선택한 Day에 장소가 없어요
                     </p>
@@ -361,7 +332,6 @@ export default function PreviewPage() {
             </div>
           </div>
 
-          {/* 우측: 지도(전체 Day 경로 색상 구분) */}
           <div className="lg:col-span-7">
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <KakaoMultiRouteMap

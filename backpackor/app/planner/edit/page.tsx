@@ -41,7 +41,9 @@ export default async function EditPlannerPage({
         .single();
 
       if (tripError) {
-        throw new Error(`여행 정보를 가져오지 못했습니다: ${tripError.message}`);
+        throw new Error(
+          `여행 정보를 가져오지 못했습니다: ${tripError.message}`
+        );
       }
 
       existingTripTitle = tripData?.trip_title || "";
@@ -144,10 +146,8 @@ export default async function EditPlannerPage({
     }
 
     // ✅ 장소 데이터 조회 (주소, 좌표 포함)
-    let query = supabase
-      .from("place")
-      .select(
-        `
+    let query = supabase.from("place").select(
+      `
         place_id,
         place_name,
         place_address,
@@ -158,7 +158,7 @@ export default async function EditPlannerPage({
         favorite_count,
         region!inner(region_name)
       `
-      );
+    );
 
     if (regionNamesForFiltering.length > 0) {
       query = query.in("region.region_name", regionNamesForFiltering);
