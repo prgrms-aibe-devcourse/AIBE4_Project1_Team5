@@ -1,24 +1,13 @@
+// @/component/place/TravelList.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import Sort from "./Sort"; // Sort 컴포넌트를 import 합니다.
+import Sort from "./Sort";
+import { Place } from "@/type/place";
 
-// Place 타입 인터페이스
-export interface Place {
-  place_id: string;
-  place_name: string;
-  place_address: string;
-  place_description: string;
-  average_rating: number;
-  place_image: string;
-  favorite_count: number;
-  review_count: number;
-}
-
-// 지역 상수 배열
 const REGIONS = [
   "전체",
   "서울특별시",
@@ -40,10 +29,18 @@ const REGIONS = [
   "제주특별자치_도",
 ];
 
-// TravelCard 컴포넌트
 const TravelCard = ({ destination }: { destination: Place }) => {
-  const [imgSrc, setImgSrc] = useState(destination.place_image);
+  const [imgSrc, setImgSrc] = useState(
+    destination.place_image ?? "/default-image.png"
+  );
+
   const region = destination.place_address?.split(" ")[0] || "지역 정보 없음";
+  const displayRating =
+    destination.average_rating !== null &&
+    destination.average_rating !== undefined
+      ? destination.average_rating.toFixed(1)
+      : "0.0";
+  const displayFavoriteCount = destination.favorite_count ?? 0;
 
   return (
     <Link
@@ -52,7 +49,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
     >
       <div className="relative w-full aspect-video">
         <Image
-          src={imgSrc || "/default-image.png"}
+          src={imgSrc}
           alt={destination.place_name}
           fill
           style={{ objectFit: "cover" }}
@@ -73,7 +70,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
             >
               <path d="M10.868 2.884c.321-.772 1.415-.772 1.736 0l1.83 4.401 4.753 .392c.83.069 1.171 1.107 .536 1.651l-3.62 3.102 1.07 4.632c.181 .79-.702 1.4-1.437 1.016L12 16.205l-4.118 2.593c-.735.384-1.618-.226-1.437-1.016l1.07-4.632L3.29 8.928c-.635-.544-.294-1.582.536-1.651l4.753-.392l1.83-4.401Z" />
             </svg>
-            {destination.average_rating.toFixed(1)}
+            {displayRating}
           </p>
           <div className="flex items-center text-sm text-gray-600">
             <svg
@@ -87,7 +84,7 @@ const TravelCard = ({ destination }: { destination: Place }) => {
                 clipRule="evenodd"
               />
             </svg>
-            <span>{destination.favorite_count}</span>
+            <span>{displayFavoriteCount}</span>
           </div>
         </div>
       </div>
@@ -102,11 +99,13 @@ export default function TravelList({
 }) {
   const [isRegionDropdownOpen, setIsRegionDropdownOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("전체");
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "popularity_desc";
   const [visibleCount, setVisibleCount] = useState(18);
+
+  // ✅ URL에서 찜 필터 상태 읽기
+  const showFavoritesOnly = searchParams.get("favorite") === "true";
 
   const handleSortChange = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -114,12 +113,23 @@ export default function TravelList({
     router.push(`?${params.toString()}`);
   };
 
+  // ✅ 찜 필터 토글
+  const handleFavoriteToggle = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (showFavoritesOnly) {
+      params.delete("favorite");
+    } else {
+      params.set("favorite", "true");
+    }
+    router.push(`?${params.toString()}`);
+  };
+
+  // ✅ 클라이언트 사이드 지역 필터링
   const filteredDestinations = initialPlaces.filter((dest) => {
-    const regionMatch =
+    return (
       selectedRegion === "전체" ||
-      (dest.place_address && dest.place_address.includes(selectedRegion));
-    const favoriteMatch = !showFavoritesOnly || dest.favorite_count > 0;
-    return regionMatch && favoriteMatch;
+      (dest.place_address && dest.place_address.includes(selectedRegion))
+    );
   });
 
   return (
@@ -130,7 +140,6 @@ export default function TravelList({
       </p>
 
       <div className="flex justify-between items-center my-6">
-        {/* [복구] 지역별 필터 및 찜하기 UI */}
         <div className="flex gap-4 items-center">
           <div className="relative">
             <button
@@ -159,11 +168,13 @@ export default function TravelList({
               </ul>
             )}
           </div>
+
+          {/* ✅ 찜 필터 체크박스 */}
           <label className="flex items-center gap-2 cursor-pointer text-sm">
             <input
               type="checkbox"
               checked={showFavoritesOnly}
-              onChange={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              onChange={handleFavoriteToggle}
               className="rounded"
             />
             찜한 여행지
@@ -172,6 +183,16 @@ export default function TravelList({
 
         <Sort currentSort={currentSort} onSortChange={handleSortChange} />
       </div>
+
+      {/* ✅ 찜 목록이 비어있을 때 */}
+      {showFavoritesOnly && filteredDestinations.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-gray-500 text-lg mb-2">찜한 여행지가 없습니다.</p>
+          <p className="text-gray-400 text-sm">
+            마음에 드는 여행지를 찜해보세요! ❤️
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDestinations.slice(0, visibleCount).map((dest) => (
