@@ -105,22 +105,43 @@ export default function PlannerEditor({
   const startDateStr = searchParams.get("start");
   const endDateStr = searchParams.get("end");
 
+    // [추가] URL 파라미터로 날짜 상태를 초기화합니다.
+    const [startDate, setStartDate] = useState(startDateStr);
+    const [endDate, setEndDate] = useState(endDateStr);
+
   const [tripTitle, setTripTitle] = useState(existingTripTitle);
   const [plan, setPlan] = useState<Plan>(existingPlan);
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
-  const days: DayInfo[] = useMemo(() => {
-    if (!startDateStr || !endDateStr) return [];
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
-    const duration = differenceInDays(end, start) + 1;
-    return Array.from({ length: duration }, (_, i) => ({
-      day: i + 1,
-      date: format(addDays(start, i), "yyyy. MM. dd"),
-    }));
-  }, [startDateStr, endDateStr]);
+  // const days: DayInfo[] = useMemo(() => {
+  //   if (!startDateStr || !endDateStr) return [];
+  //   const start = new Date(startDateStr);
+  //   const end = new Date(endDateStr);
+  //   const duration = differenceInDays(end, start) + 1;
+  //   return Array.from({ length: duration }, (_, i) => ({
+  //     day: i + 1,
+  //     date: format(addDays(start, i), "yyyy. MM. dd"),
+  //   }));
+  // }, [startDateStr, endDateStr]);
+
+    const days: DayInfo[] = useMemo(() => {
+        // [수정] startDateStr, endDateStr 대신 상태 변수 사용
+        if (!startDate || !endDate) return [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // 종료일이 시작일보다 빠르면 빈 배열 반환
+        if (start > end) return [];
+
+        const duration = differenceInDays(end, start) + 1;
+        return Array.from({ length: duration }, (_, i) => ({
+            day: i + 1,
+            date: format(addDays(start, i), "yyyy. MM. dd"),
+        }));
+    // [수정] 의존성 배열도 상태 변수로 변경
+    }, [startDate, endDate]);
 
   // ✅ 새 일정 모드에서만 빈 day 배열 초기화
   useEffect(() => {
@@ -181,6 +202,29 @@ export default function PlannerEditor({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+    // [추가] 날짜(days)가 변경될 때마다 plan 객체를 정리하는 useEffect
+    useEffect(() => {
+        // 날짜 정보가 없으면 아무것도 하지 않음
+        if (days.length === 0) return;
+
+        setPlan((prevPlan) => {
+            const newPlan: Plan = {};
+            const maxDay = days.length;
+
+            // 존재하는 날짜에 대해서만 기존 계획을 복사
+            for (let day = 1; day <= maxDay; day++) {
+                newPlan[day] = prevPlan[day] || [];
+            }
+
+            return newPlan;
+        });
+
+        // 활성화된 Day가 유효한 범위를 벗어나면 첫째 날로 설정
+        if (activeDay > days.length) {
+            setActiveDay(1);
+        }
+    }, [days, activeDay]); // days 배열이 바뀔 때마다 이 로직 실행
 
   /** 장소 추가 */
   const handleAddPlace = async (rawPlace: Place, targetDay?: number) => {
@@ -259,8 +303,8 @@ export default function PlannerEditor({
       savePlanToSession({
         tripIdToEdit: tripIdToEdit ?? null,
         tripTitle,
-        startDateStr: startDateStr || "",
-        endDateStr: endDateStr || "",
+        startDateStr: startDate || "",
+        endDateStr: endDate || "",
         plan,
       });
       router.push("/planner/preview");
@@ -321,30 +365,72 @@ export default function PlannerEditor({
           </div>
 
           {startDateStr && endDateStr && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
+            // <div className="flex items-center gap-3">
+            //   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+            //     <svg
+            //       className="w-6 h-6 text-blue-600"
+            //       fill="none"
+            //       stroke="currentColor"
+            //       viewBox="0 0 24 24"
+            //     >
+            //       <path
+            //         strokeLinecap="round"
+            //         strokeLinejoin="round"
+            //         strokeWidth={2}
+            //         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            //       />
+            //     </svg>
+            //   </div>
+            //   <div>
+            //     <p className="text-sm text-gray-500 font-medium">여행 기간</p>
+            //     <p className="text-base font-bold text-gray-900">
+            //       {format(new Date(startDateStr), "M월 d일", { locale: ko })} -{" "}
+            //       {format(new Date(endDateStr), "M월 d일", { locale: ko })}
+            //     </p>
+            //   </div>
+            // </div>
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      {<div className="w-10 h-10 bg-blue-100 rounded-xl flex-shrink-0 flex items-center justify-center">
+                          <svg
+                              className="w-6 h-6 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                          >
+                              <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                          </svg>
+                      </div>}
+                  </div>
+                  <div className="flex items-center gap-4 w-full">
+                      <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">시작일</label>
+                          <input
+                              type="date"
+                              value={startDate || ""}
+                              onChange={(e) => setStartDate(e.target.value)}
+                              className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                      </div>
+                      <span className="pt-6 font-bold text-gray-400">~</span>
+                      <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">종료일</label>
+                          <input
+                              type="date"
+                              value={endDate || ""}
+                              onChange={(e) => setEndDate(e.target.value)}
+                              // 시작일보다 이전 날짜는 선택할 수 없도록 설정
+                              min={startDate || ""}
+                              className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                      </div>
+                  </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">여행 기간</p>
-                <p className="text-base font-bold text-gray-900">
-                  {format(new Date(startDateStr), "M월 d일", { locale: ko })} -{" "}
-                  {format(new Date(endDateStr), "M월 d일", { locale: ko })}
-                </p>
-              </div>
-            </div>
           )}
         </div>
 
