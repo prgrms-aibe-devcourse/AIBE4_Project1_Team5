@@ -1,4 +1,3 @@
-// component/my-planner/TripDetailClient.tsx
 "use client";
 
 import PlaceDetailModal from "@/component/place/PlaceDetailModal";
@@ -36,9 +35,6 @@ export default function TripDetailClient({
 
   // 모달 상태
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-
-  // 리뷰 작성용 장소 선택 상태
-  const [selectedPlaces, setSelectedPlaces] = useState<Set<string>>(new Set());
 
   // 카카오맵과 동일 팔레트
   const ROUTE_COLORS = [
@@ -94,70 +90,6 @@ export default function TripDetailClient({
     setSelectedPlaceId(null);
   };
 
-  // 장소 선택/해제 핸들러
-  const togglePlaceSelection = (placeId: string) => {
-    setSelectedPlaces((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(placeId)) {
-        newSet.delete(placeId);
-      } else {
-        newSet.add(placeId);
-      }
-      return newSet;
-    });
-  };
-
-  // 여행 종료 여부 확인
-  const isTripEnded = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // 시간 제거하고 날짜만 비교
-    const endDate = new Date(plan.trip_end_date);
-    endDate.setHours(0, 0, 0, 0);
-    return endDate < today;
-  };
-
-  // 리뷰 작성하기 버튼 핸들러
-  const handleWriteReview = () => {
-    // 여행 종료 여부 확인
-    if (!isTripEnded()) {
-      alert("여행이 종료된 후에 리뷰를 작성할 수 있습니다.");
-      return;
-    }
-
-    if (selectedPlaces.size === 0) {
-      alert("리뷰를 작성할 장소를 선택해주세요.");
-      return;
-    }
-
-    // 선택된 장소들의 정보 수집
-    const allPlaces: Place[] = [];
-    Object.values(groupedDetails).forEach((details) => {
-      details.forEach((detail) => {
-        if (selectedPlaces.has(detail.place.place_id)) {
-          allPlaces.push(detail.place);
-        }
-      });
-    });
-
-    // URL 파라미터 생성
-    const placeIds = allPlaces.map((p) => p.place_id).join(",");
-    const placeNames = allPlaces.map((p) => p.place_name).join(",");
-    const tripTitle = encodeURIComponent(plan.trip_title);
-
-    // 리뷰 작성 페이지로 이동
-    router.push(
-      `/review/write-trip?placeIds=${placeIds}&placeNames=${encodeURIComponent(
-        placeNames
-      )}&tripTitle=${tripTitle}`
-    );
-  };
-
-  // 모든 장소 개수 계산
-  const totalPlaces = Object.values(groupedDetails).reduce(
-    (acc, details) => acc + details.length,
-    0
-  );
-
   return (
     <div className="p-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -193,29 +125,6 @@ export default function TripDetailClient({
         </div>
       </header>
 
-      {/* 리뷰 작성 버튼 영역 */}
-      {totalPlaces > 0 && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 mb-1">
-                리뷰를 작성할 장소를 선택해주세요
-              </p>
-              <p className="text-xs text-gray-500">
-                선택된 장소: {selectedPlaces.size}개
-              </p>
-            </div>
-            <button
-              onClick={handleWriteReview}
-              disabled={selectedPlaces.size === 0}
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              리뷰 작성하기
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Day별 일정 카드 */}
       <main className="space-y-8">
         {Object.keys(groupedDetails).length > 0 ? (
@@ -231,62 +140,32 @@ export default function TripDetailClient({
                 </h2>
 
                 <div className="space-y-4">
-                  {groupedDetails[day].map((detail, idx) => {
-                    const isSelected = selectedPlaces.has(
-                      detail.place.place_id
-                    );
+                  {groupedDetails[day].map((detail, idx) => (
+                    <button
+                      key={`${detail.day_number}-${detail.place.place_id}-${idx}`}
+                      onClick={() => handlePlaceClick(detail.place.place_id)}
+                      className="w-full flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer text-left"
+                      style={{
+                        borderLeft: `6px solid ${color}`,
+                        boxShadow: `0 1px 0 0 ${softBorder}`,
+                      }}
+                    >
+                      <img
+                        src={detail.place.place_image ?? "/default-image.jpg"}
+                        alt={detail.place.place_name}
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
 
-                    return (
-                      <div
-                        key={`${detail.day_number}-${detail.place.place_id}-${idx}`}
-                        className="relative"
-                      >
-                        {/* 체크박스 */}
-                        <div className="absolute top-4 left-4 z-10">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() =>
-                              togglePlaceSelection(detail.place.place_id)
-                            }
-                            className="w-5 h-5 cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-
-                        {/* 장소 카드 */}
-                        <button
-                          onClick={() =>
-                            handlePlaceClick(detail.place.place_id)
-                          }
-                          className={`w-full flex items-center gap-4 p-4 pl-12 bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer text-left ${
-                            isSelected ? "ring-2 ring-blue-500" : ""
-                          }`}
-                          style={{
-                            borderLeft: `6px solid ${color}`,
-                            boxShadow: `0 1px 0 0 ${softBorder}`,
-                          }}
-                        >
-                          <img
-                            src={
-                              detail.place.place_image ?? "/default-image.jpg"
-                            }
-                            alt={detail.place.place_name}
-                            className="w-20 h-20 object-cover rounded-md"
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold truncate">
-                              {detail.place.place_name}
-                            </h3>
-                            <p className="text-sm text-gray-600 truncate">
-                              {detail.place.place_address}
-                            </p>
-                          </div>
-                        </button>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold truncate">
+                          {detail.place.place_name}
+                        </h3>
+                        <p className="text-sm text-gray-600 truncate">
+                          {detail.place.place_address}
+                        </p>
                       </div>
-                    );
-                  })}
+                    </button>
+                  ))}
                 </div>
               </section>
             );
