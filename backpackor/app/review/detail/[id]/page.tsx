@@ -7,6 +7,7 @@ import { useAuth } from '@/hook/useAuth';
 import { useProfile } from '@/hook/useProfile';
 import { ReviewActionButtons } from '@/component/review/ReviewButton';
 import ImageModal from '@/component/review/ImageModal';
+import { supabase } from '@/lib/supabaseClient';
 
 interface PageProps {
   params: Promise<{
@@ -21,8 +22,9 @@ export default function ReviewDetailPage({ params }: PageProps) {
 
   const [review, setReview] = useState<ReviewWithImages | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [placeName, setPlaceName] = useState<string>('');
 
-  // 작성자 프로필 정보 가져오기 (review가 로드된 후에만 실행)
+  // 작성자 프로필 정보 가져오기
   const { profile: authorProfile } = useProfile(review?.user_id);
 
   // 이미지 모달 상태
@@ -41,6 +43,25 @@ export default function ReviewDetailPage({ params }: PageProps) {
 
     fetchReview();
   }, [id]);
+
+  // 여행지 이름 가져오기
+  useEffect(() => {
+    const fetchPlaceName = async () => {
+      if (review && review.place_id) {
+        const { data, error } = await supabase
+          .from('place')
+          .select('place_name')
+          .eq('place_id', review.place_id)
+          .single();
+
+        if (!error && data) {
+          setPlaceName(data.place_name);
+        }
+      }
+    };
+
+    fetchPlaceName();
+  }, [review]);
 
   // 이미지 클릭 핸들러
   const handleImageClick = (index: number) => {
@@ -130,6 +151,16 @@ export default function ReviewDetailPage({ params }: PageProps) {
             <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-3">
               {review.region}
             </span>
+            
+            {/* ✅ 여행지명 표시 추가 */}
+            {placeName && (
+              <div className="mb-3">
+                <p className="text-lg text-gray-700">
+                  <span className="font-semibold">📍 여행지:</span> {placeName}
+                </p>
+              </div>
+            )}
+            
             <h1 className="text-3xl font-bold mb-2">{review.review_title}</h1>
           </div>
 

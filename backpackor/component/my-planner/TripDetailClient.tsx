@@ -1,9 +1,11 @@
 "use client";
 
+import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/type/place";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface TripPlan {
   trip_id: number;
@@ -14,7 +16,7 @@ interface TripPlan {
 
 interface TripPlanDetail {
   day_number: number;
-  visit_order: number | string | null; // 값은 오더 유지(표시는 안 함)
+  visit_order: number | string | null;
   place: Place;
 }
 type GroupedDetails = Record<number, TripPlanDetail[]>;
@@ -30,6 +32,9 @@ export default function TripDetailClient({
 }: TripDetailClientProps) {
   const supabase = createBrowserClient();
   const router = useRouter();
+
+  // 모달 상태
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   // 카카오맵과 동일 팔레트
   const ROUTE_COLORS = [
@@ -75,6 +80,16 @@ export default function TripDetailClient({
     }
   };
 
+  // 장소 클릭 핸들러 (모달 열기)
+  const handlePlaceClick = (placeId: string) => {
+    setSelectedPlaceId(placeId);
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setSelectedPlaceId(null);
+  };
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -110,7 +125,7 @@ export default function TripDetailClient({
         </div>
       </header>
 
-      {/* Day별 일정 카드 (동그라미+숫자 표시 제거) */}
+      {/* Day별 일정 카드 */}
       <main className="space-y-8">
         {Object.keys(groupedDetails).length > 0 ? (
           Object.keys(groupedDetails).map((dayKey) => {
@@ -126,15 +141,15 @@ export default function TripDetailClient({
 
                 <div className="space-y-4">
                   {groupedDetails[day].map((detail, idx) => (
-                    <div
+                    <button
                       key={`${detail.day_number}-${detail.place.place_id}-${idx}`}
-                      className="flex items-center gap-4 p-4 bg-white rounded-lg shadow"
+                      onClick={() => handlePlaceClick(detail.place.place_id)}
+                      className="w-full flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-md transition-all cursor-pointer text-left"
                       style={{
-                        borderLeft: `6px solid ${color}`, // 좌측 컬러 라인만 유지
+                        borderLeft: `6px solid ${color}`,
                         boxShadow: `0 1px 0 0 ${softBorder}`,
                       }}
                     >
-                      {/* ✅ 동그라미+숫자 제거: 바로 이미지부터 */}
                       <img
                         src={detail.place.place_image ?? "/default-image.jpg"}
                         alt={detail.place.place_name}
@@ -149,7 +164,7 @@ export default function TripDetailClient({
                           {detail.place.place_address}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </section>
@@ -159,6 +174,14 @@ export default function TripDetailClient({
           <p className="text-gray-500">아직 등록된 상세 일정이 없습니다.</p>
         )}
       </main>
+
+      {/* 모달 */}
+      {selectedPlaceId && (
+        <PlaceDetailModal
+          placeId={selectedPlaceId}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
