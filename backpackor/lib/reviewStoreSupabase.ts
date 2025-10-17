@@ -104,11 +104,6 @@ export async function getReviewsByRegion(region: string): Promise<ReviewWithImag
       .eq('region', region)
       .order('created_at', { ascending: false });
 
-    if (reviewError) {
-      console.error('지역별 리뷰 가져오기 실패:', reviewError);
-      return [];
-    }
-
     if (!reviews || reviews.length === 0) {
       return [];
     }

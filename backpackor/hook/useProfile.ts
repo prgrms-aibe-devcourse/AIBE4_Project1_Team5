@@ -12,19 +12,30 @@ interface UserProfile {
 export function useProfile(userId?: string) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const DEFAULT_PROFILE_URL =
     "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
 
-  // 프로필 강제 새로고침 함수
   const refreshProfile = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
+  // 이미지 URL에 캐시 버스팅 추가하는 헬퍼 함수
+  const addCacheBusting = (url: string | null) => {
+    if (!url || url === DEFAULT_PROFILE_URL) return url;
+    const timestamp = Date.now();
+    return `${url}?t=${timestamp}`;
+  };
+
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchProfile = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from("user_profile")
@@ -32,7 +43,12 @@ export function useProfile(userId?: string) {
           .eq("user_id", userId)
           .single();
 
-        if (error && error.code !== "PGRST116") throw error;
+        if (error && error.code !== "PGRST116") {
+          console.error("Profile fetch error:", error);
+          throw error;
+        }
+
+        console.log("Fetched profile data:", data);
 
         setProfile({
           display_name: data?.display_name ?? null,
@@ -44,6 +60,8 @@ export function useProfile(userId?: string) {
           display_name: null,
           profile_image: DEFAULT_PROFILE_URL,
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -61,7 +79,7 @@ export function useProfile(userId?: string) {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log("Profile updated:", payload);
+          console.log("Profile updated via realtime:", payload);
           if (payload.new) {
             setProfile({
               display_name: (payload.new as any).display_name ?? null,
@@ -78,7 +96,6 @@ export function useProfile(userId?: string) {
     };
   }, [userId, refreshKey]);
 
-  // 프로필 업데이트 (닉네임 또는 사진)
   const updateProfile = async (
     updates: Partial<{
       display_name: string;
@@ -88,20 +105,22 @@ export function useProfile(userId?: string) {
     if (!userId) throw new Error("사용자 ID가 없습니다.");
 
     try {
-      let profileImageUrl = profile?.profile_image || DEFAULT_PROFILE_URL;
+      let profileImageUrl = profile?.profile_image || null;
 
       // 새로운 사진이 업로드된 경우
       if (updates.profile_image) {
-        // 기존 사진 삭제 (있다면)
+        // 기존 사진 삭제 (기본 프로필이 아닌 경우에만)
         if (
           profile?.profile_image &&
-          profile.profile_image !== DEFAULT_PROFILE_URL
+          profile.profile_image !== DEFAULT_PROFILE_URL &&
+          profile.profile_image !== null
         ) {
           const fileName = profile.profile_image
-            .split("/")
-            .pop()
+            .split("/profile/")[1]
             ?.split("?")[0];
+
           if (fileName) {
+            console.log("Deleting old profile image:", fileName);
             await supabase.storage.from("profile").remove([fileName]);
           }
         }
@@ -109,6 +128,8 @@ export function useProfile(userId?: string) {
         // 파일명을 user_id로 설정 (확장자 포함)
         const fileExt = updates.profile_image.name.split(".").pop();
         const fileName = `${userId}.${fileExt}`;
+
+        console.log("Uploading new profile image:", fileName);
 
         // 새로운 사진 업로드
         const { error: uploadError } = await supabase.storage
@@ -123,18 +144,21 @@ export function useProfile(userId?: string) {
           throw uploadError;
         }
 
-        const timestamp = Date.now();
-        profileImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile/${fileName}?t=${timestamp}`;
+        // 타임스탬프 없이 기본 URL만 저장
+        profileImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile/${fileName}`;
+        console.log("New profile image URL:", profileImageUrl);
       }
 
       // user_profile 테이블 업데이트
       const updateData: any = {};
-      if (updates.display_name) {
+      if (updates.display_name !== undefined) {
         updateData.display_name = updates.display_name;
       }
       if (updates.profile_image) {
         updateData.profile_image = profileImageUrl;
       }
+
+      console.log("Updating profile with data:", updateData);
 
       const { error } = await supabase
         .from("user_profile")
@@ -154,20 +178,21 @@ export function useProfile(userId?: string) {
         prev
           ? {
               ...prev,
-              ...(updates.display_name && {
+              ...(updates.display_name !== undefined && {
                 display_name: updates.display_name,
               }),
               ...(updates.profile_image && { profile_image: profileImageUrl }),
             }
           : null
       );
+
+      console.log("Profile updated successfully");
     } catch (err) {
       console.error("프로필 업데이트 실패:", err);
       throw err;
     }
   };
 
-  // 프로필 사진 삭제
   const deleteProfileImage = async () => {
     if (!userId) throw new Error("사용자 ID가 없습니다.");
 
@@ -175,10 +200,15 @@ export function useProfile(userId?: string) {
       // storage에서 사진 삭제
       if (
         profile?.profile_image &&
-        profile.profile_image !== DEFAULT_PROFILE_URL
+        profile.profile_image !== DEFAULT_PROFILE_URL &&
+        profile.profile_image !== null
       ) {
-        const fileName = profile.profile_image.split("/").pop()?.split("?")[0];
+        const fileName = profile.profile_image
+          .split("/profile/")[1]
+          ?.split("?")[0];
+
         if (fileName) {
+          console.log("Deleting profile image:", fileName);
           await supabase.storage.from("profile").remove([fileName]);
         }
       }
@@ -195,16 +225,19 @@ export function useProfile(userId?: string) {
       }
 
       // 로컬 상태 업데이트
-      setProfile((prev) =>
-        prev ? { ...prev, profile_image: DEFAULT_PROFILE_URL } : null
-      );
+      setProfile((prev) => (prev ? { ...prev, profile_image: null } : null));
+
+      console.log("Profile image deleted successfully");
     } catch (err) {
       console.error("프로필 사진 삭제 실패:", err);
       throw err;
     }
   };
 
-  const profileUrl = profile?.profile_image ?? DEFAULT_PROFILE_URL;
+  // 캐시 버스팅이 적용된 URL 반환
+  const profileUrl = profile?.profile_image
+    ? addCacheBusting(profile.profile_image)
+    : DEFAULT_PROFILE_URL;
 
   return {
     profile,
@@ -212,5 +245,6 @@ export function useProfile(userId?: string) {
     updateProfile,
     deleteProfileImage,
     refreshProfile,
+    isLoading,
   };
 }

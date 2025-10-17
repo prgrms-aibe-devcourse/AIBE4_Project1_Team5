@@ -1,60 +1,38 @@
 // component/review/ReviewSort.tsx
-"use client";
+'use client';
 
-// props의 타입을 정의합니다.
 interface SortProps {
   currentSort: string;
-  onSortChange: (sortValue: string) => void;
+  onSortChange: (sort: string) => void;
 }
 
 export default function Sort({ currentSort, onSortChange }: SortProps) {
+  const sortOptions = [
+    { label: '인기순', value: 'popularity_desc' },
+    { label: '리뷰많은순', value: 'name_asc' },
+    { label: '별점높은순', value: 'rating_desc' },
+    { label: '별점낮은순', value: 'rating_asc' },
+  ];
+
   return (
-    <div className="text-sm text-gray-600 flex items-center gap-2">
-      <button
-        onClick={() => onSortChange("popularity_desc")}
-        className={
-          currentSort === "popularity_desc"
-            ? "font-bold text-black"
-            : "cursor-pointer hover:text-black"
-        }
-      >
-        인기순
-      </button>
-      <span className="text-gray-300">|</span>
-      <button
-        onClick={() => onSortChange("name_asc")}
-        className={
-          currentSort === "name_asc"
-            ? "font-bold text-black"
-            : "cursor-pointer hover:text-black"
-        }
-      >
-      
-        이미지 많은 순
-      </button>
-      <span className="text-gray-300">|</span>
-      <button
-        onClick={() => onSortChange("rating_desc")}
-        className={
-          currentSort === "rating_desc"
-            ? "font-bold text-black"
-            : "cursor-pointer hover:text-black"
-        }
-      >
-        별점 높은 순
-      </button>
-      
-      <span className="text-gray-300">|</span>
-      <button
-        onClick={() => onSortChange("rating_asc")}
-        className={
-          currentSort === "rating_asc"
-            ? "font-bold text-black"
-            : "cursor-pointer hover:text-black"
-        }
-      >
-        별점 낮은 순
-      </button>
+    <div className="flex items-center gap-2">
+      {sortOptions.map((option, index) => (
+        <div key={option.value} className="flex items-center">
+          <button
+            onClick={() => onSortChange(option.value)}
+            className={`text-sm font-medium transition-colors ${
+              currentSort === option.value
+                ? 'text-gray-900 font-bold'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {option.label}
+          </button>
+          {index < sortOptions.length - 1 && (
+            <span className="mx-2 text-gray-300">|</span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
