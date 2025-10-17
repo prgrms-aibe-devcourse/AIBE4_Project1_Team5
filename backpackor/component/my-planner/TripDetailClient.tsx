@@ -3,6 +3,7 @@
 import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/type/place";
+import { isAfter } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,6 +36,29 @@ export default function TripDetailClient({
 
   // 모달 상태
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+
+  // 🔍 디버깅: plan 데이터 확인
+  console.log("📅 Plan 데이터:", plan);
+  console.log("📅 trip_end_date:", plan.trip_end_date);
+
+  // 여행 종료 여부 체크 - plan에서 받은 날짜 사용
+  const isTripFinished = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 시간 정보 제거하고 날짜만 비교
+
+    const endDate = new Date(plan.trip_end_date);
+    endDate.setHours(0, 0, 0, 0);
+
+    console.log("🔍 여행 종료 체크:");
+    console.log("  오늘:", today.toISOString());
+    console.log("  종료일:", endDate.toISOString());
+    console.log("  여행 종료?", isAfter(today, endDate));
+
+    return isAfter(today, endDate);
+  };
+
+  const showReview = isTripFinished();
+  console.log("✅ showReviewButton:", showReview);
 
   // 카카오맵과 동일 팔레트
   const ROUTE_COLORS = [
@@ -175,11 +199,12 @@ export default function TripDetailClient({
         )}
       </main>
 
-      {/* 모달 */}
+      {/* 모달 - 여행 종료 시에만 리뷰 버튼 표시 */}
       {selectedPlaceId && (
         <PlaceDetailModal
           placeId={selectedPlaceId}
           onClose={handleCloseModal}
+          showReviewButton={showReview}
         />
       )}
     </div>
