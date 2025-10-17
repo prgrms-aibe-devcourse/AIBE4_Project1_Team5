@@ -1,7 +1,4 @@
 // app/place/[placeId]/page.tsx
-// 특정 placeId에 해당하는 여행지 상세 페이지 서버 컴포넌트
-// Supabase에서 place 데이터와 사용자 찜 상태를 조회 후 PlaceDetailContent 컴포넌트에 전달해 렌더링
-
 import { createServerClient } from "@/lib/supabaseClient";
 import { notFound } from "next/navigation";
 import PlaceDetailContent from "@/component/place/PlaceDetailContent";
@@ -47,11 +44,26 @@ export default async function PlaceDetailPage({ params }: PageProps) {
     initialIsFavorite = !!favData;
   }
 
-  // PlaceDetailContent 컴포넌트에 place 데이터와 찜 상태 전달해 렌더링
+  // 리뷰 수와 평균 평점 계산 (수정: params.id -> placeId)
+  const { data: reviews } = await supabase
+    .from("review")
+    .select("rating")
+    .eq("place_id", placeId)
+    .eq("is_public", true);
+
+  const reviewCount = reviews?.length || 0;
+  const averageRating =
+    reviews && reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0;
+
+  // PlaceDetailContent 컴포넌트에 리뷰 데이터 전달
   return (
     <PlaceDetailContent
       place={data as TravelDetail}
       initialIsFavorite={initialIsFavorite}
+      reviewCount={reviewCount}
+      averageRating={averageRating}
     />
   );
 }

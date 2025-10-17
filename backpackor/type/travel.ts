@@ -1,3 +1,4 @@
+//@/type/travel.ts
 export type TravelDetail = {
   place_category: string;
   place_id: string;

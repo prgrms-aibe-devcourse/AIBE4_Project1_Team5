@@ -119,7 +119,7 @@ export default function PlaceDetailModal({
             place={place}
             initialIsFavorite={initialIsFavorite}
             showReviewButton={showReviewButton} // 👈 prop 전달
-          />
+            reviewCount={0} averageRating={0}          />
         </div>
       </div>
     </div>
