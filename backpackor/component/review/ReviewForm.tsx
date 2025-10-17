@@ -129,11 +129,58 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     if (foundPlace) setSelectedPlace(foundPlace);
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    /* ... (생략 없는 전체 코드) ... */
-  };
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        e.preventDefault();
+
+        if (!userId) {
+            alert("사용자 정보가 없습니다. 다시 로그인해주세요.");
+            return;
+        }
+        if (!selectedPlace) {
+            alert("리뷰를 작성할 여행지를 선택해주세요.");
+            return;
+        }
+        if (!title.trim() || !content.trim() || rating === 0) {
+            alert("제목, 내용, 별점을 모두 입력해주세요.");
+            return;
+        }
+        setIsSubmitting(true);
+
+        try {
+            let review_id = currentReviewId;
+
+            if (review_id) {
+                // 수정 모드
+                await updateReview(review_id, { title, content, rating });
+            } else {
+                // 생성 모드
+                const newReview = await saveReview({
+                    user_id: userId,
+                    place_id: selectedPlace.place_id,
+                    review_title: title,
+                    review_content: content,
+                    rating,
+                });
+                review_id = newReview.review_id;
+            }
+
+            if (newImageFiles.length > 0 && review_id) {
+                const imageUrls = await Promise.all(
+                    newImageFiles.map(file => uploadImage(file))
+                );
+                await saveReviewImages(review_id, imageUrls);
+            }
+
+            alert(currentReviewId ? "리뷰가 수정되었습니다." : "리뷰가 성공적으로 등록되었습니다.");
+            router.push(`/review`);
+
+        } catch (error) {
+            console.error("리뷰 저장/수정 오류:", error);
+            alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
   const handleImageClick = (images: string[], index: number): void => {
     /* ... (생략 없는 전체 코드) ... */
   };
@@ -206,27 +253,27 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
                 className="w-full px-4 py-2 border rounded-lg bg-gray-50 cursor-not-allowed"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                지역 <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedRegion}
-                onChange={(e) => {
-                  setSelectedRegion(e.target.value);
-                  setSelectedPlace(null);
-                }}
-                className="w-full px-4 py-2 border rounded-lg"
-                disabled={!!currentReviewId}
-              >
-                <option value="">지역을 선택하세요</option>
-                {regions.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/*<div>*/}
+            {/*  <label className="block text-sm font-medium text-gray-700 mb-2">*/}
+            {/*    지역 <span className="text-red-500">*</span>*/}
+            {/*  </label>*/}
+            {/*  <select*/}
+            {/*    value={selectedRegion}*/}
+            {/*    onChange={(e) => {*/}
+            {/*      setSelectedRegion(e.target.value);*/}
+            {/*      setSelectedPlace(null);*/}
+            {/*    }}*/}
+            {/*    className="w-full px-4 py-2 border rounded-lg"*/}
+            {/*    disabled={!!currentReviewId}*/}
+            {/*  >*/}
+            {/*    <option value="">지역을 선택하세요</option>*/}
+            {/*    {regions.map((region) => (*/}
+            {/*      <option key={region} value={region}>*/}
+            {/*        {region}*/}
+            {/*      </option>*/}
+            {/*    ))}*/}
+            {/*  </select>*/}
+            {/*</div>*/}
             {selectedPlace && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
