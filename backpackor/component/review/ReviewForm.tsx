@@ -1,6 +1,7 @@
+// component/review/ReviewForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -20,39 +21,45 @@ interface ReviewFormProps {
   placeId?: string;
 }
 
+interface Place {
+  place_id: string;
+  place_name: string;
+  place_address: string;
+  place_image: string | null;
+}
+
 export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // URL에서 edit 파라미터 확인 (쿼리 파라미터 방식)
   const editReviewId = searchParams.get('edit');
-  // editReviewId가 있으면 사용, 없으면 props의 reviewId 사용
   const currentReviewId = editReviewId || reviewId;
 
   // 폼 상태
-  const [userId, setUserId] = useState("");
-  const [regions, setRegions] = useState<string[]>([]); // 지역 목록
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
+  const [userId, setUserId] = useState<string>("");
+  const [regions, setRegions] = useState<string[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState<boolean>(false);
+  const [title, setTitle] = useState<string>("");
+  const [content, setContent] = useState<string>("");
+  const [rating, setRating] = useState<number>(0);
+  const [hoveredRating, setHoveredRating] = useState<number>(0);
 
   // 이미지 관련 상태
-  const [existingImages, setExistingImages] = useState<
-    Array<{ id: number; url: string }>
-  >([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; url: string }>>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
   // 이미지 모달 상태
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalImages, setModalImages] = useState<string[]>([]);
-  const [modalIndex, setModalIndex] = useState(0);
+  const [modalIndex, setModalIndex] = useState<number>(0);
 
   // UI 상태
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 프로필 훅 사용
   const { profile } = useProfile(userId);
@@ -80,6 +87,51 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
     fetchRegions();
   }, []);
 
+  // 지역 선택 시 해당 지역의 여행지 목록 가져오기 (수정 모드에서는 실행 안 함)
+  useEffect(() => {
+    if (currentReviewId) return; // 수정 모드에서는 여행지 목록을 가져오지 않음
+    
+    if (!selectedRegion) {
+      setPlaces([]);
+      setSelectedPlace(null);
+      return;
+    }
+
+    const fetchPlacesByRegion = async () => {
+      setIsLoadingPlaces(true);
+      try {
+        const { data, error } = await supabase
+          .from("place")
+          .select("place_id, place_name, place_address, place_image, region!inner(region_name)")
+          .eq("region.region_name", selectedRegion)
+          .order("place_name", { ascending: true });
+
+        if (error) {
+          console.error("여행지 목록 조회 실패:", error);
+          setPlaces([]);
+          return;
+        }
+
+        // 타입 안전하게 변환
+        const placesData: Place[] = (data || []).map((item: any) => ({
+          place_id: String(item.place_id),
+          place_name: String(item.place_name),
+          place_address: String(item.place_address || ""),
+          place_image: item.place_image ? String(item.place_image) : null,
+        }));
+
+        setPlaces(placesData);
+      } catch (error) {
+        console.error("여행지 목록 조회 오류:", error);
+        setPlaces([]);
+      } finally {
+        setIsLoadingPlaces(false);
+      }
+    };
+
+    fetchPlacesByRegion();
+  }, [selectedRegion, currentReviewId]);
+
   // 수정 모드일 때 기존 데이터 불러오기
   useEffect(() => {
     if (currentReviewId) {
@@ -91,13 +143,36 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           setSelectedRegion(review.region);
           setTitle(review.review_title);
           setContent(review.review_content);
-          setRating(Math.round(review.rating)); // 정수로 변환
+          setRating(Math.round(review.rating));
 
           const images = review.images.map((img) => ({
             id: img.review_image_id,
             url: img.review_image,
           }));
           setExistingImages(images);
+
+          // ✅ 수정 모드: 리뷰에서 place_id를 가져와 여행지 정보 조회
+          if (review.place_id) {
+            try {
+              const { data: placeData, error: placeError } = await supabase
+                .from("place")
+                .select("place_id, place_name, place_address, place_image")
+                .eq("place_id", review.place_id)
+                .single();
+
+              if (!placeError && placeData) {
+                const place: Place = {
+                  place_id: String(placeData.place_id),
+                  place_name: String(placeData.place_name),
+                  place_address: String(placeData.place_address || ""),
+                  place_image: placeData.place_image ? String(placeData.place_image) : null,
+                };
+                setSelectedPlace(place);
+              }
+            } catch (error) {
+              console.error("여행지 정보 조회 오류:", error);
+            }
+          }
         }
 
         setIsLoading(false);
@@ -108,23 +183,23 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   }, [currentReviewId]);
 
   // 이미지 클릭 핸들러
-  const handleImageClick = (images: string[], index: number) => {
+  const handleImageClick = (images: string[], index: number): void => {
     setModalImages(images);
     setModalIndex(index);
     setModalOpen(true);
   };
 
   // 모달 네비게이션
-  const handleModalNext = () => {
+  const handleModalNext = (): void => {
     setModalIndex((prev) => (prev + 1) % modalImages.length);
   };
 
-  const handleModalPrev = () => {
+  const handleModalPrev = (): void => {
     setModalIndex((prev) => (prev - 1 + modalImages.length) % modalImages.length);
   };
 
   // 새 이미지 파일 선택 처리
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = Array.from(e.target.files || []);
 
     const totalImages =
@@ -150,7 +225,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   const handleRemoveExistingImage = async (
     imageId: number,
     imageUrl: string
-  ) => {
+  ): Promise<void> => {
     if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
 
     const success = await deleteReviewImage(imageId, imageUrl);
@@ -162,23 +237,23 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   };
 
   // 새 이미지 삭제
-  const handleRemoveNewImage = (index: number) => {
+  const handleRemoveNewImage = (index: number): void => {
     setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
     setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 별 클릭 (정수 단위)
-  const handleStarClick = (position: number) => {
+  // 별 클릭
+  const handleStarClick = (position: number): void => {
     setRating(position);
   };
 
-  // 별 호버 (정수 단위)
-  const handleStarHover = (position: number) => {
+  // 별 호버
+  const handleStarHover = (position: number): void => {
     setHoveredRating(position);
   };
 
-  // 별 렌더링 (정수 단위)
-  const renderStar = (position: number, currentRating: number) => {
+  // 별 렌더링
+  const renderStar = (position: number, currentRating: number): JSX.Element => {
     const isFilled = position <= currentRating;
 
     return (
@@ -198,12 +273,16 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
   };
 
   // 폼 제출
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     // 유효성 검사
     if (!selectedRegion.trim()) {
       alert("지역을 선택해주세요.");
+      return;
+    }
+    if (!selectedPlace) {
+      alert("여행지를 선택해주세요.");
       return;
     }
     if (!title.trim()) {
@@ -237,7 +316,6 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           return;
         }
 
-        // 새 이미지 업로드
         if (newImageFiles.length > 0) {
           const uploadedUrls: string[] = [];
 
@@ -258,10 +336,8 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
         router.push("/review");
       } else {
         // 작성 모드
-        const uuid = crypto.randomUUID();
-
         const savedReview = await saveReview({
-          place_id: uuid,
+          place_id: selectedPlace.place_id,
           user_id: userId,
           region: selectedRegion,
           review_title: title,
@@ -275,7 +351,6 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           return;
         }
 
-        // 이미지 업로드
         if (newImageFiles.length > 0) {
           const uploadedUrls: string[] = [];
 
@@ -341,7 +416,10 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           </label>
           <select
             value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
+            onChange={(e) => {
+              setSelectedRegion(e.target.value);
+              setSelectedPlace(null);
+            }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={!!currentReviewId}
           >
@@ -354,10 +432,151 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           </select>
         </div>
 
+        {/* ✅ 수정 모드: 선택된 여행지 고정 표시 (변경 불가) */}
+        {currentReviewId && selectedPlace ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              여행지 (변경 불가)
+            </label>
+            <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                {selectedPlace.place_image && (
+                  <img
+                    src={selectedPlace.place_image}
+                    alt={selectedPlace.place_name}
+                    className="w-20 h-20 object-cover rounded-lg"
+                  />
+                )}
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    리뷰 작성된 여행지
+                  </p>
+                  <p className="text-gray-900 font-bold text-lg">
+                    📍 {selectedPlace.place_name}
+                  </p>
+                  <p className="text-gray-700 text-sm mt-1">
+                    {selectedPlace.place_address}
+                  </p>
+                </div>
+                <svg
+                  className="w-8 h-8 text-gray-400 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* 작성 모드: 여행지 선택 */
+          selectedRegion && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                여행지 <span className="text-red-500">*</span>
+              </label>
+              
+              {isLoadingPlaces ? (
+                <div className="text-center py-4 text-gray-500">
+                  여행지 목록을 불러오는 중...
+                </div>
+              ) : places.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">
+                  해당 지역에 등록된 여행지가 없습니다.
+                </div>
+              ) : (
+                <div className="max-h-64 overflow-y-auto border border-gray-300 rounded-lg">
+                  {places.map((place) => (
+                    <div
+                      key={place.place_id}
+                      onClick={() => setSelectedPlace(place)}
+                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                        selectedPlace?.place_id === place.place_id
+                          ? 'bg-blue-50 border-l-4 border-blue-500'
+                          : 'border-b border-gray-100'
+                      }`}
+                    >
+                      {place.place_image && (
+                        <img
+                          src={place.place_image}
+                          alt={place.place_name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">
+                          {place.place_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {place.place_address}
+                        </div>
+                      </div>
+                      {selectedPlace?.place_id === place.place_id && (
+                        <svg
+                          className="w-6 h-6 text-blue-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {/* ✅ 작성 모드: 선택된 여행지 고정 표시 */}
+        {!currentReviewId && selectedPlace && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              {selectedPlace.place_image && (
+                <img
+                  src={selectedPlace.place_image}
+                  alt={selectedPlace.place_name}
+                  className="w-20 h-20 object-cover rounded-lg"
+                />
+              )}
+              <div className="flex-1">
+                <p className="text-sm text-blue-600 font-medium mb-1">
+                  선택된 여행지
+                </p>
+                <p className="text-blue-900 font-bold text-lg">
+                  📍 {selectedPlace.place_name}
+                </p>
+                <p className="text-blue-700 text-sm mt-1">
+                  {selectedPlace.place_address}
+                </p>
+              </div>
+              <svg
+                className="w-8 h-8 text-blue-500 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+        )}
+
         {/* 제목 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            제목 <span className="text-red-500">*</span>
+           리뷰 제목 <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -369,7 +588,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
           />
         </div>
 
-        {/* 별점 (정수 단위) */}
+        {/* 별점 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             별점 <span className="text-red-500">*</span>
@@ -412,7 +631,7 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
             이미지 (최대 5개)
           </label>
 
-          {/* 기존 이미지 (수정 모드) */}
+          {/* 기존 이미지 */}
           {existingImages.length > 0 && (
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">기존 이미지</p>
@@ -480,9 +699,6 @@ export default function ReviewForm({ reviewId, placeId }: ReviewFormProps) {
 
           <p className="text-sm text-gray-500 mt-2">
             현재: {existingImages.length + newImageFiles.length} / 5
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            지원 형식: JPG, PNG, GIF, WebP, AVIF, SVG 등 모든 이미지 형식
           </p>
         </div>
 
