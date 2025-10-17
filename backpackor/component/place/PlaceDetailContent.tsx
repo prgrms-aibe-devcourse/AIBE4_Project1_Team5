@@ -1,3 +1,4 @@
+// @/component/place/PlaceDetailContent.tsx
 "use client";
 
 import FavoriteButton from "@/component/place/FavoriteButton";
@@ -7,17 +8,21 @@ import TravelInfoSection from "@/component/place/TravelInfoSection";
 import styles from "./PlaceDetailContent.module.css";
 import { TravelDetail } from "@/type/travel";
 
-interface Props {
+interface PlaceDetailContentProps {
   place: TravelDetail;
   initialIsFavorite: boolean;
+  reviewCount: number;
+  averageRating: number;
   showReviewButton?: boolean;
 }
 
 export default function PlaceDetailContent({
   place,
   initialIsFavorite,
+  reviewCount,
+  averageRating,
   showReviewButton = false,
-}: Props) {
+}: PlaceDetailContentProps) {
   return (
     <div className={styles.travelAppContainer}>
       {/* 1. 커버 이미지 섹션 */}
@@ -33,11 +38,6 @@ export default function PlaceDetailContent({
         <div className={styles.overlayInfo}>
           <h2>[ {place.place_category} ]</h2>
           <h1>{place.place_name}</h1>
-          <div className={styles.subtitleRatingLine}>
-            <span className={styles.rating}>
-              ⭐ {place.average_rating.toFixed(1)}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -51,11 +51,11 @@ export default function PlaceDetailContent({
             <p>{place.place_description}</p>
           </div>
 
-          {/* 여행 리뷰 섹션 - showReviewButton prop 전달 */}
+          {/* 여행 리뷰 섹션 */}
           <TravelReviewSection
             placeId={place.place_id}
-            averageRating={place.average_rating}
-            reviewCount={place.favorite_count}
+            averageRating={averageRating}
+            reviewCount={reviewCount}
             showReviewButton={showReviewButton}
             placeName={place.place_name}
           />
