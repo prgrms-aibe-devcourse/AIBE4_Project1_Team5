@@ -110,7 +110,7 @@ function ReviewCard({ review, user, onEdit, onDelete }: {
           </span>
         </div>
 
-        {/* ✅ 여행지명 표시 추가 */}
+        {/* 여행지명 표시 */}
         {placeName && (
           <div className="mb-2">
             <p className="text-sm text-gray-600">
@@ -181,6 +181,7 @@ export default function ReviewListPage() {
   const [selectedRegion, setSelectedRegion] = useState('전체');
   const [currentSort, setCurrentSort] = useState('popularity_desc');
   const [isLoading, setIsLoading] = useState(true);
+  const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false); // ✅ 내 리뷰만 보기 상태
 
   // 지역 목록 가져오기
   useEffect(() => {
@@ -211,33 +212,39 @@ export default function ReviewListPage() {
     fetchReviews();
   }, [selectedRegion]);
 
-  // 정렬 적용
+  // 정렬 및 필터링 적용
   useEffect(() => {
-    const sorted = [...reviews];
+    let filtered = [...reviews];
 
+    // ✅ 내 리뷰만 보기 필터 적용
+    if (showMyReviewsOnly && user) {
+      filtered = filtered.filter(review => review.user_id === user.id);
+    }
+
+    // 정렬 적용
     switch (currentSort) {
       case 'popularity_desc':
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       
       case 'name_asc':
-        sorted.sort((a, b) => b.images.length - a.images.length);
+        filtered.sort((a, b) => b.images.length - a.images.length);
         break;
       
       case 'rating_desc':
-        sorted.sort((a, b) => b.rating - a.rating);
+        filtered.sort((a, b) => b.rating - a.rating);
         break;
       
       case 'rating_asc':
-        sorted.sort((a, b) => a.rating - b.rating);
+        filtered.sort((a, b) => a.rating - b.rating);
         break;
       
       default:
         break;
     }
 
-    setSortedReviews(sorted);
-  }, [reviews, currentSort]);
+    setSortedReviews(filtered);
+  }, [reviews, currentSort, showMyReviewsOnly, user]);
 
   // 리뷰 삭제 (콜백 함수)
   const handleDeleteCallback = (reviewId: string) => {
@@ -317,23 +324,42 @@ export default function ReviewListPage() {
 
       {/* 지역 필터 & 정렬 */}
       <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        {/* 지역 선택 */}
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold mb-3">지역별 필터</h2>
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          >
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
+        {/* 왼쪽: 지역 선택 + 내 리뷰만 보기 */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-1">
+          {/* 지역 선택 */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">지역별 필터</h2>
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            >
+              {regions.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* ✅ 내가 작성한 리뷰만 보기 버튼 */}
+          {user && (
+            <div className="flex items-center mt-8 md:mt-0">
+              <button
+                onClick={() => setShowMyReviewsOnly(!showMyReviewsOnly)}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                  showMyReviewsOnly
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {showMyReviewsOnly ? '✓ 내 리뷰만 보기' : '내 리뷰만 보기'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* 정렬 컴포넌트 */}
+        {/* 오른쪽: 정렬 */}
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-gray-700">정렬:</span>
           <Sort currentSort={currentSort} onSortChange={setCurrentSort} />
@@ -394,9 +420,11 @@ export default function ReviewListPage() {
       {sortedReviews.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">
-            {selectedRegion === '전체' 
-              ? '아직 작성된 리뷰가 없습니다.' 
-              : `${selectedRegion} 지역에 작성된 리뷰가 없습니다.`}
+            {showMyReviewsOnly
+              ? '작성한 리뷰가 없습니다.'
+              : selectedRegion === '전체' 
+                ? '아직 작성된 리뷰가 없습니다.' 
+                : `${selectedRegion} 지역에 작성된 리뷰가 없습니다.`}
           </p>
           {user && (
             <WriteButton className="mt-4" />
