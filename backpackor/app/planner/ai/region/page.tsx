@@ -68,7 +68,7 @@ export default function AiRegionSelectPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-white">
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">
@@ -80,19 +80,109 @@ export default function AiRegionSelectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-4xl">
+        {/* 진행 단계 표시 */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-semibold">
+              1
+            </div>
+            <div className="w-12 h-0.5 bg-gray-300"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center text-sm font-semibold">
+              2
+            </div>
+            <div className="w-12 h-0.5 bg-gray-300"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center text-sm font-semibold">
+              3
+            </div>
+            <div className="w-12 h-0.5 bg-gray-300"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center text-sm font-semibold">
+              4
+            </div>
+            <div className="w-12 h-0.5 bg-gray-300"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center text-sm font-semibold">
+              5
+            </div>
+          </div>
+        </div>
+
         {/* 헤더 */}
-        <div className="mb-8">
+        <div className="text-center mb-12">
+          <p className="text-blue-600 font-semibold mb-3 text-sm tracking-wider uppercase">
+            Step 1 of 5
+          </p>
+          <h1 className="text-4xl font-bold mb-3 text-gray-900">
+            어디로 여행을 떠나시나요?
+          </h1>
+          <p className="text-gray-500 text-lg">
+            여행하고 싶은 지역을 선택해주세요 (복수 선택 가능)
+          </p>
+        </div>
+
+        {/* 지역 선택 카드 - 크기 축소 */}
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
+          {regions.map((region) => {
+            const isSelected = selectedRegions.includes(region.region_name);
+            return (
+              <button
+                key={region.region_id}
+                onClick={() => handleSelectRegion(region.region_name)}
+                className={`group relative p-4 bg-white rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                  isSelected
+                    ? "border-blue-500 shadow-lg ring-4 ring-blue-100"
+                    : "border-gray-200 hover:border-blue-300 shadow-sm"
+                }`}
+              >
+                <div className="text-center">
+                  <div className="font-semibold text-gray-900 text-sm">
+                    {region.region_name}
+                  </div>
+                </div>
+                {isSelected && (
+                  <div className="absolute top-2 right-2">
+                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 선택된 지역 카운터 */}
+        {selectedRegions.length > 0 && (
+          <div className="text-center mb-6">
+            <span className="inline-block px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+              {selectedRegions.length}개 선택됨
+            </span>
+          </div>
+        )}
+
+        {/* 네비게이션 버튼 */}
+        <div className="flex justify-between items-center gap-4">
           <Link
             href={createUrl(false)}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
+            className="flex items-center gap-2 px-6 py-3 text-gray-600 font-semibold rounded-xl hover:bg-gray-100 transition-all"
           >
             <svg
-              className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+              className="w-5 h-5"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
                 strokeLinecap="round"
@@ -101,120 +191,31 @@ export default function AiRegionSelectPage() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span className="font-medium">뒤로가기</span>
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            어디로 여행을 떠나시나요?
-          </h1>
-          <p className="text-lg text-gray-600">
-            여행하고 싶은 지역을 선택해주세요 (여러 개 선택 가능)
-          </p>
-        </div>
-
-        {/* 지역 선택 카드 */}
-        <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">지역 선택</h2>
-
-          <div className="flex flex-wrap gap-3">
-            {regions.map((region) => {
-              const isSelected = selectedRegions.includes(region.region_name);
-              return (
-                <button
-                  key={region.region_id}
-                  onClick={() => handleSelectRegion(region.region_name)}
-                  className={`px-5 py-2.5 rounded-full font-medium transition-all duration-200 ${
-                    isSelected
-                      ? "bg-gray-900 text-white shadow-md"
-                      : "bg-white text-gray-700 border border-gray-300 hover:border-gray-900"
-                  }`}
-                >
-                  {region.region_name}
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedRegions.length === 0 && (
-            <div className="mt-6 text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-              <p className="text-gray-500 font-medium">지역을 선택해주세요</p>
-              <p className="text-sm text-gray-400 mt-1">
-                여러 지역을 선택할 수 있어요
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* 선택된 지역 태그 */}
-        {selectedRegions.length > 0 && (
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 mb-8">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <span>선택한 지역</span>
-              <span className="text-sm font-normal text-gray-500">
-                ({selectedRegions.length}개)
-              </span>
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {selectedRegions.map((region) => (
-                <div
-                  key={region}
-                  className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-300 shadow-sm"
-                >
-                  <span className="font-medium text-gray-900">{region}</span>
-                  <button
-                    onClick={() => handleSelectRegion(region)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 하단 버튼 */}
-        <div className="flex justify-end gap-3">
-          <Link
-            href={createUrl(false)}
-            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
-          >
             이전 단계
           </Link>
           <Link
-            href={createUrl(true)}
+            href={selectedRegions.length > 0 ? createUrl(true) : "#"}
+            className={`flex items-center gap-2 px-8 py-3 font-semibold rounded-xl transition-all ${
+              selectedRegions.length > 0
+                ? "bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-xl"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
             onClick={(e) => {
               if (selectedRegions.length === 0) e.preventDefault();
             }}
-            className={`px-8 py-4 font-bold rounded-xl shadow-lg flex items-center gap-2 transition-all ${
-              selectedRegions.length === 0
-                ? "bg-gradient-to-r from-gray-300 to-gray-300 text-white cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl"
-            }`}
           >
-            다음 단계로
+            다음 단계
             <svg
               className="w-5 h-5"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
+                d="M9 5l7 7-7 7"
               />
             </svg>
           </Link>
