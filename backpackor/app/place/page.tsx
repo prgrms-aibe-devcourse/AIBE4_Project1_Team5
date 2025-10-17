@@ -1,50 +1,64 @@
+// app/place/page.tsx
 import { createServerClient } from "@/lib/supabaseClient";
 import TravelList from "@/component/place/TravelList";
-
+import { Place } from "@/type/place";
 interface PlacePageProps {
   searchParams: {
     sort?: string;
   };
 }
-
 export default async function PlacePage({ searchParams }: PlacePageProps) {
   const supabase = createServerClient();
-
-  // URL 파라미터가 없으면 'popularity_desc'(인기순)을 기본값으로 사용
-  const sortBy = searchParams.sort || "popularity_desc";
-
-  let query = supabase.rpc("get_places_with_details");
-
-  // sortBy 값에 따라 정렬 순서를 적용
-  switch (sortBy) {
-    case "review_desc":
-      // 1순위: 리뷰 많은 순, 2순위: 인기순
-      query = query
-        .order("review_count", { ascending: false })
-        .order("favorite_count", { ascending: false });
-      break;
-
-    case "rating_desc":
-      // 1순위: 별점 높은 순, 2순위: 인기순
-      query = query
-        .order("average_rating", { ascending: false })
-        .order("favorite_count", { ascending: false });
-      break;
-
-    case "popularity_desc":
-    default:
-      // 기본 정렬: 인기순
-      query = query.order("favorite_count", { ascending: false });
-      break;
+  const { sort } = searchParams;
+  const sortBy = sort || "popularity_desc";
+  try {
+    // :아래를_가리키는_손_모양: RPC 대신 직접 쿼리
+    let query = supabase.from("place").select("*");
+    switch (sortBy) {
+      case "review_desc":
+        query = query.order("review_count", {
+          ascending: false,
+          nullsFirst: false,
+        });
+        break;
+      case "rating_desc":
+        query = query.order("average_rating", {
+          ascending: false,
+          nullsFirst: false,
+        });
+        break;
+      case "popularity_desc":
+      default:
+        query = query.order("favorite_count", {
+          ascending: false,
+          nullsFirst: false,
+        });
+        break;
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error("Database query error:", error);
+      return <TravelList initialPlaces={[]} />;
+    }
+    const places: Place[] = (data || []).map((item: any) => ({
+      place_id: item.place_id,
+      place_name: item.place_name,
+      place_address: item.place_address ?? null,
+      place_description: item.place_description ?? null,
+      place_image: item.place_image ?? null,
+      place_detail_image: item.place_detail_image ?? null,
+      average_rating: item.average_rating ?? null,
+      favorite_count: item.favorite_count ?? null,
+      review_count: item.review_count ?? null,
+      region_id: item.region_id ?? null,
+      region: null, // region 테이블 조인이 필요하면 나중에 추가
+      place_category: item.place_category ?? null,
+      latitude: item.latitude ?? null,
+      longitude: item.longitude ?? null,
+    }));
+    return <TravelList initialPlaces={places} />;
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return <TravelList initialPlaces={[]} />;
   }
-
-  const { data: places, error } = await query;
-
-  if (error) {
-    console.error("Error fetching places:", error);
-    return <div>데이터를 불러오는 중 오류가 발생했습니다.</div>;
-  }
-
-  // @ts-ignore
-  return <TravelList initialPlaces={places || []} />;
 }

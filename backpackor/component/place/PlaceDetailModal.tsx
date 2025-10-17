@@ -1,25 +1,30 @@
 // component/place/PlaceDetailModal.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@/lib/supabaseClient";
 import PlaceDetailContent from "@/component/place/PlaceDetailContent";
+import { createBrowserClient } from "@/lib/supabaseClient";
 import { TravelDetail } from "@/type/travel";
+import { useEffect, useState } from "react";
 import styles from "./PlaceDetailModal.module.css";
 
 interface PlaceDetailModalProps {
   placeId: string;
   onClose: () => void;
+  showReviewButton?: boolean; // 👈 추가
 }
 
 export default function PlaceDetailModal({
   placeId,
   onClose,
+  showReviewButton = false, // 👈 추가
 }: PlaceDetailModalProps) {
   const [place, setPlace] = useState<TravelDetail | null>(null);
   const [initialIsFavorite, setInitialIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
+
+  // 🔍 디버깅
+  console.log("🎯 PlaceDetailModal - showReviewButton:", showReviewButton);
 
   useEffect(() => {
     const fetchPlaceData = async () => {
@@ -113,6 +118,7 @@ export default function PlaceDetailModal({
           <PlaceDetailContent
             place={place}
             initialIsFavorite={initialIsFavorite}
+            showReviewButton={showReviewButton} // 👈 prop 전달
           />
         </div>
       </div>
