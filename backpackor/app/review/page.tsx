@@ -8,8 +8,9 @@ import { useAuth } from '@/hook/useAuth';
 import { useProfile } from '@/hook/useProfile';
 import { WriteButton, ReviewActionButtons } from '@/component/review/ReviewButton';
 import Sort from '@/component/review/ReviewSort';
+import { supabase } from '@/lib/supabaseClient';
 
-// 개별 리뷰 카드 컴포넌트 (닉네임 표시 포함)
+// 개별 리뷰 카드 컴포넌트 (닉네임 + 여행지명 표시)
 function ReviewCard({ review, user, onEdit, onDelete }: {
   review: ReviewWithImages;
   user: any;
@@ -18,11 +19,31 @@ function ReviewCard({ review, user, onEdit, onDelete }: {
 }) {
   const router = useRouter();
   const { profile } = useProfile(review.user_id);
+  const [placeName, setPlaceName] = useState<string>('');
+
+  // 여행지 이름 가져오기
+  useEffect(() => {
+    const fetchPlaceName = async () => {
+      if (review.place_id) {
+        const { data, error } = await supabase
+          .from('place')
+          .select('place_name')
+          .eq('place_id', review.place_id)
+          .single();
+
+        if (!error && data) {
+          setPlaceName(data.place_name);
+        }
+      }
+    };
+
+    fetchPlaceName();
+  }, [review.place_id]);
 
   // 별점 렌더링 (정수만)
   const renderStars = (rating: number) => {
     const stars = [];
-    const roundedRating = Math.round(rating); // 정수로 반올림
+    const roundedRating = Math.round(rating);
     
     for (let i = 1; i <= 5; i++) {
       stars.push(
@@ -89,6 +110,15 @@ function ReviewCard({ review, user, onEdit, onDelete }: {
           </span>
         </div>
 
+        {/* ✅ 여행지명 표시 추가 */}
+        {placeName && (
+          <div className="mb-2">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">📍 여행지:</span> {placeName}
+            </p>
+          </div>
+        )}
+
         {/* 제목 */}
         <h3 className="text-lg font-semibold mb-2 line-clamp-1">
           {review.review_title}
@@ -147,7 +177,7 @@ export default function ReviewListPage() {
   
   const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
   const [sortedReviews, setSortedReviews] = useState<ReviewWithImages[]>([]);
-  const [regions, setRegions] = useState<string[]>(['전체']); // 지역 목록 상태
+  const [regions, setRegions] = useState<string[]>(['전체']);
   const [selectedRegion, setSelectedRegion] = useState('전체');
   const [currentSort, setCurrentSort] = useState('popularity_desc');
   const [isLoading, setIsLoading] = useState(true);
@@ -223,7 +253,7 @@ export default function ReviewListPage() {
   // 별점 렌더링 (정수만)
   const renderStars = (rating: number) => {
     const stars = [];
-    const roundedRating = Math.round(rating); // 정수로 반올림
+    const roundedRating = Math.round(rating);
     
     for (let i = 1; i <= 5; i++) {
       stars.push(
@@ -246,7 +276,6 @@ export default function ReviewListPage() {
     }
 
     const ratingCounts: Record<number, number> = {};
-    // 1~5점 초기화
     for (let i = 1; i <= 5; i++) {
       ratingCounts[i] = 0;
     }
@@ -255,7 +284,6 @@ export default function ReviewListPage() {
 
     reviews.forEach((review) => {
       totalRating += review.rating;
-      // 정수로 반올림
       const roundedRating = Math.round(review.rating);
       if (ratingCounts[roundedRating] !== undefined) {
         ratingCounts[roundedRating]++;
@@ -336,7 +364,7 @@ export default function ReviewListPage() {
             </p>
           </div>
 
-          {/* 별점 분포 (5점 ~ 1점만) */}
+          {/* 별점 분포 */}
           <div className="flex-1">
             <p className="text-sm text-gray-700 font-semibold mb-4">별점 분포</p>
             <div className="space-y-3">
