@@ -1,17 +1,12 @@
-"use client"; // ⭐️ 1. 클라이언트 컴포넌트임을 명시함 ⭐️
+"use client";
 
+import type { Review } from "@/type/travel";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-// 🚨 팀 프로젝트에 맞게 경로를 수정해야 합니다.
-// Supabase 클라이언트와 타입 정의 경로를 팀 프로젝트 구조에 맞게 변경합니다.
-// import { supabase } from "@/lib/supabase/client"; // 실제 Supabase 경로로 변경 필요
-import type { Review } from "@/type/travel"; // 타입 경로 변경 가정
 
-// ----------------------------------------------------
-// ⭐️ 인터페이스 및 상수 유지 (App Router 환경에 맞춰 임포트 경로만 수정) ⭐️
-// ----------------------------------------------------
 interface ReviewWithProfile extends Review {
   profiles: {
-    display_name: string; // user 테이블의 닉네임 컬럼명으로 가정함
+    display_name: string;
   } | null;
 }
 
@@ -19,10 +14,11 @@ interface TravelReviewSectionProps {
   placeId: string;
   averageRating: number;
   reviewCount: number;
+  showReviewButton?: boolean;
+  placeName?: string;
 }
 
 const MOCK_REVIEWS_DATA: ReviewWithProfile[] = [
-  // ... (목업 데이터 내용 유지) ...
   {
     review_id: "r1",
     place_id: "jeju-mock-id",
@@ -56,21 +52,21 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
   placeId,
   averageRating,
   reviewCount,
+  showReviewButton = false,
+  placeName = "",
 }) => {
+  const router = useRouter();
   const [reviews, setReviews] = useState<ReviewWithProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ⭐️ 로직 변경 없음: 'use client'가 있으므로 기존 로직을 그대로 사용함 ⭐️
   useEffect(() => {
     const fetchReviews = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // ... (DB 연동 예정 코드 주석 유지) ...
-
-        // ⭐️ 현재 목업 데이터 사용 (DB 없을 때 작동 보장) ⭐️
+        // DB 연동 예정
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         if (placeId === "jeju-mock-id") {
@@ -94,49 +90,78 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
     fetchReviews();
   }, [placeId]);
 
-  if (loading) return <div>리뷰 로딩 중임...</div>;
-  if (error) return <div style={{ color: "red" }}>오류: {error}</div>;
+  if (loading) return <div className="p-5">리뷰 로딩 중...</div>;
+  if (error) return <div className="p-5 text-red-600">오류: {error}</div>;
 
-  // 💻 UI 렌더링 (JSX 유지)
   return (
-    <div
-      className="travel-review-section"
-      style={{ padding: "20px", borderTop: "1px solid #ccc" }}
-    >
-      <h2>
-        여행지 리뷰 ({reviewCount}개)
-        <span
-          style={{ marginLeft: "10px", fontSize: "18px", color: "#ffc107" }}
-        >
-          ⭐️ {averageRating.toFixed(1)}
+    <div className="border-t border-gray-200 pt-8 mt-8">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          여행지 리뷰 ({reviewCount}개)
+        </h2>
+        <span className="text-lg font-semibold text-yellow-500">
+          ⭐ {averageRating.toFixed(1)}
         </span>
-      </h2>
+      </div>
 
-      <div className="review-list">
+      {/* 리뷰 작성 버튼 */}
+      {showReviewButton && (
+        <button
+          onClick={() =>
+            router.push(
+              `/review/write?placeId=${placeId}&placeName=${encodeURIComponent(
+                placeName
+              )}`
+            )
+          }
+          className="group relative w-full mb-6 overflow-hidden rounded-lg border border-gray-900 bg-white px-6 py-3 transition-all hover:border-gray-700"
+        >
+          <div className="relative flex items-center justify-center gap-2">
+            <span className="text-sm font-medium text-gray-900 transition-colors group-hover:text-gray-700">
+              이 장소 리뷰 작성하기
+            </span>
+            <svg
+              className="h-4 w-4 text-gray-900 transition-all group-hover:translate-x-1 group-hover:text-gray-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gray-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+        </button>
+      )}
+
+      {/* 리뷰 목록 */}
+      <div className="space-y-4">
         {reviews.length === 0 ? (
-          <p style={{ color: "#999" }}>아직 작성된 리뷰가 없음.</p>
+          <p className="text-gray-500 text-center py-8">
+            아직 작성된 리뷰가 없습니다.
+          </p>
         ) : (
           reviews.map((review) => (
             <div
               key={review.review_id}
-              style={{ borderBottom: "1px dashed #eee", padding: "15px 0" }}
+              className="border-b border-gray-100 pb-4 last:border-b-0"
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "5px",
-                }}
-              >
-                <strong style={{ fontWeight: 600 }}>
-                  👤 {review.profiles?.display_name || "익명 사용자"}
-                </strong>
-                <span style={{ fontSize: "12px", color: "#888" }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-gray-900">
+                  {review.profiles?.display_name || "익명 사용자"}
+                </span>
+                <span className="text-xs text-gray-500">
                   {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
-
-              <p style={{ margin: "5px 0" }}>{review.review_content}</p>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                {review.review_content}
+              </p>
             </div>
           ))
         )}
