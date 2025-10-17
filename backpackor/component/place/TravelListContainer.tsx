@@ -1,5 +1,3 @@
-// component/place/TravelListContainer.tsx
-
 "use client";
 
 import { createBrowserClient } from "@/lib/supabaseClient";
@@ -8,13 +6,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-// ✅ 1. Props 인터페이스에 initialRegion 추가
 interface TravelListContainerProps {
   places: Place[];
   onAddPlace: (place: Place) => void;
   onPlaceClick: (placeId: string) => void;
-  regionOptions: string[];
-  initialRegion?: string; // 이전 페이지에서 선택한 지역을 받을 prop
+  regionOptions?: string[];
+  initialRegion?: string;
 }
 
 const INITIAL_ITEM_COUNT = 10;
@@ -25,23 +22,51 @@ export default function TravelListContainer({
   onAddPlace,
   onPlaceClick,
   regionOptions = [],
-  initialRegion, // ✅ 2. prop 받기
+  initialRegion,
 }: TravelListContainerProps) {
   const router = useRouter();
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
-
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState("popularity_desc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ITEM_COUNT);
-
-  // ✅ 3. selectedRegion 상태의 초기값을 initialRegion prop으로 설정
   const [selectedRegion, setSelectedRegion] = useState(initialRegion || "전체");
-  
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoritePlaceIds, setFavoritePlaceIds] = useState<Set<string>>(
     new Set()
   );
+  const [updatedPlaces, setUpdatedPlaces] = useState<Place[]>(places);
 
+  useEffect(() => {
+    const supabase = createBrowserClient();
+
+    const channel = supabase
+      .channel("place_rating_changes")
+      .on(
+        "postgres_changes" as const,
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "place",
+        },
+        (payload: any) => {
+          const updated = payload.new as Place;
+          setUpdatedPlaces((prev) =>
+            prev.map((p) =>
+              p.place_id === updated.place_id
+                ? { ...p, average_rating: updated.average_rating }
+                : p
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // 찜 목록 불러오기
   useEffect(() => {
     const fetchFavorites = async () => {
       setIsLoadingFavorites(true);
@@ -73,16 +98,16 @@ export default function TravelListContainer({
     fetchFavorites();
   }, []);
 
+  // ✅ 필터링 및 정렬
   const displayPlaces = useMemo(() => {
-    let filteredPlaces = [...places];
+    let filteredPlaces = [...updatedPlaces];
 
     if (showFavoritesOnly) {
       filteredPlaces = filteredPlaces.filter((place) =>
         favoritePlaceIds.has(place.place_id)
       );
     }
-    
-    // (place as any) 부분은 실제 Place 타입에 region 속성이 있는지에 따라 조정이 필요할 수 있습니다.
+
     if (selectedRegion !== "전체") {
       filteredPlaces = filteredPlaces.filter(
         (place) => (place as any).region === selectedRegion
@@ -106,7 +131,7 @@ export default function TravelListContainer({
       place.place_name.toLowerCase().includes(searchKeyword.toLowerCase())
     );
   }, [
-    places,
+    updatedPlaces,
     sortOrder,
     searchKeyword,
     selectedRegion,
@@ -134,9 +159,8 @@ export default function TravelListContainer({
       </div>
 
       <div className="flex items-center gap-4 mb-4">
-        {/* 이 select의 value가 props로 받은 초기값으로 설정됩니다. */}
         <select
-          value={selectedRegion} 
+          value={selectedRegion}
           onChange={(e) => setSelectedRegion(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
