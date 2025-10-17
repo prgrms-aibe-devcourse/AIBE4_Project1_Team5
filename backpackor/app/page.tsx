@@ -19,16 +19,23 @@ export default function Page() {
     const fetchPlaces = async () => {
       const supabase = createBrowserClient();
 
+      // 인기 여행지 (찜 많은 순)
       const { data: popularData } = await supabase
         .from("place")
         .select("place_id, place_name, place_image, average_rating")
         .order("favorite_count", { ascending: false })
         .limit(3);
 
+      // 별점 높은 여행지 (평균 평점 순)
       const { data: bestData } = await supabase
-        .rpc("get_places_with_details")
-        .order("average_rating", { ascending: false })
+        .from("place")
+        .select("place_id, place_name, place_image, average_rating")
+        .order("average_rating", { ascending: false, nullsFirst: false })
         .limit(3);
+
+      // ✅ [디버깅] 어떤 데이터가 오는지 콘솔에서 확인합니다.
+      console.log("인기 여행지 데이터:", popularData);
+      console.log("별점 높은 여행지 데이터:", bestData);
 
       setPopularPlaces(popularData || []);
       setBestPlaces(bestData || []);
@@ -55,25 +62,20 @@ export default function Page() {
         }
       `}</style>
       <main className="min-h-screen bg-white">
-        {/* ✅ Hero Section */}
+        {/* ✅ Hero Section (복구) */}
         <section className="relative h-[60vh] min-h-[520px] overflow-hidden">
-          {/* 배경 이미지 (맨 뒤) */}
           <img
             src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/banner/1.jpg"
             alt="여행 배너"
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
-          {/* 오버레이 */}
           <div className="absolute inset-0 bg-gradient-to-b from-blue-400/30 via-blue-300/20 to-blue-200/30 z-10"></div>
-
-          {/* 텍스트 */}
           <div className="relative z-20 h-full flex items-center justify-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-10">
               {user ? (
                 <>
                   <h1 className="text-white text-8xl md:text-9xl font-extrabold tracking-tight drop-shadow-2xl animate-fade-in-up leading-tight">
-                    안녕하세요,
-                    <br />
+                    안녕하세요, <br />
                     <span className="text-sky-700 font-semibold">
                       {profile?.display_name || "사용자"}
                     </span>
@@ -89,14 +91,11 @@ export default function Page() {
                     어디로 떠나볼까요?
                   </h1>
                   <p className="text-white/90 text-4xl font-normal drop-shadow-xl leading-relaxed animate-fade-in-up">
-                    새로운 여행지를 발견하고
-                    <br />
-                    잊지 못할 추억을 만들어보세요
+                    새로운 여행지를 발견하고 <br /> 잊지 못할 추억을
+                    만들어보세요
                   </p>
                 </>
               )}
-
-              {/* CTA 버튼 */}
               <div className="flex justify-center pt-6 animate-fade-in-up">
                 <Link
                   href="/place"
@@ -128,25 +127,19 @@ export default function Page() {
           </div>
         </section>
 
-        {/* 🔥 인기 여행지 */}
+        {/* 🔥 인기 여행지 (복구) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-20">
-            {/* 🔹 영어 서브타이틀 */}
             <p className="text-blue-600 font-semibold text-lg tracking-widest mb-3">
               HOT PLACE
             </p>
-
-            {/* 🔸 메인 타이틀 */}
             <h2 className="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
               지금 가장 인기있는 여행지
             </h2>
-
             <p className="text-xl text-gray-600">
               많은 여행자들이 선택한 베스트 여행지를 만나보세요
             </p>
           </div>
-
-          {/* 카드 그리드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {popularPlaces.map((place, index) => (
               <div
@@ -162,25 +155,20 @@ export default function Page() {
           </div>
         </section>
 
-        {/* ⭐ 베스트 여행지 */}
+        {/* ⭐ 베스트 여행지 (복구) */}
         <section className="bg-gradient-to-b from-blue-50 via-sky-50 to-white py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              {/* 🔹 영어 서브타이틀 */}
               <p className="text-yellow-500 font-semibold text-lg tracking-widest mb-3">
                 BEST RATED
               </p>
-
-              {/* 🔸 메인 타이틀 */}
               <h2 className="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
                 별점이 높은 여행지
               </h2>
-
               <p className="text-xl text-gray-600">
                 실제 방문객들이 극찬한 최고의 여행지
               </p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {bestPlaces.map((place, index) => (
                 <div
@@ -197,13 +185,12 @@ export default function Page() {
           </div>
         </section>
 
-        {/* ✅ Footer CTA (일정 계획하기 유도) */}
+        {/* ✅ Footer CTA (복구) */}
         <section className="relative bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 text-white py-28 overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
           </div>
-
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-5xl font-extrabold mb-8 leading-tight">
               지금 바로 여행 계획을 시작하세요
