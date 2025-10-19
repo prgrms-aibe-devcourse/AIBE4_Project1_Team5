@@ -35,11 +35,14 @@ export default function ReviewForm({
   const [content, setContent] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
-  const [existingImages, setExistingImages] = useState<Array<{ id: number; url: string }>>([]); // 기존 이미지 목록 상태
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; url: string }>>([]); 
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // ✅ regionOptions 상태 추가
+  const [regionOptions, setRegionOptions] = useState<string[]>([]);
 
   const { profile } = useProfile(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,7 +58,7 @@ export default function ReviewForm({
     fetchUserInfo();
   }, []);
 
-  // ✅ 전체 여행지 목록 가져오기
+  // ✅ 전체 여행지 목록 가져오기 (region 포함)
   useEffect(() => {
     if (currentReviewId) return;
     const fetchAllPlaces = async () => {
@@ -69,11 +72,40 @@ export default function ReviewForm({
           average_rating,
           favorite_count,
           region_id,
-          place_category
+          place_category,
+          region!inner(region_name)
         `);
 
         if (error) throw error;
-        setAllPlaces(data || []);
+        
+        // ✅ region 필드를 명시적으로 추가
+        const placesWithRegion = (data || []).map((item: any) => ({
+          place_id: item.place_id,
+          place_name: item.place_name,
+          place_address: item.place_address,
+          place_image: item.place_image,
+          average_rating: item.average_rating,
+          favorite_count: item.favorite_count,
+          region_id: item.region_id,
+          place_category: item.place_category,
+          region: item.region?.region_name || null, // ✅ 추가
+          review_count: null,
+          place_description: null,
+          place_detail_image: null,
+          latitude: null,
+          longitude: null,
+        }));
+        
+        setAllPlaces(placesWithRegion);
+        
+        // ✅ 지역 옵션 추출
+        const uniqueRegions = Array.from(
+          new Set(placesWithRegion.map((p: Place) => p.region).filter(Boolean))
+        ) as string[];
+        setRegionOptions(uniqueRegions);
+        
+        console.log("📍 ReviewForm - 로드된 places:", placesWithRegion.slice(0, 2));
+        console.log("📍 ReviewForm - 추출된 regionOptions:", uniqueRegions);
       } catch (error) {
         console.error("전체 여행지 목록 조회 오류:", error);
         setAllPlaces([]);
@@ -489,8 +521,8 @@ export default function ReviewForm({
                 places={placesForList}
                 onAddPlace={() => {}}
                 onPlaceClick={handlePlaceSelectById}
-                regionOptions={[]}
-                initialRegion=""
+                regionOptions={regionOptions} // ✅ 추가
+                initialRegion="전체"
               />
             ))}
         </div>

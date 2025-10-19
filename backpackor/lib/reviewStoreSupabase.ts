@@ -242,6 +242,8 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
 // ========== 이미지 관련 ==========
 
 // 이미지 업로드 (Supabase Storage)
+// lib/reviewStoreSupabase.ts 의 uploadImage 함수 수정
+
 export async function uploadImage(file: File, reviewId: string): Promise<string | null> {
   try {
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -263,17 +265,23 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
     }
 
     // ✅ Public URL 생성 (수정된 부분)
-    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/review-image/${filePath}`;
+    const { data: urlData } = supabase.storage
+      .from('review-image')
+      .getPublicUrl(filePath);
 
-    console.log('✅ 생성된 이미지 URL:', publicUrl);
-    return publicUrl;
+    if (!urlData || !urlData.publicUrl) {
+      console.error('Public URL 생성 실패');
+      return null;
+    }
+
+    console.log('✅ 생성된 이미지 URL:', urlData.publicUrl);
+    return urlData.publicUrl;
 
   } catch (error) {
     console.error('이미지 업로드 오류:', error);
     return null;
   }
 }
-
 // Storage에서 이미지 삭제 (내부 함수)
 async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
   try {
@@ -331,7 +339,6 @@ export async function saveReviewImages(reviewId: string, imageUrls: string[]): P
     return false;
   }
 }
-
 
 // 리뷰 이미지 삭제 (DB + Storage)
 export async function deleteReviewImage(imageId: number, imageUrl: string): Promise<boolean> {
