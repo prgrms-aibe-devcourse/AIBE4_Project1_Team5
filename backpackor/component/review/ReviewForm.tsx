@@ -40,25 +40,24 @@ export default function ReviewForm({
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  // ✅ regionOptions 상태 추가
   const [regionOptions, setRegionOptions] = useState<string[]>([]);
 
   const { profile } = useProfile(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ 사용자 정보 로드
+  // ✅ 수정 모드 여부
+  const isEditMode = !!currentReviewId;
+
+  // 사용자 정보 로드
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) setUserId(user.id);
     };
     fetchUserInfo();
   }, []);
 
-  // ✅ 전체 여행지 목록 가져오기 (region 포함)
+  // 전체 여행지 목록 가져오기 (새 작성 모드에만)
   useEffect(() => {
     if (currentReviewId) return;
     const fetchAllPlaces = async () => {
@@ -78,7 +77,6 @@ export default function ReviewForm({
 
         if (error) throw error;
         
-        // ✅ region 필드를 명시적으로 추가
         const placesWithRegion = (data || []).map((item: any) => ({
           place_id: item.place_id,
           place_name: item.place_name,
@@ -88,7 +86,7 @@ export default function ReviewForm({
           favorite_count: item.favorite_count,
           region_id: item.region_id,
           place_category: item.place_category,
-          region: item.region?.region_name || null, // ✅ 추가
+          region: item.region?.region_name || null,
           review_count: null,
           place_description: null,
           place_detail_image: null,
@@ -98,14 +96,10 @@ export default function ReviewForm({
         
         setAllPlaces(placesWithRegion);
         
-        // ✅ 지역 옵션 추출
         const uniqueRegions = Array.from(
           new Set(placesWithRegion.map((p: Place) => p.region).filter(Boolean))
         ) as string[];
         setRegionOptions(uniqueRegions);
-        
-        console.log("📍 ReviewForm - 로드된 places:", placesWithRegion.slice(0, 2));
-        console.log("📍 ReviewForm - 추출된 regionOptions:", uniqueRegions);
       } catch (error) {
         console.error("전체 여행지 목록 조회 오류:", error);
         setAllPlaces([]);
@@ -116,7 +110,7 @@ export default function ReviewForm({
     fetchAllPlaces();
   }, [currentReviewId]);
 
-  // ✅ 수정 모드일 경우 기존 리뷰 불러오기
+  // ✅ 수정 모드: 기존 리뷰 + 여행지 정보 불러오기
   useEffect(() => {
     if (!currentReviewId) return;
     const fetchReview = async () => {
@@ -133,6 +127,40 @@ export default function ReviewForm({
               url: img.review_image,
             }))
           );
+
+          // ✅ 여행지 정보 가져오기
+          const { data: placeData, error: placeError } = await supabase
+            .from("place")
+            .select(`
+              place_id,
+              place_name,
+              place_address,
+              place_image,
+              average_rating,
+              favorite_count,
+              region!inner(region_name)
+            `)
+            .eq("place_id", reviewData.place_id)
+            .single();
+
+          if (!placeError && placeData) {
+            setSelectedPlace({
+              place_id: placeData.place_id,
+              place_name: placeData.place_name,
+              place_address: placeData.place_address,
+              place_image: placeData.place_image,
+              average_rating: placeData.average_rating,
+              favorite_count: placeData.favorite_count,
+              region: (placeData as any).region?.region_name || null,
+              review_count: null,
+              place_description: null,
+              place_detail_image: null,
+              region_id: null,
+              place_category: null,
+              latitude: null,
+              longitude: null,
+            });
+          }
         }
       } catch (error) {
         console.error("리뷰 데이터 불러오기 오류:", error);
@@ -143,13 +171,13 @@ export default function ReviewForm({
     fetchReview();
   }, [currentReviewId]);
 
-  // ✅ 여행지 선택 핸들러
+  // 여행지 선택 핸들러 (새 작성 모드만)
   const handlePlaceSelectById = (placeId: string) => {
     const foundPlace = allPlaces.find((p) => p.place_id === placeId);
     if (foundPlace) setSelectedPlace(foundPlace);
   };
 
-  // ✅ 이미지 업로드 관련 핸들러
+  // 이미지 업로드 핸들러
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -169,10 +197,7 @@ export default function ReviewForm({
     setNewImagePreviews(updatedPreviews);
   };
 
-  const handleRemoveExistingImage = async (
-    imageId: number,
-    imageUrl: string
-  ) => {
+  const handleRemoveExistingImage = async (imageId: number, imageUrl: string) => {
     const confirmDelete = confirm("이미지를 삭제하시겠습니까?");
     if (!confirmDelete) return;
     const success = await deleteReviewImage(imageId, imageUrl);
@@ -181,7 +206,7 @@ export default function ReviewForm({
     }
   };
 
-  // ✅ 리뷰 저장 및 수정
+  // 리뷰 저장 및 수정
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -221,7 +246,6 @@ export default function ReviewForm({
         review_id = newReview?.review_id;
       }
 
-      // ✅ 이미지 업로드 및 DB 저장
       if (newImageFiles.length > 0 && review_id) {
         const imageUrls = await Promise.all(
           newImageFiles.map((file) => uploadImage(file, review_id!))
@@ -233,11 +257,7 @@ export default function ReviewForm({
         }
       }
 
-      alert(
-        currentReviewId
-          ? "리뷰가 수정되었습니다."
-          : "리뷰가 성공적으로 등록되었습니다."
-      );
+      alert(currentReviewId ? "리뷰가 수정되었습니다." : "리뷰가 성공적으로 등록되었습니다.");
       router.push(`/review`);
     } catch (error) {
       console.error("리뷰 저장/수정 오류:", error);
@@ -247,7 +267,7 @@ export default function ReviewForm({
     }
   };
 
-  // ✅ 별점 표시
+  // 별점 표시
   const handleStarClick = (pos: number) => setRating(pos);
   const handleStarHover = (pos: number) => setHoveredRating(pos);
   const renderStar = (pos: number, current: number): JSX.Element => {
@@ -280,7 +300,7 @@ export default function ReviewForm({
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">
-        {currentReviewId ? "리뷰 수정" : "리뷰 작성"}
+        {isEditMode ? "리뷰 수정" : "리뷰 작성"}
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
@@ -300,11 +320,11 @@ export default function ReviewForm({
               />
             </div>
 
-            {/* 여행지 */}
+            {/* ✅ 여행지 정보 - 수정 모드에서는 고정 */}
             {selectedPlace && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  여행지
+                  여행지 {isEditMode && <span className="text-xs text-gray-500">(변경 불가)</span>}
                 </label>
                 <div className="border-2 rounded-lg p-4 bg-blue-50 border-blue-200">
                   <div className="flex items-center gap-3">
@@ -425,7 +445,6 @@ export default function ReviewForm({
               {/* 미리보기 */}
               {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                 <div className="mt-4 flex flex-wrap gap-3">
-                  {/* 기존 이미지 */}
                   {existingImages.map((img) => (
                     <div
                       key={img.id}
@@ -435,17 +454,10 @@ export default function ReviewForm({
                         src={img.url}
                         alt="기존 리뷰 이미지"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('❌ 기존 이미지 로드 실패:', img.url);
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E이미지 로드 실패%3C/text%3E%3C/svg%3E';
-                        }}
                       />
                       <button
                         type="button"
-                        onClick={() =>
-                          handleRemoveExistingImage(img.id, img.url)
-                        }
+                        onClick={() => handleRemoveExistingImage(img.id, img.url)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-90 hover:opacity-100 transition"
                         title="삭제"
                       >
@@ -454,7 +466,6 @@ export default function ReviewForm({
                     </div>
                   ))}
 
-                  {/* 새 이미지 미리보기 */}
                   {newImagePreviews.map((preview, index) => (
                     <div
                       key={`new-${index}`}
@@ -464,11 +475,6 @@ export default function ReviewForm({
                         src={preview}
                         alt={`새 이미지 ${index + 1}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('❌ 새 이미지 미리보기 로드 실패:', preview);
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E미리보기 실패%3C/text%3E%3C/svg%3E';
-                        }}
                       />
                       <button
                         type="button"
@@ -493,7 +499,7 @@ export default function ReviewForm({
               >
                 {isSubmitting
                   ? "처리 중..."
-                  : currentReviewId
+                  : isEditMode
                   ? "수정하기"
                   : "작성하기"}
               </button>
@@ -509,9 +515,9 @@ export default function ReviewForm({
           </form>
         </div>
 
-        {/* 오른쪽 여행지 목록 */}
+        {/* ✅ 오른쪽 여행지 목록 - 새 작성 모드에만 표시 */}
         <div>
-          {!currentReviewId &&
+          {!isEditMode &&
             (isLoadingPlaces ? (
               <div className="text-center py-10 text-gray-500">
                 여행지 목록을 불러오는 중...
@@ -521,7 +527,7 @@ export default function ReviewForm({
                 places={placesForList}
                 onAddPlace={() => {}}
                 onPlaceClick={handlePlaceSelectById}
-                regionOptions={regionOptions} // ✅ 추가
+                regionOptions={regionOptions}
                 initialRegion="전체"
               />
             ))}
