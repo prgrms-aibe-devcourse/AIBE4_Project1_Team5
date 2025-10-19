@@ -242,16 +242,17 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
 // ========== 이미지 관련 ==========
 
 // 이미지 업로드 (Supabase Storage)
+// lib/reviewStoreSupabase.ts 의 uploadImage 함수 수정
+
 export async function uploadImage(file: File, reviewId: string): Promise<string | null> {
   try {
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${reviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `review/${fileName}`;
     
-    
-    // ✅ 버킷 이름을 'review-image'로 수정
+    // ✅ 업로드
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('review-image')  // ← 여기! 's' 제거
+      .from('review-image')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
@@ -263,9 +264,9 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
       return null;
     }
 
-    // ✅ Public URL도 같은 버킷 이름 사용
+    // ✅ Public URL 생성 (수정된 부분)
     const { data: urlData } = supabase.storage
-      .from('review-image')  // ← 여기도! 's' 제거
+      .from('review-image')
       .getPublicUrl(filePath);
 
     if (!urlData || !urlData.publicUrl) {
@@ -273,6 +274,7 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
       return null;
     }
 
+    console.log('✅ 생성된 이미지 URL:', urlData.publicUrl);
     return urlData.publicUrl;
 
   } catch (error) {
@@ -280,12 +282,11 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
     return null;
   }
 }
-
 // Storage에서 이미지 삭제 (내부 함수)
 async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
   try {
     // ✅ URL 파싱 시 버킷 이름 수정
-    const urlParts = imageUrl.split('/review-image/');  // ← 's' 제거
+    const urlParts = imageUrl.split('/review-image/');  
     if (urlParts.length < 2) {
       console.error('잘못된 이미지 URL 형식:', imageUrl);
       return false;
@@ -338,6 +339,7 @@ export async function saveReviewImages(reviewId: string, imageUrls: string[]): P
     return false;
   }
 }
+
 
 // 리뷰 이미지 삭제 (DB + Storage)
 export async function deleteReviewImage(imageId: number, imageUrl: string): Promise<boolean> {
