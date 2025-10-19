@@ -28,14 +28,27 @@ export interface ReviewWithImages extends Review {
 // ========== 리뷰 CRUD ==========
 
 // 리뷰 저장
+// 리뷰 저장
 export async function saveReview(reviewData: Omit<Review, 'review_id' | 'created_at' | 'updated_at'>): Promise<Review | null> {
   try {
+    // ✅ region 이름으로 region_id 조회
+    let region_id = null;
+    if (reviewData.region) {
+      const { data: regionData } = await supabase
+        .from('region')
+        .select('region_id')
+        .eq('region_name', reviewData.region)
+        .single();
+      
+      region_id = regionData?.region_id || null;
+    }
+
     const { data, error } = await supabase
       .from('review')
       .insert({
         place_id: reviewData.place_id,
         user_id: reviewData.user_id,
-        region: reviewData.region,
+        region_id: region_id, // ✅ region 대신 region_id 사용
         review_title: reviewData.review_title,
         review_content: reviewData.review_content,
         rating: reviewData.rating,
@@ -231,37 +244,18 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
 // 이미지 업로드 (Supabase Storage)
 export async function uploadImage(file: File, reviewId: string): Promise<string | null> {
   try {
-    // 파일 확장자 추출 (소문자로 변환)
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    
-    // 지원하는 이미지 확장자 목록
-    const supportedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp', 'ico', 'tiff'];
-    
-    // 확장자가 이미지 형식인지 확인
-    if (!supportedFormats.includes(fileExt)) {
-      console.warn('지원하지 않는 파일 형식:', fileExt);
-      // 그래도 업로드 시도 (MIME 타입으로 확인)
-    }
-    
-    // 파일명 생성 (중복 방지)
     const fileName = `${reviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `reviews/${fileName}`;
-
-    console.log('이미지 업로드 시도:', {
-      fileName,
-      filePath,
-      fileSize: file.size,
-      fileType: file.type,
-      fileExt
-    });
-
-    // Storage에 업로드
+    const filePath = `review/${fileName}`;
+    
+    
+    // ✅ 버킷 이름을 'review-image'로 수정
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('review-images')
+      .from('review-image')  // ← 여기! 's' 제거
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type || `image/${fileExt}` // MIME 타입 자동 설정
+        contentType: file.type || `image/${fileExt}`
       });
 
     if (uploadError) {
@@ -269,19 +263,15 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
       return null;
     }
 
-    console.log('Storage 업로드 성공:', uploadData);
-
-    // Public URL 가져오기
+    // ✅ Public URL도 같은 버킷 이름 사용
     const { data: urlData } = supabase.storage
-      .from('review-images')
+      .from('review-image')  // ← 여기도! 's' 제거
       .getPublicUrl(filePath);
 
     if (!urlData || !urlData.publicUrl) {
       console.error('Public URL 생성 실패');
       return null;
     }
-
-    console.log('생성된 Public URL:', urlData.publicUrl);
 
     return urlData.publicUrl;
 
@@ -294,10 +284,8 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
 // Storage에서 이미지 삭제 (내부 함수)
 async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
   try {
-    // URL에서 파일 경로 추출
-    // 예: https://xxx.supabase.co/storage/v1/object/public/review-images/reviews/abc.jpg
-    // -> reviews/abc.jpg
-    const urlParts = imageUrl.split('/review-images/');
+    // ✅ URL 파싱 시 버킷 이름 수정
+    const urlParts = imageUrl.split('/review-image/');  // ← 's' 제거
     if (urlParts.length < 2) {
       console.error('잘못된 이미지 URL 형식:', imageUrl);
       return false;
@@ -306,7 +294,7 @@ async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
     const filePath = urlParts[1];
 
     const { error } = await supabase.storage
-      .from('review-images')
+      .from('review-image')  // ← 's' 제거
       .remove([filePath]);
 
     if (error) {
@@ -314,7 +302,6 @@ async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
       return false;
     }
 
-    console.log('Storage 이미지 삭제 성공:', filePath);
     return true;
 
   } catch (error) {
