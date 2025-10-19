@@ -182,8 +182,8 @@ export default function ReviewForm({
       } else {
         const newReview = await saveReview({
           user_id: userId,
-          place_id: selectedPlace.place_id,
-          region_id: selectedPlace.region_id ?? null,
+          place_id: selectedPlace.place_id, // 선택된 장소의 ID
+          region: selectedPlace.region ?? '', // 선택된 장소의 지역 (Review 타입에 region 필드가 있음)
           review_title: title,
           review_content: content,
           rating,

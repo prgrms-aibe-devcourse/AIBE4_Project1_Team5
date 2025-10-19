@@ -207,7 +207,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
         <button
           onClick={() =>
             router.push(
-              `/review/write?placeId=${placeId}&placeName=${encodeURIComponent(
+              `/review/write-trip?placeId=${placeId}&placeName=${encodeURIComponent(
                 placeName
               )}`
             )

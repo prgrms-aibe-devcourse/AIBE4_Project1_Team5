@@ -1,3 +1,4 @@
+// app/review/page.tsx
 "use client";
 
 import {
@@ -14,13 +15,11 @@ import {
   type ReviewWithImages,
 } from "@/lib/reviewStoreSupabase";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-// ============================
-// 개별 리뷰 카드
-// ============================
-
+// 개별 리뷰 카드 컴포넌트
 function ReviewCard({
   review,
   user,
@@ -37,7 +36,6 @@ function ReviewCard({
   const [placeName, setPlaceName] = useState<string>("");
   const [placeAddress, setPlaceAddress] = useState<string>("");
 
-  // 여행지 정보 가져오기
   useEffect(() => {
     const fetchPlaceInfo = async () => {
       if (review.place_id) {
@@ -56,7 +54,6 @@ function ReviewCard({
     fetchPlaceInfo();
   }, [review.place_id]);
 
-  // 별점 렌더링
   const renderStars = (rating: number) => {
     const stars = [];
     const roundedRating = Math.round(rating);
@@ -75,7 +72,6 @@ function ReviewCard({
     return stars;
   };
 
-  // 날짜 포맷
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("ko-KR", {
@@ -90,7 +86,6 @@ function ReviewCard({
       onClick={() => router.push(`/review/detail/${review.review_id}`)}
       className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer"
     >
-      {/* 썸네일 */}
       {review.images.length > 0 ? (
         <div className="relative w-full h-56 bg-gray-100 overflow-hidden">
           <img
@@ -101,11 +96,6 @@ function ReviewCard({
             alt={review.review_title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => {
-              console.error(
-                "이미지 로드 실패:",
-                review.images.sort((a, b) => a.image_order - b.image_order)[0]
-                  .review_image
-              );
               e.currentTarget.style.display = "none";
               const parent = e.currentTarget.parentElement;
               if (parent) {
@@ -115,7 +105,6 @@ function ReviewCard({
             }}
           />
 
-          {/* 이미지 개수 */}
           {review.images.length > 1 && (
             <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
               <svg
@@ -134,7 +123,6 @@ function ReviewCard({
             </div>
           )}
 
-          {/* 별점 배지 */}
           <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
             <span className="text-yellow-400 text-sm">★</span>
             <span className="text-sm font-bold text-gray-900">
@@ -161,9 +149,7 @@ function ReviewCard({
         </div>
       )}
 
-      {/* 내용 */}
       <div className="p-5">
-        {/* 여행지 정보 */}
         <div className="mb-4">
           <div className="flex items-start gap-2 mb-2">
             <svg
@@ -189,22 +175,18 @@ function ReviewCard({
           </div>
         </div>
 
-        {/* 리뷰 제목 */}
         <h3 className="text-base font-bold mb-2 line-clamp-2 text-gray-900 group-hover:text-blue-600 transition-colors leading-snug">
           {review.review_title}
         </h3>
 
-        {/* 별점 */}
         <div className="flex items-center gap-2 mb-3">
           <div className="flex">{renderStars(review.rating)}</div>
         </div>
 
-        {/* 내용 미리보기 */}
         <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
           {review.review_content}
         </p>
 
-        {/* 작성자/날짜 */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2">
             {isLoading ? (
@@ -219,7 +201,6 @@ function ReviewCard({
                 alt={profile?.display_name || "프로필"}
                 className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
                 onError={(e) => {
-                  console.error("프로필 이미지 로드 실패:", profileUrl);
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
                     "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
@@ -235,7 +216,6 @@ function ReviewCard({
           </span>
         </div>
 
-        {/* 본인 리뷰인 경우 수정/삭제 */}
         {user && user.id === review.user_id && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             <ReviewActionButtons
@@ -250,10 +230,7 @@ function ReviewCard({
   );
 }
 
-// ============================
 // 리뷰 목록 페이지
-// ============================
-
 export default function ReviewListPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -264,8 +241,8 @@ export default function ReviewListPage() {
   const [selectedRegion, setSelectedRegion] = useState("전체");
   const [currentSort, setCurrentSort] = useState("popularity_desc");
   const [isLoading, setIsLoading] = useState(true);
+  const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false); // ✅ 추가
 
-  // ✅ 지역 목록 불러오기
   useEffect(() => {
     const fetchRegions = async () => {
       const regionList = await getRegions();
@@ -274,7 +251,6 @@ export default function ReviewListPage() {
     fetchRegions();
   }, []);
 
-  // ✅ 리뷰 목록 불러오기
   useEffect(() => {
     const fetchReviews = async () => {
       setIsLoading(true);
@@ -288,43 +264,46 @@ export default function ReviewListPage() {
     fetchReviews();
   }, [selectedRegion]);
 
-  // ✅ 정렬
+  // ✅ 내 리뷰 필터링 + 정렬 로직 통합
   useEffect(() => {
-    const sorted = [...reviews];
+    let filtered = [...reviews];
+
+    // 내 리뷰만 보기 필터
+    if (showMyReviewsOnly && user) {
+      filtered = filtered.filter((r) => r.user_id === user.id);
+    }
+
+    // 정렬
     switch (currentSort) {
       case "popularity_desc":
-        sorted.sort(
+        filtered.sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         break;
       case "name_asc":
-        sorted.sort((a, b) => b.images.length - a.images.length);
+        filtered.sort((a, b) => b.images.length - a.images.length);
         break;
       case "rating_desc":
-        sorted.sort((a, b) => b.rating - a.rating);
+        filtered.sort((a, b) => b.rating - a.rating);
         break;
       case "rating_asc":
-        sorted.sort((a, b) => a.rating - b.rating);
-        break;
-      default:
+        filtered.sort((a, b) => a.rating - b.rating);
         break;
     }
-    setSortedReviews(sorted);
-  }, [reviews, currentSort]);
 
-  // ✅ 리뷰 삭제 콜백
+    setSortedReviews(filtered);
+  }, [reviews, currentSort, showMyReviewsOnly, user]);
+
   const handleDeleteCallback = (reviewId: string) => {
     setReviews((prev) => prev.filter((r) => r.review_id !== reviewId));
   };
 
-  // ✅ 리뷰 수정
   const handleEdit = (reviewId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/review/write?edit=${reviewId}`);
   };
 
-  // ✅ 로딩 표시
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -336,7 +315,6 @@ export default function ReviewListPage() {
     );
   }
 
-  // ✅ 렌더링
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8 lg:py-12">
@@ -353,7 +331,7 @@ export default function ReviewListPage() {
           {user && <WriteButton />}
         </div>
 
-        {/* 필터 & 정렬 */}
+        {/* ✅ 필터 & 정렬 - 내 리뷰만 보기 체크박스 추가 */}
         <div className="flex justify-between items-center mb-8 bg-white rounded-xl p-4 shadow-sm">
           <div className="flex gap-3 items-center">
             {/* 지역별 필터 */}
@@ -394,13 +372,28 @@ export default function ReviewListPage() {
                 ))}
               </ul>
             </div>
+
+            {/* ✅ 내 리뷰만 보기 체크박스 */}
+            {user && (
+              <label className="flex items-center gap-2 px-4 py-2 text-sm font-semibold cursor-pointer hover:bg-gray-50 rounded-lg transition-colors">
+                <input
+                  type="checkbox"
+                  checked={showMyReviewsOnly}
+                  onChange={(e) => setShowMyReviewsOnly(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span>내 리뷰만 보기</span>
+              </label>
+            )}
           </div>
+
+          {/* 정렬 */}
           <Sort currentSort={currentSort} onSortChange={setCurrentSort} />
         </div>
 
         {/* 리뷰 목록 */}
         {sortedReviews.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
+          <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-20 w-20 text-gray-300 mx-auto mb-4"
@@ -416,12 +409,16 @@ export default function ReviewListPage() {
               />
             </svg>
             <p className="text-gray-600 text-lg mb-2 font-semibold">
-              {selectedRegion === "전체"
+              {showMyReviewsOnly
+                ? "작성한 리뷰가 없습니다"
+                : selectedRegion === "전체"
                 ? "아직 작성된 리뷰가 없습니다"
                 : `${selectedRegion} 지역에 작성된 리뷰가 없습니다`}
             </p>
             <p className="text-gray-500 text-sm mb-6">
-              첫 리뷰의 주인공이 되어보세요!
+              {showMyReviewsOnly
+                ? "여행지를 방문하고 첫 리뷰를 작성해보세요!"
+                : "첫 리뷰의 주인공이 되어보세요!"}
             </p>
             {user && <WriteButton />}
           </div>
