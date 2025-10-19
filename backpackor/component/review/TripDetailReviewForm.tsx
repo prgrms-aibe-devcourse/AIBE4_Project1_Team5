@@ -1,4 +1,4 @@
-// app/review/write-place/page.tsx
+// component/review/TripDetailReviewForm.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -8,12 +8,11 @@ import {
   saveReview,
   uploadImage,
   saveReviewImages,
-  getRegions,
 } from "@/lib/reviewStoreSupabase";
 import { useProfile } from "@/hook/useProfile";
 import ImageModal from "@/component/review/ImageModal";
 
-export default function PlaceReviewForm() {
+export default function TripDetailReviewForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -22,8 +21,12 @@ export default function PlaceReviewForm() {
   const placeName = searchParams.get('placeName');
 
   const [userId, setUserId] = useState<string>("");
-  const [regions, setRegions] = useState<string[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [placeInfo, setPlaceInfo] = useState<{
+    place_name: string;
+    place_address: string | null;
+    place_image: string | null;
+    region_name: string | null;
+  } | null>(null);
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
@@ -40,7 +43,7 @@ export default function PlaceReviewForm() {
   const { profile } = useProfile(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 초기화
+  // 초기화 - 사용자 정보 및 여행지 정보 가져오기
   useEffect(() => {
     if (!placeId || !placeName) {
       alert("잘못된 접근입니다.");
@@ -55,9 +58,26 @@ export default function PlaceReviewForm() {
         setUserId(user.id);
       }
 
-      // 지역 목록 가져오기
-      const regionList = await getRegions();
-      setRegions(regionList);
+      // ✅ 여행지 상세 정보 가져오기 (사진 포함)
+      const { data: placeData, error: placeError } = await supabase
+        .from("place")
+        .select(`
+          place_name,
+          place_address,
+          place_image,
+          region!inner(region_name)
+        `)
+        .eq("place_id", placeId)
+        .single();
+
+      if (!placeError && placeData) {
+        setPlaceInfo({
+          place_name: placeData.place_name,
+          place_address: placeData.place_address,
+          place_image: placeData.place_image,
+          region_name: (placeData as any).region?.region_name || null,
+        });
+      }
     };
 
     initializeData();
@@ -136,8 +156,8 @@ export default function PlaceReviewForm() {
       alert("사용자 정보가 없습니다. 다시 로그인해주세요.");
       return;
     }
-    if (!selectedRegion.trim()) {
-      alert("지역을 선택해주세요.");
+    if (!placeInfo?.region_name) {
+      alert("여행지 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
     if (!title.trim()) {
@@ -160,7 +180,7 @@ export default function PlaceReviewForm() {
       const savedReview = await saveReview({
         place_id: placeId!,
         user_id: userId,
-        region: selectedRegion,
+        region: placeInfo.region_name,
         review_title: title,
         review_content: content,
         rating: rating,
@@ -205,8 +225,10 @@ export default function PlaceReviewForm() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{placeName} 여행지 리뷰 작성</h1>
-          <p className="text-lg text-gray-600">"{placeName}" 리뷰를 작성해주세요</p>
+          <h1 className="text-3xl font-bold mb-2">여행지 리뷰 작성</h1>
+          <p className="text-lg text-gray-600">
+            "{placeInfo?.place_name || placeName}" 리뷰를 작성해주세요
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
@@ -223,30 +245,35 @@ export default function PlaceReviewForm() {
             />
           </div>
 
-          {/* 여행지 정보 */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-600 font-medium mb-1">리뷰 작성 여행지</p>
-            <p className="text-xl font-bold text-blue-900">{placeName}</p>
-          </div>
-
-          {/* 지역 선택 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              지역 <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">지역을 선택하세요</option>
-              {regions.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* ✅ 여행지 정보 (사진 포함) */}
+          {placeInfo && (
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+              <p className="text-sm text-blue-600 font-semibold mb-3">
+                리뷰 작성 여행지
+              </p>
+              <div className="flex items-center gap-4">
+                {/* 여행지 사진 */}
+                {placeInfo.place_image && (
+                  <img
+                    src={placeInfo.place_image}
+                    alt={placeInfo.place_name}
+                    className="w-24 h-24 object-cover rounded-lg shadow-sm"
+                  />
+                )}
+                {/* 여행지 정보 */}
+                <div className="flex-1">
+                  <p className="text-xl font-bold text-blue-900 mb-1">
+                    {placeInfo.place_name}
+                  </p>
+                  {placeInfo.place_address && (
+                    <p className="text-sm text-blue-700">
+                      {placeInfo.place_address}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 제목 */}
           <div>
