@@ -1,3 +1,4 @@
+// app/review/detail/[id]/page.tsx
 "use client";
 
 import ImageModal from "@/component/review/ImageModal";
@@ -296,7 +297,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
               )}
             </div>
           </div>
-
           {/* 이미지 갤러리 */}
           {review.images.length > 0 && (
             <div className="p-8 border-b border-gray-100">
@@ -322,10 +322,18 @@ export default function ReviewDetailPage({ params }: PageProps) {
                           "❌ 이미지 로드 실패:",
                           image.review_image
                         );
-                        const parent = e.currentTarget.parentElement;
+                        const target = e.target as HTMLImageElement;
+                        // ✅ 에러 발생 시 부모 요소에 에러 메시지 표시
+                        const parent = target.parentElement;
                         if (parent) {
-                          parent.innerHTML =
-                            '<div class="flex items-center justify-center h-full bg-gray-200"><span class="text-gray-400 text-sm">이미지 로드 실패</span></div>';
+                          parent.innerHTML = `
+                  <div class="flex flex-col items-center justify-center h-full bg-gray-200 text-gray-500">
+                    <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="text-xs">이미지 로드 실패</span>
+                  </div>
+                `;
                         }
                       }}
                     />
@@ -335,7 +343,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
-
           {/* 리뷰 내용 */}
           <div className="p-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
@@ -347,7 +354,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
               </p>
             </div>
           </div>
-
           {/* 하단 버튼 */}
           <div className="p-8 bg-gray-50 border-t border-gray-100">
             <div className="flex gap-3">
