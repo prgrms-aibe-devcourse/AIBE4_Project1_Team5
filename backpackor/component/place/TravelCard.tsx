@@ -11,6 +11,11 @@ interface TravelCardProps {
 const TravelCard: React.FC<TravelCardProps> = ({ place }) => {
   const router = useRouter();
 
+  // ✅ place가 없거나 필수 데이터가 없으면 렌더링하지 않음
+  if (!place || !place.place_id) {
+    return null;
+  }
+
   const handleClick = () => {
     router.push(`/place/${place.place_id}`);
   };
@@ -20,11 +25,15 @@ const TravelCard: React.FC<TravelCardProps> = ({ place }) => {
       <div className="travel-card" onClick={handleClick}>
         <div
           className="card-image"
-          style={{ backgroundImage: `url(${place.place_image})` }}
+          style={{ 
+            backgroundImage: `url(${place.place_image || '/default-image.jpg'})` 
+          }}
         />
         <div className="card-info">
-          <h3 className="card-title">{place.place_name}</h3>
-          <p className="card-rating">⭐ {place.average_rating.toFixed(1)}</p>
+          <h3 className="card-title">{place.place_name || '이름 없음'}</h3>
+          <p className="card-rating">
+            ⭐ {place.average_rating ? place.average_rating.toFixed(1) : '0.0'}
+          </p>
         </div>
       </div>
 
