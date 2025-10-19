@@ -318,8 +318,10 @@ export default function ReviewDetailPage({ params }: PageProps) {
                       alt={`리뷰 이미지 ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       onError={(e) => {
-                        console.error("이미지 로드 실패:", image.review_image);
-                        e.currentTarget.style.display = "none";
+                        console.error(
+                          "❌ 이미지 로드 실패:",
+                          image.review_image
+                        );
                         const parent = e.currentTarget.parentElement;
                         if (parent) {
                           parent.innerHTML =

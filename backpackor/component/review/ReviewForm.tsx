@@ -35,9 +35,7 @@ export default function ReviewForm({
   const [content, setContent] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
-  const [existingImages, setExistingImages] = useState<
-    Array<{ id: number; url: string }>
-  >([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; url: string }>>([]); // 기존 이미지 목록 상태
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -119,7 +117,7 @@ export default function ReviewForm({
     if (foundPlace) setSelectedPlace(foundPlace);
   };
 
-  // ✅ 이미지 업로드 관련 핸들러 (개수 제한 제거)
+  // ✅ 이미지 업로드 관련 핸들러
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -182,8 +180,8 @@ export default function ReviewForm({
       } else {
         const newReview = await saveReview({
           user_id: userId,
-          place_id: selectedPlace.place_id, // 선택된 장소의 ID
-          region: selectedPlace.region ?? '', // 선택된 장소의 지역 (Review 타입에 region 필드가 있음)
+          place_id: selectedPlace.place_id,
+          region: selectedPlace.region ?? "",
           review_title: title,
           review_content: content,
           rating,
@@ -393,35 +391,65 @@ export default function ReviewForm({
               />
 
               {/* 미리보기 */}
-              <div className="flex flex-wrap gap-3">
-                {[
-                  ...existingImages,
-                  ...newImagePreviews.map((src, i) => ({ url: src, id: i })),
-                ].map((img, index) => (
-                  <div
-                    key={img.id}
-                    className="relative group w-24 h-24 border rounded-lg overflow-hidden"
-                  >
-                    <img
-                      src={img.url}
-                      alt="리뷰 이미지"
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        existingImages.find((ex) => ex.id === img.id)
-                          ? handleRemoveExistingImage(img.id, img.url)
-                          : handleRemoveNewImage(index)
-                      }
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-90 hover:opacity-100 transition"
-                      title="삭제"
+              {(existingImages.length > 0 || newImagePreviews.length > 0) && (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {/* 기존 이미지 */}
+                  {existingImages.map((img) => (
+                    <div
+                      key={img.id}
+                      className="relative group w-24 h-24 border rounded-lg overflow-hidden"
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <img
+                        src={img.url}
+                        alt="기존 리뷰 이미지"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('❌ 기존 이미지 로드 실패:', img.url);
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E이미지 로드 실패%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemoveExistingImage(img.id, img.url)
+                        }
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-90 hover:opacity-100 transition"
+                        title="삭제"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* 새 이미지 미리보기 */}
+                  {newImagePreviews.map((preview, index) => (
+                    <div
+                      key={`new-${index}`}
+                      className="relative group w-24 h-24 border rounded-lg overflow-hidden"
+                    >
+                      <img
+                        src={preview}
+                        alt={`새 이미지 ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('❌ 새 이미지 미리보기 로드 실패:', preview);
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E미리보기 실패%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-90 hover:opacity-100 transition"
+                        title="삭제"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 버튼 */}
