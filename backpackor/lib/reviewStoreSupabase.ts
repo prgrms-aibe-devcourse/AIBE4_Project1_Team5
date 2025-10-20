@@ -243,16 +243,16 @@ export async function deleteReview(reviewId: string): Promise<boolean> {
 
 // 이미지 업로드 (Supabase Storage)
 // lib/reviewStoreSupabase.ts 의 uploadImage 함수 수정
-
+// ✅ 수정된 uploadImage 함수
 export async function uploadImage(file: File, reviewId: string): Promise<string | null> {
   try {
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${reviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `review/${fileName}`;
     
-    // ✅ 업로드
+    // ✅ 업로드 - 버킷 이름을 review_image로 변경
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('review-image')
+      .from('review_image')  // ⭐ 하이픈(-) → 언더스코어(_)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
@@ -264,9 +264,9 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
       return null;
     }
 
-    // ✅ Public URL 생성 (수정된 부분)
+    // ✅ Public URL 생성
     const { data: urlData } = supabase.storage
-      .from('review-image')
+      .from('review_image')  // ⭐ 하이픈(-) → 언더스코어(_)
       .getPublicUrl(filePath);
 
     if (!urlData || !urlData.publicUrl) {
@@ -282,11 +282,12 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
     return null;
   }
 }
-// Storage에서 이미지 삭제 (내부 함수)
+
+// ✅ deleteImageFromStorage 함수도 수정
 async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
   try {
-    // ✅ URL 파싱 시 버킷 이름 수정
-    const urlParts = imageUrl.split('/review-image/');  
+    // URL 파싱 - 버킷 이름을 review_image로 변경
+    const urlParts = imageUrl.split('/review_image/');  // ⭐ 언더스코어(_)
     if (urlParts.length < 2) {
       console.error('잘못된 이미지 URL 형식:', imageUrl);
       return false;
@@ -295,7 +296,7 @@ async function deleteImageFromStorage(imageUrl: string): Promise<boolean> {
     const filePath = urlParts[1];
 
     const { error } = await supabase.storage
-      .from('review-image')  // ← 's' 제거
+      .from('review_image')  // ⭐ 언더스코어(_)
       .remove([filePath]);
 
     if (error) {
