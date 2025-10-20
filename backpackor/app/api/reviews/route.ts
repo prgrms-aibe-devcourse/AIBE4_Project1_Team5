@@ -15,10 +15,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 리뷰 데이터 조회
+    // ✅ 리뷰 + 이미지 함께 조회
     const { data: reviews, error: reviewsError } = await supabase
       .from("review")
-      .select("*")
+      .select(`
+        *,
+        review_image (
+          review_image_id,
+          review_image,
+          image_order
+        )
+      `)
       .eq("place_id", placeId)
       .order("created_at", { ascending: false });
 
@@ -51,12 +58,16 @@ export async function GET(request: NextRequest) {
       console.error("프로필 조회 오류:", profilesError);
     }
 
-    // 리뷰와 프로필 매핑
+    // ✅ 리뷰 + 프로필 + 이미지 매핑
     const reviewsWithProfiles = reviews.map((review) => {
       const profile = profiles?.find((p) => p.user_id === review.user_id);
       return {
         ...review,
         profiles: profile ? { display_name: profile.display_name } : null,
+        // ✅ review_image가 배열이 아니면 빈 배열로 처리
+        images: Array.isArray(review.review_image) 
+          ? review.review_image 
+          : (review.review_image ? [review.review_image] : [])
       };
     });
 
@@ -64,6 +75,14 @@ export async function GET(request: NextRequest) {
     const count = reviews.length;
     const averageRating =
       reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+
+    // ✅ 디버깅 로그
+    console.log("📊 리뷰 조회 결과:", {
+      count,
+      averageRating,
+      firstReview: reviewsWithProfiles[0],
+      hasImages: reviewsWithProfiles[0]?.images?.length > 0
+    });
 
     return NextResponse.json({
       reviews: reviewsWithProfiles,
