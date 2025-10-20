@@ -322,6 +322,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
                           "❌ 이미지 로드 실패:",
                           image.review_image
                         );
+                        console.log("📋 전체 이미지 데이터:", image);
                         const target = e.target as HTMLImageElement;
                         // ✅ 에러 발생 시 부모 요소에 에러 메시지 표시
                         const parent = target.parentElement;
