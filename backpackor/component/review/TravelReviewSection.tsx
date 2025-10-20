@@ -6,10 +6,17 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+interface ReviewImage {
+  review_image_id: number;
+  review_image: string;
+  image_order: number;
+}
+
 interface ReviewWithProfile extends Review {
   profiles: {
     display_name: string;
   } | null;
+  images?: ReviewImage[];
 }
 
 interface TravelReviewSectionProps {
@@ -43,6 +50,9 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
   );
   const [userId, setUserId] = useState<string | null>(null);
 
+  // ✅ 이미지 모달 상태
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
   // 로그인 사용자 확인
   useEffect(() => {
     const checkUser = async () => {
@@ -75,6 +85,13 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
         }
 
         const data = await response.json();
+
+        // ✅ 디버깅: 이미지 데이터 확인
+        console.log("🖼️ 받은 리뷰 데이터:", data.reviews);
+        if (data.reviews && data.reviews.length > 0) {
+          console.log("첫 번째 리뷰의 이미지:", data.reviews[0]?.images);
+        }
+
         setReviews(data.reviews || []);
         setActualReviewCount(data.count || 0);
         setActualAverageRating(data.averageRating || 0);
@@ -124,7 +141,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
         },
         body: JSON.stringify({
           reviewId,
-          action: isHelpful ? "remove" : "add", // 추가 또는 제거
+          action: isHelpful ? "remove" : "add",
         }),
       });
 
@@ -284,6 +301,29 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
                   </h3>
                 )}
 
+                {/* ✅ 이미지 표시 */}
+                {review.images && review.images.length > 0 && (
+                  <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
+                    {review.images.map((img) => (
+                      <div
+                        key={img.review_image_id}
+                        className="relative flex-shrink-0"
+                      >
+                        <img
+                          src={img.review_image}
+                          alt="리뷰 이미지"
+                          className="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity border border-gray-200"
+                          onClick={() => setSelectedImage(img.review_image)}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            console.error('❌ 이미지 로드 실패:', img.review_image);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* 리뷰 내용 */}
                 <p className="text-gray-700 text-sm leading-relaxed mb-3">
                   {review.review_content}
@@ -323,6 +363,27 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
           })
         )}
       </div>
+
+      {/* ✅ 이미지 확대 모달 */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+          >
+            ×
+          </button>
+          <img
+            src={selectedImage}
+            alt="확대된 리뷰 이미지"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
