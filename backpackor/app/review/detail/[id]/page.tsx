@@ -1,10 +1,10 @@
-// app/review/detail/[id]/page.tsx
 "use client";
 
 import ImageModal from "@/component/review/ImageModal";
 import { ReviewActionButtons } from "@/component/review/ReviewButton";
 import { useAuth } from "@/hook/useAuth";
 import { useProfile } from "@/hook/useProfile";
+import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 import {
   getReviewById,
   type ReviewWithImages,
@@ -29,6 +29,9 @@ export default function ReviewDetailPage({ params }: PageProps) {
   const [placeName, setPlaceName] = useState<string>("");
   const [placeAddress, setPlaceAddress] = useState<string>("");
   const [placeImage, setPlaceImage] = useState<string>("");
+
+  // place 모달 상태
+  const [placeModalOpen, setPlaceModalOpen] = useState(false);
 
   // 작성자 프로필 정보 가져오기
   const { profile: authorProfile } = useProfile(review?.user_id);
@@ -189,9 +192,18 @@ export default function ReviewDetailPage({ params }: PageProps) {
                   {review.review_title}
                 </h1>
 
-                {/* 여행지 카드 */}
+                {/* 여행지 카드 (클릭 시 모달 열기) */}
                 {placeName && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-6 border border-blue-100">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setPlaceModalOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        setPlaceModalOpen(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-6 border border-blue-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  >
                     <div className="flex items-center gap-4">
                       {placeImage && (
                         <img
@@ -386,6 +398,15 @@ export default function ReviewDetailPage({ params }: PageProps) {
           onClose={() => setModalOpen(false)}
           onNext={handleModalNext}
           onPrev={handleModalPrev}
+        />
+      )}
+
+      {/* 여행지 상세 모달 */}
+      {placeModalOpen && review?.place_id && (
+        <PlaceDetailModal
+          placeId={review.place_id}
+          onClose={() => setPlaceModalOpen(false)}
+          showReviewButton={true}
         />
       )}
     </div>
