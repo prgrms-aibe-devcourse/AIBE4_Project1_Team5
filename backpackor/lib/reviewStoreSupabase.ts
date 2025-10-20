@@ -111,11 +111,20 @@ export async function getReviews(): Promise<ReviewWithImages[]> {
 // 특정 지역 리뷰 가져오기
 export async function getReviewsByRegion(region: string): Promise<ReviewWithImages[]> {
   try {
+    // ✅ region 테이블과 조인하여 region_name으로 필터링
     const { data: reviews, error: reviewError } = await supabase
       .from('review')
-      .select('*')
-      .eq('region', region)
+      .select(`
+        *,
+        region!inner(region_name)
+      `)
+      .eq('region.region_name', region)
       .order('created_at', { ascending: false });
+
+    if (reviewError) {
+      console.error('지역별 리뷰 조회 실패:', reviewError);
+      return [];
+    }
 
     if (!reviews || reviews.length === 0) {
       return [];
@@ -127,7 +136,7 @@ export async function getReviewsByRegion(region: string): Promise<ReviewWithImag
           .from('review_image')
           .select('*')
           .eq('review_id', review.review_id)
-          .order('review_image_id', { ascending: true }); // ID 순서로 정렬 (첫 번째 = 썸네일)
+          .order('review_image_id', { ascending: true });
 
         return {
           ...review,
@@ -250,6 +259,7 @@ export async function uploadImage(file: File, reviewId: string): Promise<string 
     const fileName = `${reviewId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `review/${fileName}`;
     
+    console.log('🔍 업로드 시도:', { filePath, fileType: file.type });
     // ✅ 업로드 - 버킷 이름을 review_image로 변경
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('review_image')  // ⭐ 하이픈(-) → 언더스코어(_)
