@@ -387,6 +387,7 @@ export default function TripDetailReviewForm({
                       {placeInfo.place_address}
                     </p>
                   )}
+                  
                 </div>
               </div>
             </div>
