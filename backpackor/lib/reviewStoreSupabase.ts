@@ -16,7 +16,7 @@ export interface Review {
 
 export interface ReviewImage {
   review_image_id: number;
-  review_id: string;
+  review_id: string;  
   review_image: string;
   image_order: number; // 해당 리뷰의 총 이미지 개수
 }
@@ -27,7 +27,6 @@ export interface ReviewWithImages extends Review {
 
 // ========== 리뷰 CRUD ==========
 
-// 리뷰 저장
 // 리뷰 저장
 export async function saveReview(reviewData: Omit<Review, 'review_id' | 'created_at' | 'updated_at'>): Promise<Review | null> {
   try {

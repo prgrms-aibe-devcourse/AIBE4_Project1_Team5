@@ -47,6 +47,8 @@ export default function ReviewDetailPage({ params }: PageProps) {
       setIsLoading(true);
       const data = await getReviewById(id);
       setReview(data);
+      
+
       setIsLoading(false);
     };
 
@@ -67,6 +69,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
           setPlaceName(data.place_name);
           setPlaceAddress(data.place_address || "");
           setPlaceImage(data.place_image || "");
+          
         }
       }
     };
@@ -322,35 +325,16 @@ export default function ReviewDetailPage({ params }: PageProps) {
                 {review.images.map((image, index) => (
                   <div
                     key={image.review_image_id}
-                    className="relative aspect-square cursor-pointer group overflow-hidden rounded-xl bg-gray-100"
+                    className="relative aspect-square cursor-pointer group overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center"
                     onClick={() => handleImageClick(index)}
                   >
                     <img
                       src={image.review_image}
                       alt={`리뷰 이미지 ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      onError={(e) => {
-                        console.error(
-                          "❌ 이미지 로드 실패:",
-                          image.review_image
-                        );
-                        console.log("📋 전체 이미지 데이터:", image);
-                        const target = e.target as HTMLImageElement;
-                        // ✅ 에러 발생 시 부모 요소에 에러 메시지 표시
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = `
-                  <div class="flex flex-col items-center justify-center h-full bg-gray-200 text-gray-500">
-                    <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <span class="text-xs">이미지 로드 실패</span>
-                  </div>
-                `;
-                        }
-                      }}
+                      
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300" />
+                    {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300" /> */}
                   </div>
                 ))}
               </div>
