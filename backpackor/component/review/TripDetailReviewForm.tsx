@@ -12,13 +12,21 @@ import {
 import { useProfile } from "@/hook/useProfile";
 import ImageModal from "@/component/review/ImageModal";
 
-export default function TripDetailReviewForm() {
+interface TripDetailReviewFormProps {
+  editId?: string | null;
+}
+
+export default function TripDetailReviewForm({
+  editId,
+}: TripDetailReviewFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // URL에서 여행지 정보 추출
-  const placeId = searchParams.get('placeId');
-  const placeName = searchParams.get('placeName');
+
+  // URL에서 오는 placeId/placeName (편집 모드인 경우 review에서 덮어쓰기 가능)
+  const initialPlaceId = searchParams.get("placeId");
+  const initialPlaceName = searchParams.get("placeName");
+  const [placeId, setPlaceId] = useState<string | null>(initialPlaceId);
+  const [placeName, setPlaceName] = useState<string | null>(initialPlaceName);
 
   const [userId, setUserId] = useState<string>("");
   const [placeInfo, setPlaceInfo] = useState<{
@@ -27,12 +35,15 @@ export default function TripDetailReviewForm() {
     place_image: string | null;
     region_name: string | null;
   } | null>(null);
+
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
+
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // 이미지 모달 상태
@@ -41,47 +52,115 @@ export default function TripDetailReviewForm() {
   const [modalIndex, setModalIndex] = useState(0);
 
   const { profile } = useProfile(userId);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // 초기화 - 사용자 정보 및 여행지 정보 가져오기
+  // 초기화 - 사용자 정보, 여행지 정보, (편집 모드라면) 기존 리뷰 로드
   useEffect(() => {
-    if (!placeId || !placeName) {
-      alert("잘못된 접근입니다.");
-      router.push("/review");
-      return;
-    }
-
     const initializeData = async () => {
-      // 사용자 정보 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
+      // 사용자 정보
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) setUserId(user.id);
+      } catch (err) {
+        console.error("getUser error", err);
       }
 
-      // ✅ 여행지 상세 정보 가져오기 (사진 포함)
-      const { data: placeData, error: placeError } = await supabase
-        .from("place")
-        .select(`
-          place_name,
-          place_address,
-          place_image,
-          region!inner(region_name)
-        `)
-        .eq("place_id", placeId)
-        .single();
+      // 편집 모드: 기존 리뷰 불러오기
+      if (editId) {
+        try {
+          const { data: reviewData, error: reviewError } = await supabase
+            .from("review")
+            .select("*")
+            .eq("review_id", editId)
+            .single();
 
-      if (!placeError && placeData) {
-        setPlaceInfo({
-          place_name: placeData.place_name,
-          place_address: placeData.place_address,
-          place_image: placeData.place_image,
-          region_name: (placeData as any).region?.region_name || null,
-        });
+          if (reviewError) {
+            console.warn("review load error", reviewError);
+          } else if (reviewData) {
+            setTitle(reviewData.review_title || "");
+            setContent(reviewData.review_content || "");
+            setRating(reviewData.rating ?? 0);
+
+            // 편집되는 리뷰의 placeId가 있으면 사용
+            if (reviewData.place_id) {
+              setPlaceId(reviewData.place_id);
+            }
+
+            // 기존에 저장된 이미지 URL 불러오기 (테이블/컬럼 이름은 프로젝트에 맞게 변경)
+            try {
+              const { data: imagesData, error: imagesError } = await supabase
+                .from("review_image")
+                .select("image_url")
+                .eq("review_id", editId);
+
+              if (!imagesError && imagesData) {
+                const urls = (imagesData as any[])
+                  .map((r) => r.image_url)
+                  .filter(Boolean);
+                setImagePreviews(urls);
+                // 이미지 파일(File) 객체는 클라이언트에서 복원할 수 없으므로 imageFiles는 비워둡니다.
+              }
+            } catch (imgErr) {
+              console.error("review images load error", imgErr);
+            }
+          }
+        } catch (err) {
+          console.error("load review failed", err);
+        }
+      }
+
+      // place 정보 불러오기 (placeId가 결정된 이후에 실행)
+      const effectivePlaceId = placeId;
+      if (!effectivePlaceId) {
+        // 편집모드가 아니고 URL에 placeId가 없으면 잘못된 접근
+        if (!editId) {
+          alert("잘못된 접근입니다.");
+          router.push("/review");
+          return;
+        }
+        // 편집모드인데도 placeId가 없다면 이미 위에서 시도했거나 review에서 가져오지 못한 경우
+      }
+
+      if (effectivePlaceId) {
+        try {
+          const { data: placeData, error: placeError } = await supabase
+            .from("place")
+            .select(
+              `
+              place_name,
+              place_address,
+              place_image,
+              region!inner(region_name)
+            `
+            )
+            .eq("place_id", effectivePlaceId)
+            .single();
+
+          if (!placeError && placeData) {
+            setPlaceInfo({
+              place_name: placeData.place_name,
+              place_address: placeData.place_address,
+              place_image: placeData.place_image,
+              region_name: (placeData as any).region?.region_name || null,
+            });
+            // placeName이 비어있으면 placeData로 채움
+            if (!placeName) {
+              setPlaceName(placeData.place_name);
+            }
+          } else {
+            console.warn("place load warning", placeError);
+          }
+        } catch (err) {
+          console.error("place load failed", err);
+        }
       }
     };
 
     initializeData();
-  }, [placeId, placeName, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, placeId]); // placeId가 설정되면 장소 정보를 다시 불러옵니다.
 
   // 별점 클릭 핸들러
   const handleStarClick = (rating: number) => {
@@ -90,7 +169,7 @@ export default function TripDetailReviewForm() {
 
   // 별점 렌더링
   const renderStars = (currentRating: number) => {
-    return [1, 2, 3, 4, 5].map(position => (
+    return [1, 2, 3, 4, 5].map((position) => (
       <button
         key={position}
         type="button"
@@ -98,7 +177,9 @@ export default function TripDetailReviewForm() {
         onMouseEnter={() => setHoveredRating(position)}
         onMouseLeave={() => setHoveredRating(0)}
         className={`text-5xl cursor-pointer focus:outline-none transition-all hover:scale-110 ${
-          position <= (hoveredRating || currentRating) ? 'text-yellow-400' : 'text-gray-300'
+          position <= (hoveredRating || currentRating)
+            ? "text-yellow-400"
+            : "text-gray-300"
         }`}
       >
         ★
@@ -109,18 +190,18 @@ export default function TripDetailReviewForm() {
   // 이미지 선택 핸들러
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
+
     if (imageFiles.length + files.length > 5) {
       alert("이미지는 최대 5개까지 업로드할 수 있습니다.");
       return;
     }
 
-    setImageFiles(prev => [...prev, ...files]);
+    setImageFiles((prev) => [...prev, ...files]);
 
-    files.forEach(file => {
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result as string]);
+        setImagePreviews((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
@@ -128,8 +209,8 @@ export default function TripDetailReviewForm() {
 
   // 이미지 삭제 핸들러
   const handleImageRemove = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   // 이미지 클릭 핸들러 (모달)
@@ -139,17 +220,18 @@ export default function TripDetailReviewForm() {
     setModalOpen(true);
   };
 
-  // 모달 네비게이션
   const handleModalNext = () => {
-    setModalIndex(prev => (prev + 1) % modalImages.length);
+    setModalIndex((prev) => (prev + 1) % modalImages.length);
   };
 
   const handleModalPrev = () => {
-    setModalIndex(prev => (prev - 1 + modalImages.length) % modalImages.length);
+    setModalIndex(
+      (prev) => (prev - 1 + modalImages.length) % modalImages.length
+    );
   };
 
-  // 폼 제출
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 폼 제출 (새로 작성 / 편집 모두 처리)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!userId) {
@@ -176,27 +258,48 @@ export default function TripDetailReviewForm() {
     setIsSubmitting(true);
 
     try {
-      // 리뷰 저장
-      const savedReview = await saveReview({
-        place_id: placeId!,
-        user_id: userId,
-        region: placeInfo.region_name,
-        review_title: title,
-        review_content: content,
-        rating: rating,
-      });
+      let savedReview: any = null;
 
-      if (!savedReview) {
-        throw new Error("리뷰 저장에 실패했습니다.");
+      if (editId) {
+        // 편집 모드: 기존 리뷰 업데이트
+        const { data: updated, error: updateError } = await supabase
+          .from("review")
+          .update({
+            review_title: title,
+            review_content: content,
+            rating,
+          })
+          .eq("review_id", editId)
+          .select()
+          .single();
+
+        if (updateError) {
+          throw updateError;
+        }
+        savedReview = updated;
+      } else {
+        // 새 리뷰 저장 (saveReview helper 사용)
+        const result = await saveReview({
+          place_id: placeId!,
+          user_id: userId,
+          region: placeInfo.region_name,
+          review_title: title,
+          review_content: content,
+          rating: rating,
+        });
+        if (!result) throw new Error("리뷰 저장에 실패했습니다.");
+        savedReview = result;
       }
 
-      // 이미지 업로드
+      const reviewId = editId ?? savedReview.review_id;
+
+      // 이미지 업로드 (새로 선택한 파일들만 업로드)
       if (imageFiles.length > 0) {
         const uploadedUrls: string[] = [];
 
         for (const file of imageFiles) {
           try {
-            const url = await uploadImage(file, savedReview.review_id);
+            const url = await uploadImage(file, reviewId);
             if (url) {
               uploadedUrls.push(url);
             }
@@ -205,17 +308,27 @@ export default function TripDetailReviewForm() {
           }
         }
 
-        // 이미지 URL DB 저장
+        // 이미지 URL DB 저장 (편집/생성 모두 동일 처리)
         if (uploadedUrls.length > 0) {
-          await saveReviewImages(savedReview.review_id, uploadedUrls);
+          await saveReviewImages(reviewId, uploadedUrls);
         }
       }
 
-      alert("리뷰가 성공적으로 작성되었습니다.");
-      router.push(`/place/${placeId}`);
+      alert(
+        editId
+          ? "리뷰가 성공적으로 수정되었습니다."
+          : "리뷰가 성공적으로 작성되었습니다."
+      );
+      // placeId가 있을 경우 해당 장소 페이지로 이동
+      const targetPlaceId = placeId ?? savedReview?.place_id ?? "";
+      if (targetPlaceId) {
+        router.push(`/place/${targetPlaceId}`);
+      } else {
+        router.push("/review");
+      }
     } catch (error) {
       console.error("리뷰 제출 오류:", error);
-      alert("리뷰 작성 중 오류가 발생했습니다. 다시 시도해주세요.");
+      alert("리뷰 작성/수정 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -225,13 +338,19 @@ export default function TripDetailReviewForm() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">여행지 리뷰 작성</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {editId ? "여행지 리뷰 수정" : "여행지 리뷰 작성"}
+          </h1>
           <p className="text-lg text-gray-600">
-            "{placeInfo?.place_name || placeName}" 리뷰를 작성해주세요
+            "{placeInfo?.place_name || placeName}" 리뷰를{" "}
+            {editId ? "수정" : "작성"}해주세요
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6"
+        >
           {/* 닉네임 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -245,14 +364,13 @@ export default function TripDetailReviewForm() {
             />
           </div>
 
-          {/* ✅ 여행지 정보 (사진 포함) */}
+          {/* 여행지 정보 */}
           {placeInfo && (
             <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
               <p className="text-sm text-blue-600 font-semibold mb-3">
                 리뷰 작성 여행지
               </p>
               <div className="flex items-center gap-4">
-                {/* 여행지 사진 */}
                 {placeInfo.place_image && (
                   <img
                     src={placeInfo.place_image}
@@ -260,7 +378,6 @@ export default function TripDetailReviewForm() {
                     className="w-24 h-24 object-cover rounded-lg shadow-sm"
                   />
                 )}
-                {/* 여행지 정보 */}
                 <div className="flex-1">
                   <p className="text-xl font-bold text-blue-900 mb-1">
                     {placeInfo.place_name}
@@ -325,7 +442,6 @@ export default function TripDetailReviewForm() {
               이미지 (최대 5개)
             </label>
 
-            {/* 이미지 미리보기 */}
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {imagePreviews.map((preview, index) => (
@@ -348,7 +464,6 @@ export default function TripDetailReviewForm() {
               </div>
             )}
 
-            {/* 이미지 추가 버튼 */}
             <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-all"
@@ -395,7 +510,13 @@ export default function TripDetailReviewForm() {
               disabled={isSubmitting}
               className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "리뷰 작성 중..." : "리뷰 작성하기"}
+              {isSubmitting
+                ? editId
+                  ? "리뷰 수정 중..."
+                  : "리뷰 작성 중..."
+                : editId
+                ? "리뷰 수정하기"
+                : "리뷰 작성하기"}
             </button>
 
             <button
