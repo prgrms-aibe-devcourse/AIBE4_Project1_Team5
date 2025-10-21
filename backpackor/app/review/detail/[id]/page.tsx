@@ -34,7 +34,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
   const [placeModalOpen, setPlaceModalOpen] = useState(false);
 
   // 작성자 프로필 정보 가져오기
-  const { profile: authorProfile } = useProfile(review?.user_id);
+  const { profile: authorProfile, profileUrl: authorProfileUrl, isLoading: isProfileLoading } = useProfile(review?.user_id);
 
   // 이미지 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -262,19 +262,25 @@ export default function ReviewDetailPage({ params }: PageProps) {
             {/* 작성 정보 */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                    clipRule="evenodd"
+                {isProfileLoading ? (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                ) : (
+                  <img
+                    src={
+                      authorProfileUrl && authorProfileUrl.trim() !== ""
+                        ? authorProfileUrl
+                        : "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png"
+                    }
+                    alt={authorProfile?.display_name || "프로필"}
+                    className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src =
+                        "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
+                    }}
                   />
-                </svg>
-                <span>{authorProfile?.display_name || "익명 사용자"}</span>
+                )}
+                <span className="font-semibold text-gray-700">{authorProfile?.display_name || "익명 사용자"}</span>
               </div>
               <span className="text-gray-300">|</span>
               <div className="flex items-center gap-2">
@@ -310,6 +316,14 @@ export default function ReviewDetailPage({ params }: PageProps) {
               )}
             </div>
           </div>
+          {/* 리뷰 내용 */}
+          <div className="p-8">
+            <div className="prose max-w-none">
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
+                {review.review_content}
+              </p>
+            </div>
+          </div>
           {/* 이미지 갤러리 */}
           {review.images.length > 0 && (
             <div className="p-8 border-b border-gray-100">
@@ -337,17 +351,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
-          {/* 리뷰 내용 */}
-          <div className="p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              리뷰 내용
-            </h2>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
-                {review.review_content}
-              </p>
-            </div>
-          </div>
           {/* 하단 버튼 */}
           <div className="p-8 bg-gray-50 border-t border-gray-100">
             <div className="flex gap-3">
