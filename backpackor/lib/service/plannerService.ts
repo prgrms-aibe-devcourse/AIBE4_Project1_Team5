@@ -1,6 +1,6 @@
 // /lib/service/plannerService.ts
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Plan, PlannerDraft } from "@/type/place";
+import type { Plan, PlannerDraft } from "@/types/place";
 
 /** 세션에 저장할 최소 필드 타입(미리보기에서 쓰는 키만) */
 type SessionPlace = {

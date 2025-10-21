@@ -1,7 +1,7 @@
 // app/review/write/page.tsx
-'use client';
+"use client";
 
-import ReviewForm from '@/component/review/ReviewForm';
+import ReviewForm from "@/components/review/ReviewForm";
 
 export default function ReviewWritePage() {
   return <ReviewForm />;

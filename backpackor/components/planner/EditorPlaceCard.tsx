@@ -1,7 +1,7 @@
 // component/my-planner/PlanList.tsx
 "use client";
 
-import TripPlanCard from "@/component/my-planner/TripPlanCard";
+import TripPlanCard from "@/components/my-planner/TripPlanCard";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 

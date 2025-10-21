@@ -1,8 +1,8 @@
 // app/place/[placeId]/page.tsx
+import PlaceDetailContent from "@/components/place/PlaceDetailContent";
 import { createServerClient } from "@/lib/supabaseClient";
+import { TravelDetail } from "@/types/travel";
 import { notFound } from "next/navigation";
-import PlaceDetailContent from "@/component/place/PlaceDetailContent";
-import { TravelDetail } from "@/type/travel";
 
 interface PageProps {
   params: { placeId: string };

@@ -1,10 +1,10 @@
 "use client";
 
-import TravelCard from "@/component/place/TravelCard";
-import { useAuth } from "@/hook/useAuth";
-import { useProfile } from "@/hook/useProfile";
+import TravelCard from "@/components/place/TravelCard";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { TravelSummary } from "@/type/travel";
+import type { TravelSummary } from "@/types/travel";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 

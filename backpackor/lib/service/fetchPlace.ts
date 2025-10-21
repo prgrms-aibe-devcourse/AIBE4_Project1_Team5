@@ -1,6 +1,6 @@
 // /lib/services/fetchPlacesService.ts
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Place, Plan } from "@/type/place";
+import type { Place, Plan } from "@/types/place";
 
 const toPlace = (row: any): Place => ({
   place_id: row?.place_id ?? "",

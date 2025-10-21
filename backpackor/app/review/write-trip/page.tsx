@@ -1,7 +1,7 @@
 // app/review/write-trip/page.tsx
 "use client";
 
-import DetailReviewForm from "@/component/review/TripDetailReviewForm";
+import DetailReviewForm from "@/components/review/TripDetailReviewForm";
 import { useSearchParams } from "next/navigation";
 
 export default function WriteTripReviewPage() {

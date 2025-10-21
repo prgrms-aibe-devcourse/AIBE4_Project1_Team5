@@ -1,8 +1,8 @@
 "use client";
 
-import PlaceDetailModal from "@/component/place/PlaceDetailModal";
+import PlaceDetailModal from "@/components/place/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Place } from "@/type/place";
+import type { Place } from "@/types/place";
 import { isAfter } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

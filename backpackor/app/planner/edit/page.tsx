@@ -1,7 +1,7 @@
 // app/planner/edit/page.tsx
-import PlannerEditor from "@/component/planner/PlannerEditor";
+import PlannerEditor from "@/components/planner/PlannerEditor";
 import { createServerClient } from "@/lib/supabaseClient";
-import type { Place, Plan } from "@/type/place";
+import type { Place, Plan } from "@/types/place";
 
 interface EditPlannerPageProps {
   searchParams: Promise<{

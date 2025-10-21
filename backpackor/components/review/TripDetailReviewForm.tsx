@@ -1,16 +1,16 @@
 // component/review/TripDetailReviewForm.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import ImageModal from "@/components/review/ImageModal";
+import { useProfile } from "@/hooks/useProfile";
 import {
   saveReview,
-  uploadImage,
   saveReviewImages,
+  uploadImage,
 } from "@/lib/reviewStoreSupabase";
-import { useProfile } from "@/hook/useProfile";
-import ImageModal from "@/component/review/ImageModal";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 interface TripDetailReviewFormProps {
   editId?: string | null;
@@ -387,7 +387,6 @@ export default function TripDetailReviewForm({
                       {placeInfo.place_address}
                     </p>
                   )}
-                  
                 </div>
               </div>
             </div>

@@ -1,11 +1,11 @@
 // component/review/ReviewCard.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabaseClient";
+import type { Review } from "@/types/travel";
 import { useRouter } from "next/navigation";
-import { useProfile } from "@/hook/useProfile";
-import type { Review } from "@/type/travel";
+import React, { useEffect, useState } from "react";
 
 const getLoggedInUserId = async (): Promise<string | null> => {
   const {

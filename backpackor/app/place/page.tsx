@@ -1,11 +1,11 @@
 // app/place/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import TravelList from "@/components/place/TravelList";
 import { supabase } from "@/lib/supabaseClient";
-import TravelList from "@/component/place/TravelList";
-import { Place } from "@/type/place";
+import { Place } from "@/types/place";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function PlacePage() {
   const searchParams = useSearchParams();

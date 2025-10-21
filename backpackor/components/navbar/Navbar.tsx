@@ -1,8 +1,8 @@
 "use client";
 
-import { useAuth } from "@/hook/useAuth";
-import { useProfile } from "@/hook/useProfile";
-import { useSocialAuth } from "@/hook/useSocialAuth";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useSocialAuth } from "@/hooks/useSocialAuth";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

@@ -1,12 +1,12 @@
 // @/component/place/PlaceDetailContent.tsx
 "use client";
 
-import FavoriteButton from "@/component/place/FavoriteButton";
-import RelatedPlacesSection from "@/component/place/RelatedPlacesSection";
-import TravelReviewSection from "@/component/review/TravelReviewSection";
-import TravelInfoSection from "@/component/place/TravelInfoSection";
+import FavoriteButton from "@/components/place/FavoriteButton";
+import RelatedPlacesSection from "@/components/place/RelatedPlacesSection";
+import TravelInfoSection from "@/components/place/TravelInfoSection";
+import TravelReviewSection from "@/components/review/TravelReviewSection";
+import { TravelDetail } from "@/types/travel";
 import styles from "./PlaceDetailContent.module.css";
-import { TravelDetail } from "@/type/travel";
 
 interface PlaceDetailContentProps {
   place: TravelDetail;

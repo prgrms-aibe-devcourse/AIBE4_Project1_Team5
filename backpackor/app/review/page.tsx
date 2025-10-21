@@ -4,10 +4,10 @@
 import {
   ReviewActionButtons,
   WriteButton,
-} from "@/component/review/ReviewButton";
-import Sort from "@/component/review/ReviewSort";
-import { useAuth } from "@/hook/useAuth";
-import { useProfile } from "@/hook/useProfile";
+} from "@/components/review/ReviewButton";
+import Sort from "@/components/review/ReviewSort";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import {
   getRegions,
   getReviews,
@@ -15,9 +15,8 @@ import {
   type ReviewWithImages,
 } from "@/lib/reviewStoreSupabase";
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 // 개별 리뷰 카드 컴포넌트
 function ReviewCard({

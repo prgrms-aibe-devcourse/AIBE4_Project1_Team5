@@ -1,9 +1,9 @@
 // component/place/PlaceDetailModal.tsx
 "use client";
 
-import PlaceDetailContent from "@/component/place/PlaceDetailContent";
+import PlaceDetailContent from "@/components/place/PlaceDetailContent";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import { TravelDetail } from "@/type/travel";
+import { TravelDetail } from "@/types/travel";
 import { useEffect, useState } from "react";
 import styles from "./PlaceDetailModal.module.css";
 
@@ -119,7 +119,9 @@ export default function PlaceDetailModal({
             place={place}
             initialIsFavorite={initialIsFavorite}
             showReviewButton={showReviewButton} // 👈 prop 전달
-            reviewCount={0} averageRating={0}          />
+            reviewCount={0}
+            averageRating={0}
+          />
         </div>
       </div>
     </div>

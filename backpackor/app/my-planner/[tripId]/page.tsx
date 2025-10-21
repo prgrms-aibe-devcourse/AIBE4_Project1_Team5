@@ -1,9 +1,9 @@
 // app/my-planner/[tripId]/page.tsx
 
-import KakaoMultiRouteMap from "@/component/map/KakaoMultiRouteMap";
-import TripDetailClient from "@/component/my-planner/TripDetailClient";
+import KakaoMultiRouteMap from "@/components/map/KakaoMultiRouteMap";
+import TripDetailClient from "@/components/my-planner/TripDetailClient";
 import { createServerClient } from "@/lib/supabaseClient";
-import type { Place } from "@/type/place";
+import type { Place } from "@/types/place";
 import { notFound } from "next/navigation";
 
 interface TripDetailPageProps {

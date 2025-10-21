@@ -1,12 +1,12 @@
 // @/component/place/TravelList.tsx
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { Place } from "@/types/place";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import Sort from "./Sort";
-import { Place } from "@/type/place";
 
 const REGIONS = [
   "전체",

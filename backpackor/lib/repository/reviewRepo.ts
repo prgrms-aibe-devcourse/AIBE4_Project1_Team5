@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabaseClient";
-import type { Review } from "@/type/travel";
+import type { Review } from "@/types/travel";
 
 export async function getReviewsByPlaceId(placeId: string): Promise<Review[]> {
   const supabase = createServerClient();
