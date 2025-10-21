@@ -310,6 +310,14 @@ export default function ReviewDetailPage({ params }: PageProps) {
               )}
             </div>
           </div>
+          {/* 리뷰 내용 */}
+          <div className="p-8">
+            <div className="prose max-w-none">
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
+                {review.review_content}
+              </p>
+            </div>
+          </div>
           {/* 이미지 갤러리 */}
           {review.images.length > 0 && (
             <div className="p-8 border-b border-gray-100">
@@ -337,17 +345,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
               </div>
             </div>
           )}
-          {/* 리뷰 내용 */}
-          <div className="p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              리뷰 내용
-            </h2>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
-                {review.review_content}
-              </p>
-            </div>
-          </div>
           {/* 하단 버튼 */}
           <div className="p-8 bg-gray-50 border-t border-gray-100">
             <div className="flex gap-3">
