@@ -1,7 +1,7 @@
 "use client";
 
-import TravelListContainer from "@/component/place/TravelListContainer";
-import { useProfile } from "@/hook/useProfile";
+import TravelListContainer from "@/components/place/TravelListContainer";
+import { useProfile } from "@/hooks/useProfile";
 import {
   deleteReviewImage,
   getReviewById,
@@ -11,7 +11,7 @@ import {
   uploadImage,
 } from "@/lib/reviewStoreSupabase";
 import { supabase } from "@/lib/supabaseClient";
-import type { Place } from "@/type/place";
+import type { Place } from "@/types/place";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 
@@ -35,7 +35,9 @@ export default function ReviewForm({
   const [content, setContent] = useState<string>("");
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
-  const [existingImages, setExistingImages] = useState<Array<{ id: number; url: string }>>([]); 
+  const [existingImages, setExistingImages] = useState<
+    Array<{ id: number; url: string }>
+  >([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -51,7 +53,9 @@ export default function ReviewForm({
   // 사용자 정보 로드
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) setUserId(user.id);
     };
     fetchUserInfo();
@@ -76,7 +80,7 @@ export default function ReviewForm({
         `);
 
         if (error) throw error;
-        
+
         const placesWithRegion = (data || []).map((item: any) => ({
           place_id: item.place_id,
           place_name: item.place_name,
@@ -93,9 +97,9 @@ export default function ReviewForm({
           latitude: null,
           longitude: null,
         }));
-        
+
         setAllPlaces(placesWithRegion);
-        
+
         const uniqueRegions = Array.from(
           new Set(placesWithRegion.map((p: Place) => p.region).filter(Boolean))
         ) as string[];
@@ -131,7 +135,8 @@ export default function ReviewForm({
           // ✅ 여행지 정보 가져오기
           const { data: placeData, error: placeError } = await supabase
             .from("place")
-            .select(`
+            .select(
+              `
               place_id,
               place_name,
               place_address,
@@ -139,7 +144,8 @@ export default function ReviewForm({
               average_rating,
               favorite_count,
               region!inner(region_name)
-            `)
+            `
+            )
             .eq("place_id", reviewData.place_id)
             .single();
 
@@ -197,7 +203,10 @@ export default function ReviewForm({
     setNewImagePreviews(updatedPreviews);
   };
 
-  const handleRemoveExistingImage = async (imageId: number, imageUrl: string) => {
+  const handleRemoveExistingImage = async (
+    imageId: number,
+    imageUrl: string
+  ) => {
     const confirmDelete = confirm("이미지를 삭제하시겠습니까?");
     if (!confirmDelete) return;
     const success = await deleteReviewImage(imageId, imageUrl);
@@ -257,7 +266,11 @@ export default function ReviewForm({
         }
       }
 
-      alert(currentReviewId ? "리뷰가 수정되었습니다." : "리뷰가 성공적으로 등록되었습니다.");
+      alert(
+        currentReviewId
+          ? "리뷰가 수정되었습니다."
+          : "리뷰가 성공적으로 등록되었습니다."
+      );
       router.push(`/review`);
     } catch (error) {
       console.error("리뷰 저장/수정 오류:", error);
@@ -324,7 +337,10 @@ export default function ReviewForm({
             {selectedPlace && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  여행지 {isEditMode && <span className="text-xs text-gray-500">(변경 불가)</span>}
+                  여행지{" "}
+                  {isEditMode && (
+                    <span className="text-xs text-gray-500">(변경 불가)</span>
+                  )}
                 </label>
                 <div className="border-2 rounded-lg p-4 bg-blue-50 border-blue-200">
                   <div className="flex items-center gap-3">
@@ -457,7 +473,9 @@ export default function ReviewForm({
                       />
                       <button
                         type="button"
-                        onClick={() => handleRemoveExistingImage(img.id, img.url)}
+                        onClick={() =>
+                          handleRemoveExistingImage(img.id, img.url)
+                        }
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-90 hover:opacity-100 transition"
                         title="삭제"
                       >

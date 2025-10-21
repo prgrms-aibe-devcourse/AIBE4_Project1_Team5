@@ -1,6 +1,6 @@
 "use client";
 
-import { useSocialAuth } from "@/hook/useSocialAuth";
+import { useSocialAuth } from "@/hooks/useSocialAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";

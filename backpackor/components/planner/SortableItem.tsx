@@ -1,6 +1,6 @@
 // component/planner/SortableItem.tsx
 
-import type { Place } from "@/type/place";
+import type { Place } from "@/types/place";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";

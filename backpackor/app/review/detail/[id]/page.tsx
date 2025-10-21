@@ -1,10 +1,10 @@
 "use client";
 
-import ImageModal from "@/component/review/ImageModal";
-import { ReviewActionButtons } from "@/component/review/ReviewButton";
-import { useAuth } from "@/hook/useAuth";
-import { useProfile } from "@/hook/useProfile";
-import PlaceDetailModal from "@/component/place/PlaceDetailModal";
+import PlaceDetailModal from "@/components/place/PlaceDetailModal";
+import ImageModal from "@/components/review/ImageModal";
+import { ReviewActionButtons } from "@/components/review/ReviewButton";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import {
   getReviewById,
   type ReviewWithImages,
@@ -47,7 +47,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
       setIsLoading(true);
       const data = await getReviewById(id);
       setReview(data);
-      
 
       setIsLoading(false);
     };
@@ -69,7 +68,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
           setPlaceName(data.place_name);
           setPlaceAddress(data.place_address || "");
           setPlaceImage(data.place_image || "");
-          
         }
       }
     };
@@ -332,7 +330,6 @@ export default function ReviewDetailPage({ params }: PageProps) {
                       src={image.review_image}
                       alt={`리뷰 이미지 ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      
                     />
                     {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300" /> */}
                   </div>

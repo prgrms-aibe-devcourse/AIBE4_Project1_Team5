@@ -1,6 +1,6 @@
 "use client";
 
-import KakaoMultiRouteMap from "@/component/map/KakaoMultiRouteMap";
+import KakaoMultiRouteMap from "@/components/map/KakaoMultiRouteMap";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";

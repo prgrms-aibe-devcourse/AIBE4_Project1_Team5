@@ -1,9 +1,9 @@
 // component/review/ReviewList.tsx
 "use client";
 
+import type { Review } from "@/types/travel";
 import React, { useState } from "react";
 import ReviewCard from "./ReviewCard";
-import type { Review } from "@/type/travel";
 
 interface ReviewListProps {
   reviews: Review[];

@@ -1,8 +1,8 @@
 // app/my-page/page.tsx
 "use client";
 
-import { useAuth } from "@/hook/useAuth";
-import { useProfile } from "@/hook/useProfile";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 

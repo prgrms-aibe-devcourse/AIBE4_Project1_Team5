@@ -2,10 +2,10 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import TravelCard from "@/components/place/TravelCard";
 import { supabase } from "@/lib/supabaseClient";
-import type { TravelSummary } from "@/type/travel";
-import TravelCard from "@/component/place/TravelCard";
+import type { TravelSummary } from "@/types/travel";
+import React, { useEffect, useState } from "react";
 
 // 한 페이지에 보여줄 카드 개수를 3으로 설정
 const CARDS_PER_PAGE = 3;

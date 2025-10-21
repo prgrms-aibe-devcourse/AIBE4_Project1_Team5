@@ -1,13 +1,13 @@
 // app/planner/new/region/page.tsx
 "use client";
 
+import PlaceDetailModal from "@/components/place/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import PlaceDetailModal from "@/component/place/PlaceDetailModal";
 
 // Region 타입 정의
 interface Region {

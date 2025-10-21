@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Place } from "@/type/place";
+import type { Place } from "@/types/place";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";

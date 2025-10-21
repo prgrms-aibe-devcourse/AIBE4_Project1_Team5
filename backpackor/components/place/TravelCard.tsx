@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import type { TravelSummary } from "@/types/travel";
 import { useRouter } from "next/navigation";
-import type { TravelSummary } from "@/type/travel";
+import React from "react";
 
 interface TravelCardProps {
   place: TravelSummary;
@@ -25,14 +25,16 @@ const TravelCard: React.FC<TravelCardProps> = ({ place }) => {
       <div className="travel-card" onClick={handleClick}>
         <div
           className="card-image"
-          style={{ 
-            backgroundImage: `url(${place.place_image || '/default-image.jpg'})` 
+          style={{
+            backgroundImage: `url(${
+              place.place_image || "/default-image.jpg"
+            })`,
           }}
         />
         <div className="card-info">
-          <h3 className="card-title">{place.place_name || '이름 없음'}</h3>
+          <h3 className="card-title">{place.place_name || "이름 없음"}</h3>
           <p className="card-rating">
-            ⭐ {place.average_rating ? place.average_rating.toFixed(1) : '0.0'}
+            ⭐ {place.average_rating ? place.average_rating.toFixed(1) : "0.0"}
           </p>
         </div>
       </div>
