@@ -1,10 +1,10 @@
 "use client";
 
-import TravelCard from "@/components/place/TravelCard";
-import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { PlaceCard } from "@/components/place/card/PlaceCard";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useProfile } from "@/hooks/auth/useProfile";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { TravelSummary } from "@/types/travel";
+import type { Place } from "@/types/place";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -12,8 +12,8 @@ export default function Page() {
   const { user } = useAuth();
   const { profile } = useProfile(user?.id);
 
-  const [popularPlaces, setPopularPlaces] = useState<TravelSummary[]>([]);
-  const [bestPlaces, setBestPlaces] = useState<TravelSummary[]>([]);
+  const [popularPlaces, setPopularPlaces] = useState<Place[]>([]);
+  const [bestPlaces, setBestPlaces] = useState<Place[]>([]);
 
   useEffect(() => {
     const fetchPlaces = async () => {
@@ -22,20 +22,16 @@ export default function Page() {
       // 인기 여행지 (찜 많은 순)
       const { data: popularData } = await supabase
         .from("place")
-        .select("place_id, place_name, place_image, average_rating")
+        .select("*")
         .order("favorite_count", { ascending: false })
         .limit(3);
 
       // 별점 높은 여행지 (평균 평점 순)
       const { data: bestData } = await supabase
         .from("place")
-        .select("place_id, place_name, place_image, average_rating")
+        .select("*")
         .order("average_rating", { ascending: false, nullsFirst: false })
         .limit(3);
-
-      // ✅ [디버깅] 어떤 데이터가 오는지 콘솔에서 확인합니다.
-      console.log("인기 여행지 데이터:", popularData);
-      console.log("별점 높은 여행지 데이터:", bestData);
 
       setPopularPlaces(popularData || []);
       setBestPlaces(bestData || []);
@@ -144,12 +140,12 @@ export default function Page() {
             {popularPlaces.map((place, index) => (
               <div
                 key={place.place_id}
-                className="transform hover:scale-105 transition-all duration-300 hover:shadow-2xl"
+                className="transform hover:scale-105 transition-all duration-300"
                 style={{
                   animation: `fadeInUp 0.6s ease-out ${index * 0.15}s both`,
                 }}
               >
-                <TravelCard place={place} />
+                <PlaceCard place={place} />
               </div>
             ))}
           </div>
@@ -173,12 +169,12 @@ export default function Page() {
               {bestPlaces.map((place, index) => (
                 <div
                   key={place.place_id}
-                  className="transform hover:scale-105 transition-all duration-300 hover:shadow-2xl"
+                  className="transform hover:scale-105 transition-all duration-300"
                   style={{
                     animation: `fadeInUp 0.6s ease-out ${index * 0.15}s both`,
                   }}
                 >
-                  <TravelCard place={place} />
+                  <PlaceCard place={place} />
                 </div>
               ))}
             </div>

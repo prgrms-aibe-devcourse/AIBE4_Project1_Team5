@@ -1,11 +1,11 @@
 // app/place/[placeId]/page.tsx
-import PlaceDetailContent from "@/components/place/PlaceDetailContent";
+import PlaceDetailContent from "@/components/place/detail/PlaceDetailContent";
 import { createServerClient } from "@/lib/supabaseClient";
-import { TravelDetail } from "@/types/travel";
+import type { PlaceDetail } from "@/types/place";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { placeId: string };
+  params: Promise<{ placeId: string }>;
 }
 
 export default async function PlaceDetailPage({ params }: PageProps) {
@@ -60,7 +60,7 @@ export default async function PlaceDetailPage({ params }: PageProps) {
   // PlaceDetailContent 컴포넌트에 리뷰 데이터 전달
   return (
     <PlaceDetailContent
-      place={data as TravelDetail}
+      place={data as PlaceDetail}
       initialIsFavorite={initialIsFavorite}
       reviewCount={reviewCount}
       averageRating={averageRating}

@@ -40,7 +40,7 @@ export default function FavoriteButton({
           .select("place_id")
           .eq("user_id", user.id)
           .eq("place_id", placeId)
-          .single();
+          .maybeSingle();
 
         setIsFavorite(!!data);
       }
@@ -128,7 +128,9 @@ export default function FavoriteButton({
   return (
     <button
       onClick={handleFavoriteClick}
-      className={`favorite-button ${isLoading ? "cursor-not-allowed" : ""}`}
+      className={`w-full h-full flex items-center justify-center transition-all ${
+        isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:scale-110"
+      }`}
       aria-label="찜하기"
       disabled={isLoading}
     >
@@ -137,7 +139,7 @@ export default function FavoriteButton({
         className={`transition-all ${
           isFavorite
             ? "text-red-500 fill-red-500"
-            : "text-black fill-none stroke-[2]"
+            : "text-gray-700 fill-none stroke-[2] hover:text-red-400"
         }`}
       />
     </button>

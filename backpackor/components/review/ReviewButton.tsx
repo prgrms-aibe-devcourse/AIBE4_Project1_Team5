@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { deleteReview } from '@/lib/reviewStoreSupabase';
+import { deleteReview } from '@/apis/reviewApi';
 
 // ========== 리뷰 작성 버튼 ==========
 interface WriteButtonProps {

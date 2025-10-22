@@ -1,12 +1,31 @@
 "use client";
 
-import { useSocialAuth } from "@/hooks/useSocialAuth";
-import { supabase } from "@/lib/supabaseClient";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useSocialLogin } from "@/hooks/auth/useSocialLogin";
+import { SocialLoginButton } from "@/components/auth/SocialLoginButton";
+
+const SOCIAL_PROVIDERS = [
+  {
+    provider: "google" as const,
+    logoUrl:
+      "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/google_logo.png",
+  },
+  {
+    provider: "kakao" as const,
+    logoUrl:
+      "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/kakao_logo.png",
+  },
+  {
+    provider: "github" as const,
+    logoUrl:
+      "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/github_logo.png",
+  },
+] as const;
 
 export default function LoginPage() {
-  const { handleSocialLogin } = useSocialAuth();
+  const { handleLogin } = useSocialLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -27,7 +46,6 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50 mt-[-2rem]">
-      {/* 로그인 카드 */}
       <div className="w-full max-w-md py-20 px-12 space-y-20 bg-white rounded-3xl shadow-xl">
         {/* 제목 영역 */}
         <div className="text-center space-y-5">
@@ -35,51 +53,19 @@ export default function LoginPage() {
           <p className="text-lg text-gray-600">
             소셜 계정으로 간편하게 시작해보세요
           </p>
-
-          {/* 구분선 */}
           <div className="w-40 mx-auto border-t-2 border-gray-200 opacity-70 mt-6" />
         </div>
 
         {/* 소셜 로그인 버튼 */}
         <div className="flex justify-center items-center space-x-10">
-          {/* Google */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin("google")}
-            className="w-24 h-24 flex items-center justify-center rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 hover:scale-110 transition-transform shadow-md"
-          >
-            <img
-              src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/google_logo.png"
-              alt="Google logo"
-              className="w-16 h-16 object-contain"
+          {SOCIAL_PROVIDERS.map(({ provider, logoUrl }) => (
+            <SocialLoginButton
+              key={provider}
+              provider={provider}
+              logoUrl={logoUrl}
+              onLogin={handleLogin}
             />
-          </button>
-
-          {/* Kakao */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin("kakao")}
-            className="w-24 h-24 flex items-center justify-center rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 hover:scale-110 transition-transform shadow-md"
-          >
-            <img
-              src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/kakao_logo.png"
-              alt="Kakao logo"
-              className="w-16 h-16 object-contain"
-            />
-          </button>
-
-          {/* GitHub */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin("github")}
-            className="w-24 h-24 flex items-center justify-center rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 hover:scale-110 transition-transform shadow-md"
-          >
-            <img
-              src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/social/github_logo.png"
-              alt="GitHub logo"
-              className="w-16 h-16 object-cover rounded-full"
-            />
-          </button>
+          ))}
         </div>
       </div>
     </main>

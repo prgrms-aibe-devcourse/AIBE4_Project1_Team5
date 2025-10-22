@@ -1,8 +1,8 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
-import { useSocialAuth } from "@/hooks/useSocialAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useProfile } from "@/hooks/auth/useProfile";
+import { useSocialLogin } from "@/hooks/auth/useSocialLogin";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -15,10 +15,12 @@ const NAV_LINKS = [
   { href: "/review", label: "리뷰" },
 ] as const;
 
+const DEFAULT_PROFILE_IMAGE = "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
+
 export default function Navbar() {
   const { user, loading } = useAuth();
   const { profile, profileUrl } = useProfile(user?.id);
-  const { handleSocialLogout } = useSocialAuth();
+  const { handleLogout } = useSocialLogin();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,14 +43,16 @@ export default function Navbar() {
         href="/"
         className="flex items-center transition-transform duration-300 hover:scale-105"
       >
-        <Image
-          src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png"
-          alt="로고"
-          width={200}
-          height={56}
-          priority
-          className="w-[200px] h-auto object-contain"
-        />
+        <div className="relative w-[200px] h-[56px]">
+          <Image
+            src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png"
+            alt="로고"
+            fill
+            sizes="200px"
+            priority
+            className="object-contain"
+          />
+        </div>
       </Link>
 
       {/* 메뉴 */}
@@ -81,7 +85,7 @@ export default function Navbar() {
             >
               <div className="relative w-9 h-9">
                 <Image
-                  src={profileUrl}
+                  src={profileUrl || DEFAULT_PROFILE_IMAGE}
                   alt="프로필 이미지"
                   fill
                   sizes="36px"
@@ -104,7 +108,7 @@ export default function Navbar() {
                   마이페이지
                 </Link>
                 <button
-                  onClick={handleSocialLogout}
+                  onClick={handleLogout}
                   className="block w-full px-4 py-2 text-gray-800 hover:bg-gray-100 text-center"
                 >
                   로그아웃

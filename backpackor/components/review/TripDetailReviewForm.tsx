@@ -2,12 +2,12 @@
 "use client";
 
 import ImageModal from "@/components/review/ImageModal";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/auth/useProfile";
 import {
   saveReview,
   saveReviewImages,
   uploadImage,
-} from "@/lib/reviewStoreSupabase";
+} from "@/apis/reviewApi";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -34,6 +34,7 @@ export default function TripDetailReviewForm({
     place_address: string | null;
     place_image: string | null;
     region_name: string | null;
+    region_id: number | null;
   } | null>(null);
 
   const [title, setTitle] = useState<string>("");
@@ -77,7 +78,7 @@ export default function TripDetailReviewForm({
             .single();
 
           if (reviewError) {
-            console.warn("review load error", reviewError);
+            // Review load error
           } else if (reviewData) {
             setTitle(reviewData.review_title || "");
             setContent(reviewData.review_content || "");
@@ -88,16 +89,17 @@ export default function TripDetailReviewForm({
               setPlaceId(reviewData.place_id);
             }
 
-            // 기존에 저장된 이미지 URL 불러오기 (테이블/컬럼 이름은 프로젝트에 맞게 변경)
+            // 기존에 저장된 이미지 URL 불러오기
             try {
-              const { data: imagesData, error: imagesError } = await supabase
+              const { data: imagesData, error: imagesError} = await supabase
                 .from("review_image")
-                .select("image_url")
-                .eq("review_id", editId);
+                .select("review_image_id, review_image, image_order")
+                .eq("review_id", editId)
+                .order("image_order", { ascending: true });
 
               if (!imagesError && imagesData) {
                 const urls = (imagesData as any[])
-                  .map((r) => r.image_url)
+                  .map((r) => r.review_image)
                   .filter(Boolean);
                 setImagePreviews(urls);
                 // 이미지 파일(File) 객체는 클라이언트에서 복원할 수 없으므로 imageFiles는 비워둡니다.
@@ -144,16 +146,17 @@ export default function TripDetailReviewForm({
               place_address: placeData.place_address,
               place_image: placeData.place_image,
               region_name: (placeData as any).region?.region_name || null,
+              region_id: (placeData as any).region?.region_id || null,
             });
             // placeName이 비어있으면 placeData로 채움
             if (!placeName) {
               setPlaceName(placeData.place_name);
             }
           } else {
-            console.warn("place load warning", placeError);
+            // Place load warning
           }
         } catch (err) {
-          console.error("place load failed", err);
+          // Place load failed
         }
       }
     };
@@ -282,7 +285,7 @@ export default function TripDetailReviewForm({
         const result = await saveReview({
           place_id: placeId!,
           user_id: userId,
-          region: placeInfo.region_name,
+          region_id: placeInfo.region_id,
           review_title: title,
           review_content: content,
           rating: rating,
@@ -319,12 +322,18 @@ export default function TripDetailReviewForm({
           ? "리뷰가 성공적으로 수정되었습니다."
           : "리뷰가 성공적으로 작성되었습니다."
       );
-      // placeId가 있을 경우 해당 장소 페이지로 이동
-      const targetPlaceId = placeId ?? savedReview?.place_id ?? "";
-      if (targetPlaceId) {
-        router.push(`/place/${targetPlaceId}`);
+
+      // 리뷰 수정 시: 리뷰 상세 페이지로 이동
+      // 새로 작성 시: 장소 페이지로 이동
+      if (editId) {
+        router.push(`/review/detail/${reviewId}`);
       } else {
-        router.push("/review");
+        const targetPlaceId = placeId ?? savedReview?.place_id ?? "";
+        if (targetPlaceId) {
+          router.push(`/place/${targetPlaceId}`);
+        } else {
+          router.push("/review");
+        }
       }
     } catch (error) {
       console.error("리뷰 제출 오류:", error);

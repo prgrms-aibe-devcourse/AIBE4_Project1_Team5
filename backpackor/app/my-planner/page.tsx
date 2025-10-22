@@ -1,7 +1,7 @@
 "use client";
 
 import PlanList from "@/components/my-planner/PlanList";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
