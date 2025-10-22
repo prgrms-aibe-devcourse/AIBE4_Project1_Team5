@@ -14,26 +14,87 @@ export default function AiPlannerStylePage() {
 
   // .get('region') 대신 .getAll('region')을 사용하여 모든 지역 정보를 배열로 가져옵니다.
   const regions = searchParams.getAll("region");
+  const regionIds = searchParams.getAll("region_id");
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
   const companion = searchParams.get("companion");
 
+  // 카테고리 매핑: 사용자 선택 -> DB place_category
+  const categoryMapping: Record<string, string[]> = {
+    nature: ["자연명소", "휴양림", "식물원"],
+    beach: ["해수욕장"],
+    hotspring: ["온천지역"],
+    culture: ["문화재", "드라마/영화촬영지"],
+    festival: ["지역축제"],
+    activity: ["체험형", "캠핑장/야영장"],
+    theme: ["테마공원", "동물원", "아쿠아리움"],
+    shopping: ["먹거리/패션거리"],
+    attraction: ["관광지"],
+  };
+
   const styleOptions = [
-    { name: "자연, 힐링", value: "nature", icon: "🌿", desc: "자연 속 휴식" },
-    { name: "맛집, 음식", value: "food", icon: "🍽️", desc: "미식 탐방" },
-    { name: "문화, 역사", value: "culture", icon: "🏛️", desc: "역사 체험" },
     {
-      name: "액티비티, 체험",
-      value: "activity",
-      icon: "🎢",
-      desc: "활동적인 여행",
+      name: "자연, 힐링",
+      value: "nature",
+      icon: "🌿",
+      desc: "숲, 식물원",
+      categories: categoryMapping.nature
     },
-    { name: "쇼핑", value: "shopping", icon: "🛍️", desc: "쇼핑 천국" },
     {
-      name: "포토스팟, SNS 핫플",
-      value: "photo",
-      icon: "📸",
-      desc: "인생샷 남기기",
+      name: "바다, 해변",
+      value: "beach",
+      icon: "🏖️",
+      desc: "해수욕장",
+      categories: categoryMapping.beach
+    },
+    {
+      name: "온천, 스파",
+      value: "hotspring",
+      icon: "♨️",
+      desc: "온천 휴양",
+      categories: categoryMapping.hotspring
+    },
+    {
+      name: "문화, 역사",
+      value: "culture",
+      icon: "🏛️",
+      desc: "문화재, 촬영지",
+      categories: categoryMapping.culture
+    },
+    {
+      name: "축제, 이벤트",
+      value: "festival",
+      icon: "🎪",
+      desc: "지역축제",
+      categories: categoryMapping.festival
+    },
+    {
+      name: "체험, 캠핑",
+      value: "activity",
+      icon: "⛺",
+      desc: "체험형 활동",
+      categories: categoryMapping.activity
+    },
+    {
+      name: "테마파크",
+      value: "theme",
+      icon: "🎢",
+      desc: "놀이공원, 동물원",
+      categories: categoryMapping.theme
+    },
+    {
+      name: "쇼핑, 거리",
+      value: "shopping",
+      icon: "🛍️",
+      desc: "쇼핑 거리",
+      categories: categoryMapping.shopping
+    },
+    {
+      name: "명소 관광",
+      value: "attraction",
+      icon: "📍",
+      desc: "유명 관광지",
+      categories: categoryMapping.attraction
     },
   ];
 
@@ -55,6 +116,7 @@ export default function AiPlannerStylePage() {
     if (startDate) params.append("start", startDate);
     if (endDate) params.append("end", endDate);
     regions.forEach((region) => params.append("region", region)); // 모든 지역 추가
+    regionIds.forEach((id) => params.append("region_id", id));
     if (companion) params.append("companion", companion);
 
     if (isNext) {

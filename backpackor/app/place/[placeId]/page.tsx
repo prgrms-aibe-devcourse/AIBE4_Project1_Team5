@@ -12,10 +12,10 @@ export default async function PlaceDetailPage({ params }: PageProps) {
   const supabase = createServerClient();
   const { placeId } = await params;
 
-  // Supabase에서 placeId에 해당하는 여행지 상세 데이터 조회
+  // Supabase에서 placeId에 해당하는 여행지 상세 데이터 조회 (지역명 포함)
   const { data, error } = await supabase
     .from("place")
-    .select("*")
+    .select("*, region(region_name)")
     .eq("place_id", placeId)
     .single();
 
@@ -57,10 +57,17 @@ export default async function PlaceDetailPage({ params }: PageProps) {
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : 0;
 
-  // PlaceDetailContent 컴포넌트에 리뷰 데이터 전달
+  // 지역명 추출 (타입 안전하게 처리)
+  const regionName =
+    data.region && typeof data.region === "object" && "region_name" in data.region
+      ? (data.region.region_name as string)
+      : "알 수 없음";
+
+  // PlaceDetailContent 컴포넌트에 리뷰 데이터 및 지역명 전달
   return (
     <PlaceDetailContent
       place={data as PlaceDetail}
+      regionName={regionName}
       initialIsFavorite={initialIsFavorite}
       reviewCount={reviewCount}
       averageRating={averageRating}

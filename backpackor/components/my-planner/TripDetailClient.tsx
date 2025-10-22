@@ -2,32 +2,12 @@
 
 import PlaceDetailModal from "@/components/place/detail/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Place } from "@/types/place";
+import type { TripPlan, TripPlanDetail, GroupedDetails, TripDetailClientProps } from "@/types";
 import { differenceInCalendarDays, isAfter } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-
-interface TripPlan {
-  trip_id: number;
-  trip_title: string;
-  trip_start_date: string;
-  trip_end_date: string;
-}
-
-interface TripPlanDetail {
-  day_number: number;
-  visit_order: number | string | null;
-  place: Place;
-}
-type GroupedDetails = Record<number, TripPlanDetail[]>;
-
-interface TripDetailClientProps {
-  plan: TripPlan;
-  groupedDetails: GroupedDetails;
-  onDayChange?: (day: number) => void;
-}
 
 export default function TripDetailClient({
   plan,

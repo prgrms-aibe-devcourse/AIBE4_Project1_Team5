@@ -2,7 +2,7 @@
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { PlannerDraft, SessionPlace, SessionPlan } from "@/types/planner";
 
-/** 세션에 플랜 저장 */
+// 세션에 플랜 저장
 export const savePlanToSession = (draft: PlannerDraft): boolean => {
   try {
     const sessionPlan: SessionPlan = {};
@@ -37,7 +37,7 @@ export const savePlanToSession = (draft: PlannerDraft): boolean => {
   }
 };
 
-/** 세션에서 플랜 불러오기 */
+// 세션에서 플랜 불러오기
 export const loadPlanFromSession = ():
   | (Omit<PlannerDraft, "plan"> & { plan: SessionPlan })
   | null => {
@@ -76,7 +76,7 @@ export const loadPlanFromSession = ():
   }
 };
 
-/** DB에 플랜 저장 */
+// DB에 플랜 저장
 export const savePlanToDB = async (draft: PlannerDraft): Promise<number> => {
   const supabase = createBrowserClient();
 
@@ -146,7 +146,7 @@ export const savePlanToDB = async (draft: PlannerDraft): Promise<number> => {
   return tripId;
 };
 
-/** 장소 좌표 정보 가져오기 */
+// 장소 좌표 정보 가져오기
 export const fetchPlaceWithCoords = async (placeId: string) => {
   try {
     const supabase = createBrowserClient();

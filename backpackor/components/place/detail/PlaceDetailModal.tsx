@@ -18,6 +18,7 @@ export default function PlaceDetailModal({
   showReviewButton = false,
 }: PlaceDetailModalProps) {
   const [place, setPlace] = useState<PlaceDetail | null>(null);
+  const [regionName, setRegionName] = useState<string>("알 수 없음");
   const [initialIsFavorite, setInitialIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
@@ -26,10 +27,10 @@ export default function PlaceDetailModal({
     const fetchPlaceData = async () => {
       setLoading(true);
 
-      // place 데이터 조회
+      // place 데이터 조회 (지역명 포함)
       const { data: placeData, error: placeError } = await supabase
         .from("place")
-        .select("*")
+        .select("*, region(region_name)")
         .eq("place_id", placeId)
         .single();
 
@@ -40,6 +41,15 @@ export default function PlaceDetailModal({
       }
 
       setPlace(placeData as PlaceDetail);
+
+      // 지역명 추출
+      const extractedRegionName =
+        placeData.region &&
+        typeof placeData.region === "object" &&
+        "region_name" in placeData.region
+          ? (placeData.region.region_name as string)
+          : "알 수 없음";
+      setRegionName(extractedRegionName);
 
       // 사용자 찜 상태 조회
       const {
@@ -128,6 +138,7 @@ export default function PlaceDetailModal({
         <div className="p-0">
           <PlaceDetailContent
             place={place}
+            regionName={regionName}
             initialIsFavorite={initialIsFavorite}
             showReviewButton={showReviewButton}
             reviewCount={0}

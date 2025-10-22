@@ -3,12 +3,12 @@
 
 import FavoriteButton from "@/components/place/FavoriteButton";
 import RelatedPlacesSection from "@/components/place/detail/RelatedPlacesSection";
-import TravelInfoSection from "@/components/place/detail/TravelInfoSection";
 import TravelReviewSection from "@/components/review/TravelReviewSection";
 import type { PlaceDetail } from "@/types/place";
 
 interface PlaceDetailContentProps {
   place: PlaceDetail;
+  regionName: string;
   initialIsFavorite: boolean;
   reviewCount: number;
   averageRating: number;
@@ -17,6 +17,7 @@ interface PlaceDetailContentProps {
 
 export default function PlaceDetailContent({
   place,
+  regionName,
   initialIsFavorite,
   reviewCount,
   averageRating,
@@ -52,44 +53,55 @@ export default function PlaceDetailContent({
         </div>
       </div>
 
-      {/* 상세 내용 레이아웃 */}
-      <div className="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8 py-8 px-6 mb-0 items-start lg:px-5 sm:py-6 sm:px-4">
-        {/* 왼쪽 섹션 */}
-        <div className="col-span-1">
-          {/* 여행 소개 */}
-          <div className="mb-12">
-            <h2 className="text-xl font-bold m-0 mb-4 text-[#1a1a1a]">
-              여행지 소개
-            </h2>
-            <p className="text-[15px] leading-relaxed text-[#4a4a4a] m-0">
-              {place.place_description}
-            </p>
+      {/* 상세 내용 레이아웃 - 전체 너비 */}
+      <div className="max-w-[1200px] mx-auto py-10 px-6 lg:px-5 sm:py-8 sm:px-4">
+        {/* 주소 섹션 */}
+        <div className="mb-10 pb-6 border-b border-gray-200">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-6 h-6 text-blue-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-1">위치</h3>
+              <p className="text-lg text-gray-900">{place.place_address}</p>
+            </div>
           </div>
-
-          {/* 여행 리뷰 섹션 */}
-          <TravelReviewSection
-            placeId={place.place_id}
-            averageRating={averageRating}
-            reviewCount={reviewCount}
-            showReviewButton={showReviewButton}
-            placeName={place.place_name}
-          />
-
-          {/* 같이 가보면 좋을 장소 섹션 */}
-          <RelatedPlacesSection
-            regionId={place.region_id}
-            currentPlaceId={place.place_id}
-          />
         </div>
 
-        {/* 오른쪽 섹션 */}
-        <div className="col-span-1 flex flex-col gap-4 xl:sticky xl:top-5 xl:self-start xl:max-h-[calc(100vh-40px)] xl:overflow-y-auto scrollbar-none">
-          <TravelInfoSection
-            placeAddress={place.place_address}
-            travelPeriod="2박 3일 ~ 3박 4일"
-            flightInfo="인천/김포 공항"
-          />
+        {/* 여행지 소개 */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">
+            여행지 소개
+          </h2>
+          <p className="text-base leading-relaxed text-gray-700">
+            {place.place_description}
+          </p>
         </div>
+
+        {/* 여행 리뷰 섹션 */}
+        <TravelReviewSection
+          placeId={place.place_id}
+          averageRating={averageRating}
+          reviewCount={reviewCount}
+          showReviewButton={showReviewButton}
+          placeName={place.place_name}
+        />
+
+        {/* 같이 가보면 좋을 장소 섹션 */}
+        <RelatedPlacesSection
+          regionId={place.region_id}
+          currentPlaceId={place.place_id}
+        />
       </div>
     </div>
   );

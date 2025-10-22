@@ -45,6 +45,9 @@ export default function AiLoadingPage() {
                     const regionNames = searchParams.getAll('region');
                     regionNames.forEach(region => params.append('region', region));
 
+                    const regionIds = searchParams.getAll('region_id');
+                    regionIds.forEach(id => params.append('region_id', id));
+
                     router.push(`/planner/edit?${params.toString()}`);
                 }, 500);
 
