@@ -1,7 +1,4 @@
 /** @type {import('next').NextConfig} */
-
-const withCritters = require("@critters/next");
-
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -22,9 +19,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // CSS 최적화: 사용하지 않는 CSS 제거
   experimental: {
     optimizeCss: true,
   },
 };
 
-module.exports = withCritters(nextConfig);
+export default nextConfig;
