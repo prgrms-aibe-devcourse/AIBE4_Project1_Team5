@@ -23,7 +23,12 @@ export const useKakaoLoader = (apiKey?: string): KakaoLoaderState => {
 
     // API Key 미제공
     if (!apiKey) {
-      setError("Kakao API Key가 제공되지 않았습니다.");
+      const errorMsg = "Kakao API Key가 제공되지 않았습니다. 환경 변수를 확인하세요.";
+      console.error(errorMsg, {
+        env: process.env.NODE_ENV,
+        hasKey: !!process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY,
+      });
+      setError(errorMsg);
       return;
     }
 
