@@ -25,6 +25,7 @@
     "supabase": "^2.51.0"
   },
   "devDependencies": {
+    "@critters/next": "^2.0.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
