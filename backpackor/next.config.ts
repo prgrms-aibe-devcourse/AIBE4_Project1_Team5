@@ -1,7 +1,4 @@
 /** @type {import('next').NextConfig} */
-
-const withCritters = require("@critters/next").default;
-
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -28,5 +25,4 @@ const nextConfig = {
   },
 };
 
-// CommonJS 방식으로 export
-module.exports = withCritters(nextConfig);
+export default nextConfig;
