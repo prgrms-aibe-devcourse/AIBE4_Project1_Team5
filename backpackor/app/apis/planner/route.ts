@@ -69,6 +69,11 @@ export async function GET(request: NextRequest) {
             JSON 형식 예시: {"title": "부산 힐링 & 맛집 탐방", "plan": {"1": [{"place_name": "감천문화마을"}], "2": [{"place_name": "해운대해수욕장"}]}}
         `;
 
+        console.log("=============== 🚀 AI에게 보내는 내용 ================");
+        console.log("System Instruction:", systemInstruction);
+        console.log("Prompt:", prompt);
+        console.log("====================================================");
+
         // --- [수정] SDK를 사용하여 AI에게 요청하는 부분 ---
         // 1. SDK 클라이언트를 API 키와 함께 초기화합니다.
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -84,6 +89,10 @@ export async function GET(request: NextRequest) {
         // 4. AI의 응답 결과에서 텍스트 부분만 깔끔하게 추출합니다.
         let aiResponseText = result.response.text();
         // --- 수정 끝 ---
+
+        console.log("=============== 🎁 AI가 보낸 원본 응답 ================");
+        console.log(aiResponseText);
+        console.log("====================================================");
 
         // AI 응답 후처리 및 최종 반환 (기존과 동일)
         if (aiResponseText.startsWith("```json")) {
