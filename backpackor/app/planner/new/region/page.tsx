@@ -1,7 +1,7 @@
 // app/planner/new/region/page.tsx
 "use client";
 
-import PlaceDetailModal from "@/components/place/PlaceDetailModal";
+import PlaceDetailModal from "@/components/place/detail/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -25,7 +25,7 @@ export default function RegionSelectPage() {
 
   const [regions, setRegions] = useState<Region[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedRegionIds, setSelectedRegionIds] = useState<number[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   // 날짜 정보 가져오기
@@ -53,11 +53,11 @@ export default function RegionSelectPage() {
   }, [supabase]);
 
   // 지역 버튼 클릭 시, 선택 목록에 추가하거나 제거하는 함수
-  const handleSelectRegion = (regionName: string) => {
-    setSelectedRegions((prev) =>
-      prev.includes(regionName)
-        ? prev.filter((r) => r !== regionName)
-        : [...prev, regionName]
+  const handleSelectRegion = (regionId: number) => {
+    setSelectedRegionIds((prev) =>
+      prev.includes(regionId)
+        ? prev.filter((id) => id !== regionId)
+        : [...prev, regionId]
     );
   };
 
@@ -73,7 +73,7 @@ export default function RegionSelectPage() {
 
   // 다음 단계로 이동
   const handleNext = () => {
-    if (selectedRegions.length === 0) {
+    if (selectedRegionIds.length === 0) {
       alert("최소 1개의 지역을 선택해주세요.");
       return;
     }
@@ -81,7 +81,7 @@ export default function RegionSelectPage() {
     const params = new URLSearchParams();
     if (startDate) params.append("start", startDate);
     if (endDate) params.append("end", endDate);
-    selectedRegions.forEach((region) => params.append("region", region));
+    selectedRegionIds.forEach((regionId) => params.append("region_id", String(regionId)));
 
     router.push(`/planner/edit?${params.toString()}`);
   };
@@ -164,10 +164,10 @@ export default function RegionSelectPage() {
                     </p>
                   </div>
                 </div>
-                {selectedRegions.length > 0 && (
+                {selectedRegionIds.length > 0 && (
                   <div className="bg-gray-100 px-3 py-1.5 rounded-full">
                     <span className="text-sm font-bold text-gray-700">
-                      {selectedRegions.length}개 선택
+                      {selectedRegionIds.length}개 선택
                     </span>
                   </div>
                 )}
@@ -181,11 +181,11 @@ export default function RegionSelectPage() {
 
             <div className="flex flex-wrap gap-3">
               {regions.map((region) => {
-                const isSelected = selectedRegions.includes(region.region_name);
+                const isSelected = selectedRegionIds.includes(region.region_id);
                 return (
                   <button
                     key={region.region_id}
-                    onClick={() => handleSelectRegion(region.region_name)}
+                    onClick={() => handleSelectRegion(region.region_id)}
                     className={`px-5 py-2.5 rounded-full font-medium transition-all duration-200 ${
                       isSelected
                         ? "bg-gray-900 text-white shadow-md"
@@ -198,7 +198,7 @@ export default function RegionSelectPage() {
               })}
             </div>
 
-            {selectedRegions.length === 0 && (
+            {selectedRegionIds.length === 0 && (
               <div className="mt-6 text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
                 <p className="text-gray-500 font-medium">지역을 선택해주세요</p>
                 <p className="text-sm text-gray-400 mt-1">
@@ -209,41 +209,45 @@ export default function RegionSelectPage() {
           </div>
 
           {/* 선택된 지역 태그 */}
-          {selectedRegions.length > 0 && (
+          {selectedRegionIds.length > 0 && (
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 mb-8">
               <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <span>선택한 지역</span>
                 <span className="text-sm font-normal text-gray-500">
-                  ({selectedRegions.length}개)
+                  ({selectedRegionIds.length}개)
                 </span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {selectedRegions.map((region) => (
-                  <div
-                    key={region}
-                    className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-300 shadow-sm"
-                  >
-                    <span className="font-medium text-gray-900">{region}</span>
-                    <button
-                      onClick={() => handleSelectRegion(region)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                {selectedRegionIds.map((regionId) => {
+                  const region = regions.find((r) => r.region_id === regionId);
+                  if (!region) return null;
+                  return (
+                    <div
+                      key={regionId}
+                      className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-300 shadow-sm"
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                      <span className="font-medium text-gray-900">{region.region_name}</span>
+                      <button
+                        onClick={() => handleSelectRegion(regionId)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -260,7 +264,7 @@ export default function RegionSelectPage() {
             </Link>
             <button
               onClick={handleNext}
-              disabled={selectedRegions.length === 0}
+              disabled={selectedRegionIds.length === 0}
               className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
             >
               일정 만들러 가기

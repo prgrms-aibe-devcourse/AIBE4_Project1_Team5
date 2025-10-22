@@ -1,11 +1,11 @@
 // app/planner/edit/page.tsx
-import PlannerEditor from "@/components/planner/PlannerEditor";
+import PlannerEditor from "@/components/planner/editor/PlannerEditor";
 import { createServerClient } from "@/lib/supabaseClient";
 import type { Place, Plan } from "@/types/place";
 
 interface EditPlannerPageProps {
   searchParams: Promise<{
-    region?: string | string[];
+    region_id?: string | string[];
     aiPlan?: string;
     trip_id?: string;
     start?: string;
@@ -21,18 +21,15 @@ export default async function EditPlannerPage({
 }: EditPlannerPageProps) {
   const params = await searchParams;
   const supabase = createServerClient();
-  const { trip_id, region } = params;
+  const { trip_id, region_id } = params;
 
   let places: Place[] = [];
-  let regionNamesForFiltering: string[] = [];
+  let regionIdsForFiltering: number[] = [];
   let existingTripTitle = "";
   let existingPlan: Plan = {};
 
   try {
     if (trip_id) {
-      // ✅ 수정 모드
-      console.log(`[Server] 기존 일정 수정 모드 (trip_id: ${trip_id})`);
-
       // 1. 기존 여행 제목 가져오기
       const { data: tripData, error: tripError } = await supabase
         .from("trip_plan")
@@ -94,24 +91,23 @@ export default async function EditPlannerPage({
             place_image: item.place.place_image,
             average_rating: item.place.average_rating,
             favorite_count: item.place.favorite_count,
-            region: item.place.region?.region_name || null,
             visit_order: item.visit_order,
             day_number: item.day_number,
             review_count: null,
             place_description: null,
             place_detail_image: null,
-            region_id: null,
+            region_id: item.place.region?.region_id || null,
             place_category: null,
           });
 
           return acc;
         }, {});
 
-        // 4. 지역 정보 추출
+        // 4. 지역 ID 정보 추출
         const placeIds = detailData.map((item: any) => item.place_id);
         const { data: regionData, error: regionError } = await supabase
           .from("place")
-          .select("region!inner(region_name)")
+          .select("region_id")
           .in("place_id", placeIds);
 
         if (regionError) {
@@ -120,32 +116,20 @@ export default async function EditPlannerPage({
           );
         }
 
-        regionNamesForFiltering = [
-          ...new Set(regionData.map((item: any) => item.region.region_name)),
+        regionIdsForFiltering = [
+          ...new Set(regionData.map((item: any) => item.region_id)),
         ];
-
-        console.log(
-          `[Server] 필터링할 지역: ${regionNamesForFiltering.join(", ")}`
-        );
-        console.log(`[Server] 기존 일정 로드 완료:`, existingPlan);
       }
     } else {
-      // ✅ 새 일정 생성 모드
-      console.log("[Server] 새 일정 생성 모드");
-
-      const selectedRegions = Array.isArray(region)
-        ? region
-        : region
-        ? [region]
+      const selectedRegionIds = Array.isArray(region_id)
+        ? region_id.map(Number)
+        : region_id
+        ? [Number(region_id)]
         : [];
-      regionNamesForFiltering = selectedRegions;
-
-      console.log(
-        `[Server] 선택된 지역: ${regionNamesForFiltering.join(", ")}`
-      );
+      regionIdsForFiltering = selectedRegionIds;
     }
 
-    // ✅ 장소 데이터 조회 (주소, 좌표 포함)
+    // 장소 데이터 조회 (주소, 좌표 포함)
     let query = supabase.from("place").select(
       `
         place_id,
@@ -156,12 +140,12 @@ export default async function EditPlannerPage({
         place_image,
         average_rating,
         favorite_count,
-        region!inner(region_name)
+        region_id
       `
     );
 
-    if (regionNamesForFiltering.length > 0) {
-      query = query.in("region.region_name", regionNamesForFiltering);
+    if (regionIdsForFiltering.length > 0) {
+      query = query.in("region_id", regionIdsForFiltering);
     }
 
     const { data: placeData, error: placeError } = await query;
@@ -170,7 +154,7 @@ export default async function EditPlannerPage({
       throw new Error(`장소 데이터 조회 실패: ${placeError.message}`);
     }
 
-    // ✅ 필드 매핑
+    // 필드 매핑
     places = (placeData || []).map((p: any) => ({
       place_id: p.place_id,
       place_name: p.place_name,
@@ -180,18 +164,13 @@ export default async function EditPlannerPage({
       place_image: p.place_image,
       average_rating: p.average_rating,
       favorite_count: p.favorite_count,
-      region: p.region.region_name,
       review_count: null,
       place_description: null,
       place_detail_image: null,
-      region_id: null,
+      region_id: p.region_id || null,
       place_category: null,
     }));
-
-    console.log(`[Server] Place 데이터 로드 완료. 총 ${places.length}개`);
   } catch (error: any) {
-    console.error("[Server] 장소 데이터 로드 실패:", error.message);
-
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="max-w-md w-full mx-auto px-4">
@@ -227,7 +206,7 @@ export default async function EditPlannerPage({
     );
   }
 
-  // ✅ 장소 없음 처리
+  // 장소 없음 처리
   if (places.length === 0 && !trip_id) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -273,7 +252,7 @@ export default async function EditPlannerPage({
   return (
     <PlannerEditor
       initialPlaces={places}
-      regionOptions={regionNamesForFiltering}
+      regionIds={regionIdsForFiltering}
       existingTripTitle={existingTripTitle}
       existingPlan={existingPlan}
     />

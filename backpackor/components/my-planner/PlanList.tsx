@@ -126,12 +126,25 @@ export default function PlanList({ initialPlans }: PlanListProps) {
         );
 
         return (
-          <div
+          <a
             key={plan.trip_id}
-            className="relative flex flex-col justify-between bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-300"
+            href={`/my-planner/${plan.trip_id}`}
+            className="relative flex flex-col bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-300 cursor-pointer"
           >
-            {/* 상태 태그 */}
-            <div className="absolute top-4 right-4">
+            {/* 상단: 기간 태그 & 상태 태그 */}
+            <div className="flex items-center justify-between mb-3">
+              <span
+                className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full border shadow-sm
+    ${
+      status === "여행예정"
+        ? "bg-white border-blue-100 text-gray-700"
+        : status === "여행중"
+        ? "bg-white border-green-100 text-gray-700"
+        : "bg-white border-gray-100 text-gray-700"
+    }`}
+              >
+                {duration}
+              </span>
               <span
                 className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm
       ${
@@ -174,12 +187,12 @@ export default function PlanList({ initialPlans }: PlanListProps) {
             </div>
 
             {/* 제목 */}
-            <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
+            <h2 className="text-lg font-bold text-gray-900 mb-2 truncate">
               {plan.trip_title}
             </h2>
 
             {/* 날짜 */}
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 mb-3">
               {new Date(plan.trip_start_date).toLocaleDateString("ko-KR", {
                 month: "long",
                 day: "numeric",
@@ -191,55 +204,19 @@ export default function PlanList({ initialPlans }: PlanListProps) {
               })}
             </p>
 
-            {/* 기간 태그 */}
-            <span
-              className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full border shadow-sm
-    ${
-      status === "여행예정"
-        ? "bg-white border-blue-100 text-gray-700"
-        : status === "여행중"
-        ? "bg-white border-green-100 text-gray-700"
-        : "bg-white border-gray-100 text-gray-700"
-    }`}
-              style={{
-                minWidth: "fit-content",
-                maxWidth: "fit-content",
-                marginBottom: "1rem", // 👈 여백 추가
-              }}
-            >
-              {duration}
-            </span>
-
             {/* 버튼 영역 */}
-            <div className="flex items-center justify-between">
-              <a
-                href={`/my-planner/${plan.trip_id}`}
-                className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 transition"
-              >
-                보기
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5-5 5M6 12h12"
-                  />
-                </svg>
-              </a>
-
+            <div className="flex justify-end mt-auto">
               <button
-                onClick={() => handleDelete(plan.trip_id)}
-                className="px-4 py-2 text-sm text-red-600 font-semibold hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete(plan.trip_id);
+                }}
+                className="px-3 py-1.5 text-sm text-red-600 font-semibold hover:text-red-700 hover:bg-red-50 rounded-lg transition"
               >
                 삭제
               </button>
             </div>
-          </div>
+          </a>
         );
       })}
     </main>

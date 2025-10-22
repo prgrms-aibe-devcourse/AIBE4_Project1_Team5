@@ -1,20 +1,23 @@
 // app/review/page.tsx
 "use client";
 
+import { getReviewsByRegion } from "@/apis/reviewApi";
+import { RegionFilter } from "@/components/common/filter/RegionFilter";
+import {
+  REVIEW_SORT_OPTIONS,
+  SortOptions,
+} from "@/components/common/filter/SortOptions";
 import {
   ReviewActionButtons,
   WriteButton,
 } from "@/components/review/ReviewButton";
-import Sort from "@/components/review/ReviewSort";
-import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
-import {
-  getRegions,
-  getReviews,
-  getReviewsByRegion,
-  type ReviewWithImages,
-} from "@/lib/reviewStoreSupabase";
+import { HelpfulButton } from "@/components/review/HelpfulButton";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useProfile } from "@/hooks/auth/useProfile";
 import { supabase } from "@/lib/supabaseClient";
+import type { ReviewWithImages } from "@/types/review";
+import { formatDateShort } from "@/utils/dateFormat";
+import { renderStars } from "@/utils/rating";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -53,33 +56,6 @@ function ReviewCard({
     fetchPlaceInfo();
   }, [review.place_id]);
 
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const roundedRating = Math.round(rating);
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <span
-          key={i}
-          className={`text-xl ${
-            i <= roundedRating ? "text-yellow-400" : "text-gray-300"
-          }`}
-        >
-          ★
-        </span>
-      );
-    }
-    return stars;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   return (
     <div
       onClick={() => router.push(`/review/detail/${review.review_id}`)}
@@ -94,6 +70,7 @@ function ReviewCard({
             }
             alt={review.review_title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
             onError={(e) => {
               e.currentTarget.style.display = "none";
               const parent = e.currentTarget.parentElement;
@@ -182,9 +159,11 @@ function ReviewCard({
           <div className="flex">{renderStars(review.rating)}</div>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-          {review.review_content}
-        </p>
+        <div className="mb-4 h-[2.5rem] flex items-start">
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+            {review.review_content}
+          </p>
+        </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2">
@@ -211,8 +190,16 @@ function ReviewCard({
             </span>
           </div>
           <span className="text-xs text-gray-500">
-            {formatDate(review.created_at)}
+            {formatDateShort(review.created_at)}
           </span>
+        </div>
+
+        {/* 도움됨 버튼 */}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <HelpfulButton
+            reviewId={review.review_id}
+            initialHelpfulCount={review.helpful_count || 0}
+          />
         </div>
 
         {user && user.id === review.user_id && (
@@ -236,34 +223,22 @@ export default function ReviewListPage() {
 
   const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
   const [sortedReviews, setSortedReviews] = useState<ReviewWithImages[]>([]);
-  const [regions, setRegions] = useState<string[]>(["전체"]);
-  const [selectedRegion, setSelectedRegion] = useState("전체");
-  const [currentSort, setCurrentSort] = useState("popularity_desc");
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null); // region_id 기반
+  const [currentSort, setCurrentSort] = useState("created_desc");
   const [isLoading, setIsLoading] = useState(true);
-  const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false); // ✅ 추가
-
-  useEffect(() => {
-    const fetchRegions = async () => {
-      const regionList = await getRegions();
-      setRegions(["전체", ...regionList]);
-    };
-    fetchRegions();
-  }, []);
+  const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false);
 
   useEffect(() => {
     const fetchReviews = async () => {
       setIsLoading(true);
-      const data =
-        selectedRegion === "전체"
-          ? await getReviews()
-          : await getReviewsByRegion(selectedRegion);
+      const data = await getReviewsByRegion(selectedRegionId); // null이면 전체 조회
       setReviews(data);
       setIsLoading(false);
     };
     fetchReviews();
-  }, [selectedRegion]);
+  }, [selectedRegionId]);
 
-  // ✅ 내 리뷰 필터링 + 정렬 로직 통합
+  // 내 리뷰 필터링 + 정렬 로직 통합
   useEffect(() => {
     let filtered = [...reviews];
 
@@ -274,19 +249,23 @@ export default function ReviewListPage() {
 
     // 정렬
     switch (currentSort) {
-      case "popularity_desc":
+      case "created_desc":
+        // 최신순
         filtered.sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         break;
-      case "name_asc":
-        filtered.sort((a, b) => b.images.length - a.images.length);
+      case "helpful_desc":
+        // 도움순
+        filtered.sort((a, b) => (b.helpful_count || 0) - (a.helpful_count || 0));
         break;
       case "rating_desc":
+        // 별점높은순
         filtered.sort((a, b) => b.rating - a.rating);
         break;
       case "rating_asc":
+        // 별점낮은순
         filtered.sort((a, b) => a.rating - b.rating);
         break;
     }
@@ -330,49 +309,16 @@ export default function ReviewListPage() {
           {user && <WriteButton />}
         </div>
 
-        {/* ✅ 필터 & 정렬 - 내 리뷰만 보기 체크박스 추가 */}
+        {/* 필터 & 정렬 */}
         <div className="flex justify-between items-center mb-8 bg-white rounded-xl p-4 shadow-sm">
           <div className="flex gap-3 items-center">
-            {/* 지역별 필터 */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  const dropdown = document.getElementById("region-dropdown");
-                  if (dropdown) dropdown.classList.toggle("hidden");
-                }}
-                className="px-4 py-2 text-sm font-semibold border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                >
-                  <path d="M2 4.75A.75.75 0 0 1 2.75 4h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 3.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8.75Z" />
-                </svg>
-                {selectedRegion === "전체" ? "지역별 필터" : selectedRegion}
-              </button>
-              <ul
-                id="region-dropdown"
-                className="hidden absolute z-10 mt-1 w-48 bg-white border rounded-lg shadow-lg max-h-80 overflow-y-auto"
-              >
-                {regions.map((region) => (
-                  <li
-                    key={region}
-                    onClick={() => {
-                      setSelectedRegion(region);
-                      const dropdown =
-                        document.getElementById("region-dropdown");
-                      if (dropdown) dropdown.classList.add("hidden");
-                    }}
-                    className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-50"
-                  >
-                    {region}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* 지역별 필터 (공통 컴포넌트) */}
+            <RegionFilter
+              selectedRegionId={selectedRegionId}
+              onRegionChange={setSelectedRegionId}
+            />
 
-            {/* ✅ 내 리뷰만 보기 체크박스 */}
+            {/* 내 리뷰만 보기 체크박스 */}
             {user && (
               <label className="flex items-center gap-2 px-4 py-2 text-sm font-semibold cursor-pointer hover:bg-gray-50 rounded-lg transition-colors">
                 <input
@@ -381,13 +327,17 @@ export default function ReviewListPage() {
                   onChange={(e) => setShowMyReviewsOnly(e.target.checked)}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span>내 리뷰만 보기</span>
+                <span>내 리뷰</span>
               </label>
             )}
           </div>
 
-          {/* 정렬 */}
-          <Sort currentSort={currentSort} onSortChange={setCurrentSort} />
+          {/* 정렬 (공통 컴포넌트) */}
+          <SortOptions
+            currentSort={currentSort}
+            options={REVIEW_SORT_OPTIONS}
+            onSortChange={setCurrentSort}
+          />
         </div>
 
         {/* 리뷰 목록 */}
@@ -410,9 +360,9 @@ export default function ReviewListPage() {
             <p className="text-gray-600 text-lg mb-2 font-semibold">
               {showMyReviewsOnly
                 ? "작성한 리뷰가 없습니다"
-                : selectedRegion === "전체"
+                : selectedRegionId === null
                 ? "아직 작성된 리뷰가 없습니다"
-                : `${selectedRegion} 지역에 작성된 리뷰가 없습니다`}
+                : "선택한 지역에 작성된 리뷰가 없습니다"}
             </p>
             <p className="text-gray-500 text-sm mb-6">
               {showMyReviewsOnly

@@ -1,7 +1,8 @@
 "use client";
 
-import TravelListContainer from "@/components/place/TravelListContainer";
-import { useProfile } from "@/hooks/useProfile";
+import TravelListContainer from "@/components/place/list/TravelListContainer";
+import PlaceDetailModal from "@/components/place/detail/PlaceDetailModal";
+import { useProfile } from "@/hooks/auth/useProfile";
 import {
   deleteReviewImage,
   getReviewById,
@@ -9,7 +10,7 @@ import {
   saveReviewImages,
   updateReview,
   uploadImage,
-} from "@/lib/reviewStoreSupabase";
+} from "@/apis/reviewApi";
 import { supabase } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -43,6 +44,7 @@ export default function ReviewForm({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [regionOptions, setRegionOptions] = useState<string[]>([]);
+  const [selectedPlaceIdForModal, setSelectedPlaceIdForModal] = useState<string | null>(null);
 
   const { profile } = useProfile(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,7 +92,6 @@ export default function ReviewForm({
           favorite_count: item.favorite_count,
           region_id: item.region_id,
           place_category: item.place_category,
-          region: item.region?.region_name || null,
           review_count: null,
           place_description: null,
           place_detail_image: null,
@@ -100,10 +101,8 @@ export default function ReviewForm({
 
         setAllPlaces(placesWithRegion);
 
-        const uniqueRegions = Array.from(
-          new Set(placesWithRegion.map((p: Place) => p.region).filter(Boolean))
-        ) as string[];
-        setRegionOptions(uniqueRegions);
+        // TODO: region_id 기반으로 변경 필요
+        setRegionOptions([]);
       } catch (error) {
         console.error("전체 여행지 목록 조회 오류:", error);
         setAllPlaces([]);
@@ -157,11 +156,10 @@ export default function ReviewForm({
               place_image: placeData.place_image,
               average_rating: placeData.average_rating,
               favorite_count: placeData.favorite_count,
-              region: (placeData as any).region?.region_name || null,
               review_count: null,
               place_description: null,
               place_detail_image: null,
-              region_id: null,
+              region_id: (placeData as any).region?.region_id || null,
               place_category: null,
               latitude: null,
               longitude: null,
@@ -181,6 +179,16 @@ export default function ReviewForm({
   const handlePlaceSelectById = (placeId: string) => {
     const foundPlace = allPlaces.find((p) => p.place_id === placeId);
     if (foundPlace) setSelectedPlace(foundPlace);
+  };
+
+  // 카드 클릭 시 모달 열기
+  const handlePlaceCardClick = (placeId: string) => {
+    setSelectedPlaceIdForModal(placeId);
+  };
+
+  // + 버튼 클릭 시 장소 추가
+  const handleAddPlace = (place: Place) => {
+    setSelectedPlace(place);
   };
 
   // 이미지 업로드 핸들러
@@ -247,7 +255,7 @@ export default function ReviewForm({
         const newReview = await saveReview({
           user_id: userId,
           place_id: selectedPlace.place_id,
-          region: selectedPlace.region ?? "",
+          region_id: selectedPlace.region_id,
           review_title: title,
           review_content: content,
           rating,
@@ -360,9 +368,9 @@ export default function ReviewForm({
                       </p>
                       <p className="text-sm text-yellow-600 mt-1">
                         ⭐ 평균 평점:{" "}
-                        {selectedPlace.average_rating
+                        {selectedPlace.average_rating != null && selectedPlace.average_rating > 0
                           ? selectedPlace.average_rating.toFixed(1)
-                          : "-"}
+                          : "0"}
                       </p>
                     </div>
                   </div>
@@ -543,14 +551,20 @@ export default function ReviewForm({
             ) : (
               <TravelListContainer
                 places={placesForList}
-                onAddPlace={() => {}}
-                onPlaceClick={handlePlaceSelectById}
-                regionOptions={regionOptions}
-                initialRegion="전체"
+                onAddPlace={handleAddPlace}
+                onPlaceClick={handlePlaceCardClick}
               />
             ))}
         </div>
       </div>
+
+      {/* 장소 상세 모달 */}
+      {selectedPlaceIdForModal && (
+        <PlaceDetailModal
+          placeId={selectedPlaceIdForModal}
+          onClose={() => setSelectedPlaceIdForModal(null)}
+        />
+      )}
     </div>
   );
 }

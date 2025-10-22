@@ -6,7 +6,7 @@ import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 /** DB place 스키마와 맞춤 */
 type Place = {
@@ -54,7 +54,8 @@ export default function PreviewPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [activeDay, setActiveDay] = useState<number>(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [mapFocusDay, setMapFocusDay] = useState<number | null>(null);
+  const [focusDay, setFocusDay] = useState<number | null>(null);
+  const dayRefsRef = useRef<Record<number, HTMLElement | null>>({});
 
   // sessionStorage에서 불러오기
   useEffect(() => {
@@ -97,6 +98,34 @@ export default function PreviewPage() {
     .map((n) => parseInt(n, 10))
     .sort((a, b) => a - b);
   const activePlaces = draft.plan[activeDay] || [];
+
+  const handleDayChange = (day: number) => {
+    setActiveDay(day);
+    setFocusDay(day);
+
+    // 해당 Day 섹션으로 스크롤
+    const dayElement = dayRefsRef.current[day];
+    if (dayElement) {
+      const headerOffset = 200; // sticky 헤더 높이 + 여유 공간
+      const elementPosition = dayElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleFocusComplete = () => {
+    // Day 포커스 완료 후에도 focusDay 유지 (줌 레벨 유지)
+    // setFocusDay(null); 제거
+  };
+
+  const handleShowAll = () => {
+    setFocusDay(null);
+    // activeDay는 변경하지 않음 (현재 선택된 Day 유지)
+  };
 
   /** 확정하기(저장) → /my-planner/[trip_id] 로 이동 */
   const handleConfirm = async () => {
@@ -147,10 +176,11 @@ export default function PreviewPage() {
       if (!tripId) throw new Error("trip_id 생성에 실패했습니다.");
 
       const rows = dayKeys.flatMap((day) =>
-        (draft.plan[day] || []).map((p) => ({
+        (draft.plan[day] || []).map((p, idx) => ({
           trip_id: tripId!,
           day_number: day,
           place_id: p.place_id,
+          visit_order: idx + 1,
         }))
       );
 
@@ -165,7 +195,7 @@ export default function PreviewPage() {
     } catch (e: any) {
       console.error(e);
       alert(`저장 중 오류가 발생했습니다.\n${e?.message ?? ""}`);
-    } finally {
+    } finally{
       setIsSaving(false);
     }
   };
@@ -249,15 +279,16 @@ export default function PreviewPage() {
         {/* 좌측 Day 리스트 & 지도 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-5">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-6">
-              {/* ✅ Day 탭 색상 일치 */}
-              <div className="flex gap-2 mb-6 flex-wrap">
+            {/* Sticky 헤더: Day 탭 */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-6 z-10 mb-4">
+              {/* Day 탭 색상 일치 */}
+              <div className="flex gap-2 flex-wrap">
                 {dayKeys.map((day, idx) => {
                   const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
                   return (
                     <button
                       key={day}
-                      onClick={() => setActiveDay(day)}
+                      onClick={() => handleDayChange(day)}
                       style={{
                         backgroundColor: activeDay === day ? color : "white",
                         color: activeDay === day ? "white" : "#374151",
@@ -277,58 +308,91 @@ export default function PreviewPage() {
                   );
                 })}
               </div>
+            </div>
 
-              {/* ✅ 동그라미 색상 일치 */}
-              <div className="space-y-3">
-                {activePlaces.length > 0 ? (
-                  activePlaces.map((place, idx) => (
-                    <div
-                      key={place.place_id}
-                      className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-all"
+            {/* Day별 장소 리스트 */}
+            <div className="space-y-6">
+              {dayKeys.map((day) => {
+                const places = draft.plan[day] || [];
+                const color = ROUTE_COLORS[(day - 1) % ROUTE_COLORS.length];
+
+                return (
+                  <div
+                    key={day}
+                    ref={(el) => {
+                      dayRefsRef.current[day] = el;
+                    }}
+                    className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm"
+                  >
+                    <h3
+                      className="text-2xl font-bold mb-4"
+                      style={{ color }}
                     >
-                      <div
-                        className="w-10 h-10 flex items-center justify-center text-white rounded-full font-bold text-base shadow-sm flex-shrink-0"
-                        style={{
-                          backgroundColor:
-                            ROUTE_COLORS[(activeDay - 1) % ROUTE_COLORS.length],
-                        }}
-                      >
-                        {idx + 1}
-                      </div>
+                      Day {day}
+                    </h3>
 
-                      {place.place_image && (
-                        <div className="relative w-20 h-20 flex-shrink-0">
-                          <Image
-                            src={place.place_image}
-                            alt={place.place_name}
-                            fill
-                            className="rounded-lg object-cover"
-                          />
+                    <div className="space-y-3">
+                      {places.length > 0 ? (
+                        places.map((place, idx) => (
+                          <div
+                            key={place.place_id}
+                            className="relative flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-all overflow-hidden"
+                          >
+                            {/* 왼쪽 색상 바 */}
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-1"
+                              style={{ backgroundColor: color }}
+                            />
+
+                            <div
+                              className="w-10 h-10 flex items-center justify-center text-white rounded-full font-bold text-base shadow-sm flex-shrink-0 ml-2"
+                              style={{ backgroundColor: color }}
+                            >
+                              {idx + 1}
+                            </div>
+
+                            {place.place_image && (
+                              <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100">
+                                <Image
+                                  src={place.place_image}
+                                  alt={place.place_name}
+                                  fill
+                                  sizes="80px"
+                                  className="rounded-lg object-cover"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-gray-900 mb-1 truncate">
+                                {place.place_name}
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center gap-3">
+                                {place.place_address && (
+                                  <span className="truncate">
+                                    {place.place_address}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                          <p className="text-base font-medium">
+                            이 날짜에는 장소가 없어요
+                          </p>
                         </div>
                       )}
-
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-gray-900 mb-1 truncate">
-                          {place.place_name}
-                        </div>
-                        <div className="text-sm text-gray-500 flex items-center gap-3">
-                          {place.place_address && (
-                            <span className="truncate">
-                              {place.place_address}
-                            </span>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                    <p className="text-lg font-medium">
-                      선택한 Day에 장소가 없어요
-                    </p>
                   </div>
-                )}
-              </div>
+                );
+              })}
             </div>
           </div>
 
@@ -350,6 +414,9 @@ export default function PreviewPage() {
                   ) as any
                 }
                 kakaoApiKey={process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}
+                focusDay={focusDay}
+                onFocusComplete={handleFocusComplete}
+                onShowAll={handleShowAll}
               />
             </div>
           </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
-import type { Review } from "@/types/travel";
+import type { Review } from "@/types/review";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -68,7 +68,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
       setError(null);
 
       try {
-        const response = await fetch(`/api/reviews?place_id=${placeId}`);
+        const response = await fetch(`/apis/review?place_id=${placeId}`);
 
         if (!response.ok) {
           throw new Error("리뷰를 불러오는데 실패했습니다.");
@@ -117,7 +117,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
     try {
       const isHelpful = userHelpfulReviews.has(reviewId);
 
-      const response = await fetch(`/api/reviews/helpful`, {
+      const response = await fetch(`/apis/review/helpful`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,7 +207,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
         <button
           onClick={() =>
             router.push(
-              `/review/write-trip?placeId=${placeId}&placeName=${encodeURIComponent(
+              `/review/write?placeId=${placeId}&placeName=${encodeURIComponent(
                 placeName
               )}`
             )
@@ -314,7 +314,7 @@ const TravelReviewSection: React.FC<TravelReviewSectionProps> = ({
                           : "text-gray-700"
                       }`}
                     >
-                      도움됨 {review.helpful_count}
+                      도움됐어요 {review.helpful_count}
                     </span>
                   </button>
                 </div>
