@@ -131,16 +131,16 @@ export default function TripDetailClient({
     <div className="max-w-4xl mx-auto">
       {/* 헤더 */}
       <header className="mb-6 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1 min-w-0">
             <Link
               href="/my-planner"
-              className="text-blue-500 hover:underline mb-2 inline-block"
+              className="text-blue-500 hover:underline mb-2 inline-block text-sm"
             >
               &larr; 내 일정 목록으로 돌아가기
             </Link>
-            <h1 className="text-3xl font-bold">{plan.trip_title}</h1>
-            <p className="text-base text-gray-900">
+            <h1 className="text-lg font-bold truncate">{plan.trip_title}</h1>
+            <p className="text-sm text-gray-900 mt-1">
               {plan.trip_start_date} ~ {plan.trip_end_date}{" "}
               <span className="text-gray-600 font-medium">
                 ({nights}박 {days}일)
@@ -148,18 +148,18 @@ export default function TripDetailClient({
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 flex-shrink-0">
             <Link
               href={`/planner/edit?trip_id=${plan.trip_id}&start=${plan.trip_start_date}&end=${plan.trip_end_date}`}
-              className="px-4 py-2 text-center bg-gray-200 font-semibold rounded-lg text-sm hover:bg-gray-300"
+              className="px-4 py-2 text-center bg-gray-200 font-semibold rounded-lg text-sm hover:bg-gray-300 whitespace-nowrap"
             >
-              수정하기
+              수정
             </Link>
             <button
               onClick={handleDelete}
-              className="px-4 py-2 bg-red-100 text-red-600 font-semibold rounded-lg text-sm hover:bg-red-200"
+              className="px-4 py-2 bg-red-100 text-red-600 font-semibold rounded-lg text-sm hover:bg-red-200 whitespace-nowrap"
             >
-              삭제하기
+              삭제
             </button>
           </div>
         </div>

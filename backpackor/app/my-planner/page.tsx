@@ -102,10 +102,10 @@ function MyPlannerContent() {
         <header className="mb-8 sm:mb-10">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
             <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 내 여행 일정
               </h1>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-base">
                 나만의 특별한 여행 계획을 관리하세요
               </p>
             </div>
