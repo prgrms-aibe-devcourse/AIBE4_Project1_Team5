@@ -4,6 +4,7 @@
 import { useRouter } from "next/navigation";
 import { loginWithSocial, logout } from "@/apis/authApi";
 import type { SocialProvider } from "@/types/auth";
+import { getBaseUrl } from "@/utils/url";
 
 export const useSocialLogin = () => {
   const router = useRouter();
@@ -13,9 +14,11 @@ export const useSocialLogin = () => {
       const params = new URLSearchParams(window.location.search);
       const redirectParam = params.get("redirect");
 
+      // 환경에 맞는 baseUrl 사용
+      const baseUrl = getBaseUrl();
       const redirectTo = redirectParam
-        ? `${window.location.origin}${redirectParam}`
-        : `${window.location.origin}/`;
+        ? `${baseUrl}${redirectParam}`
+        : `${baseUrl}/`;
 
       const { error } = await loginWithSocial(provider, redirectTo);
 
