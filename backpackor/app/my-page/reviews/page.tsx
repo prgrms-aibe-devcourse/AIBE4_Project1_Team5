@@ -17,6 +17,7 @@ import {
   MY_PAGE_REVIEW_SORT_OPTIONS,
   SortOptions,
 } from "@/components/common/filter/SortOptions";
+import Image from "next/image";
 
 // 개별 리뷰 카드 컴포넌트
 function ReviewCard({
@@ -60,23 +61,19 @@ function ReviewCard({
     >
       {review.images.length > 0 ? (
         <div className="relative w-full h-56 bg-gray-100 overflow-hidden">
-          <img
-            src={
-              review.images.sort((a, b) => a.image_order - b.image_order)[0]
-                .review_image
-            }
-            alt={review.review_title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              const parent = e.currentTarget.parentElement;
-              if (parent) {
-                parent.innerHTML =
-                  '<div class="flex items-center justify-center h-full"><span class="text-gray-400 text-sm font-medium">이미지 로드 실패</span></div>';
-              }
-            }}
-          />
+            <Image
+                src={
+                    review.images.sort((a, b) => a.image_order - b.image_order)[0]
+                        .review_image
+                }
+                alt={review.review_title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                priority={false}
+                onError={() => {
+                    console.error("이미지 로드 실패");
+                }}
+            />
 
           {review.images.length > 1 && (
             <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full font-medium backdrop-blur-sm flex items-center gap-1">
@@ -167,20 +164,17 @@ function ReviewCard({
             {isLoading ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
             ) : (
-              <img
-                src={
-                  profileUrl && profileUrl.trim() !== ""
-                    ? profileUrl
-                    : "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png"
-                }
-                alt={profile?.display_name || "프로필"}
-                className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src =
-                    "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png";
-                }}
-              />
+                <Image
+                    src={
+                        profileUrl && profileUrl.trim() !== ""
+                            ? profileUrl
+                            : "https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/profile/base.png"
+                    }
+                    alt={profile?.display_name || "프로필"}
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover shadow-sm ring-2 ring-gray-100"
+                />
             )}
             <span className="text-sm font-semibold text-gray-700">
               {profile?.display_name || "익명"}

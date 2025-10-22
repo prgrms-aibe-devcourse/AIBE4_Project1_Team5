@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 interface TripDetailReviewFormProps {
   editId?: string | null;
@@ -381,11 +382,13 @@ export default function TripDetailReviewForm({
               </p>
               <div className="flex items-center gap-4">
                 {placeInfo.place_image && (
-                  <img
-                    src={placeInfo.place_image}
-                    alt={placeInfo.place_name}
-                    className="w-24 h-24 object-cover rounded-lg shadow-sm"
-                  />
+                    <Image
+                        src={placeInfo.place_image}
+                        alt={placeInfo.place_name}
+                        width={96}
+                        height={96}
+                        className="object-cover rounded-lg shadow-sm"
+                    />
                 )}
                 <div className="flex-1">
                   <p className="text-xl font-bold text-blue-900 mb-1">
@@ -455,12 +458,14 @@ export default function TripDetailReviewForm({
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {imagePreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={preview}
-                      alt={`미리보기 ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleImageClick(index)}
-                    />
+                      <Image
+                          src={preview}
+                          alt={`미리보기 ${index + 1}`}
+                          width={400}
+                          height={96}
+                          className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleImageClick(index)}
+                      />
                     <button
                       type="button"
                       onClick={() => handleImageRemove(index)}

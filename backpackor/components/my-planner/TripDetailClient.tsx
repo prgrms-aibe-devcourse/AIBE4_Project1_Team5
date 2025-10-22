@@ -3,10 +3,11 @@
 import PlaceDetailModal from "@/components/place/detail/PlaceDetailModal";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
-import { isAfter, differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays, isAfter } from "date-fns";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 
 interface TripPlan {
   trip_id: number;
@@ -136,11 +137,12 @@ export default function TripDetailClient({
     if (dayElement) {
       const headerOffset = 200; // sticky 헤더 높이 + 여유 공간
       const elementPosition = dayElement.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerOffset;
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -201,9 +203,7 @@ export default function TripDetailClient({
                       ? `2px solid ${color}`
                       : "2px solid #E5E7EB",
                   boxShadow:
-                    activeDay === day
-                      ? "0 0 6px rgba(0,0,0,0.15)"
-                      : "none",
+                    activeDay === day ? "0 0 6px rgba(0,0,0,0.15)" : "none",
                 }}
                 className="px-5 py-2.5 rounded-xl font-semibold transition-all"
               >
@@ -257,15 +257,19 @@ export default function TripDetailClient({
 
                         {/* 장소 이미지 */}
                         {detail.place.place_image && (
-                          <div className="relative w-14 h-14 flex-shrink-0 bg-gray-100">
-                            <img
+                          <div className="relative w-14 h-14 flex-shrink-0 bg-gray-100 overflow-hidden rounded-lg">
+                            <Image
                               src={detail.place.place_image}
                               alt={detail.place.place_name}
-                              className="w-full h-full rounded-lg object-cover"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
+                              fill
+                              className="object-cover rounded-lg"
+                              sizes="56px"
+                              onError={() =>
+                                console.error(
+                                  "이미지 로드 실패:",
+                                  detail.place.place_image
+                                )
+                              }
                             />
                           </div>
                         )}
