@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { RegionFilter } from "@/components/common/filter/RegionFilter";
 import { SortOptions, PLACE_SORT_OPTIONS } from "@/components/common/filter/SortOptions";
@@ -8,7 +8,7 @@ import { PlaceGrid } from "@/components/place/list/PlaceGrid";
 import { usePlaces } from "@/hooks/place/usePlaces";
 import { usePlaceFilters } from "@/hooks/place/usePlaceFilters";
 
-export default function PlacePage() {
+function PlacePageContent() {
   const {
     currentSort,
     showFavoritesOnly,
@@ -106,5 +106,22 @@ export default function PlacePage() {
       {/* 여행지 그리드 */}
       <PlaceGrid places={filteredPlaces} showFavoritesOnly={showFavoritesOnly} />
     </main>
+  );
+}
+
+export default function PlacePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <PlacePageContent />
+    </Suspense>
   );
 }

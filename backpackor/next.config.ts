@@ -19,10 +19,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // CSS 최적화: 사용하지 않는 CSS 제거
-  experimental: {
-    optimizeCss: true,
-  },
 };
 
 export default nextConfig;

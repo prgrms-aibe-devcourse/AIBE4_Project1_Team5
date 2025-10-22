@@ -3,12 +3,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 /**
  * AI 여행 계획 생성을 위한 동행 선택 페이지 컴포넌트
  */
-export default function AiPlannerCompanionPage() {
+function AiPlannerCompanionContent() {
   const searchParams = useSearchParams();
   const [selectedCompanion, setSelectedCompanion] = useState<string | null>(
     null
@@ -194,5 +194,22 @@ export default function AiPlannerCompanionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AiPlannerCompanionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <AiPlannerCompanionContent />
+    </Suspense>
   );
 }

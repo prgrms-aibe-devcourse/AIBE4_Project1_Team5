@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 // Region 타입 정의
 interface Region {
@@ -18,7 +18,7 @@ interface Region {
 /**
  * 직접 여행 계획 생성을 위한 지역 선택 페이지 컴포넌트입니다.
  */
-export default function RegionSelectPage() {
+function RegionSelectPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createBrowserClient();
@@ -294,5 +294,22 @@ export default function RegionSelectPage() {
         />
       )}
     </>
+  );
+}
+
+export default function RegionSelectPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <RegionSelectPageContent />
+    </Suspense>
   );
 }

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 interface TripPlan {
   trip_id: number;
@@ -15,7 +15,7 @@ interface TripPlan {
   created_at: string;
 }
 
-export default function MyPlannerPage() {
+function MyPlannerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -176,5 +176,22 @@ export default function MyPlannerPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MyPlannerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <MyPlannerContent />
+    </Suspense>
   );
 }
