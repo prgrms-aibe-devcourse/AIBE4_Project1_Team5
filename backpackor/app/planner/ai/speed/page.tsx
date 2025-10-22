@@ -14,6 +14,7 @@ export default function AiPlannerSpeedPage() {
 
   // 다중 지역 및 스타일 정보를 배열로 받아옵니다.
   const regions = searchParams.getAll("region");
+  const regionIds = searchParams.getAll("region_id");
   const styles = searchParams.getAll("style");
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
@@ -58,6 +59,7 @@ export default function AiPlannerSpeedPage() {
     if (endDate) params.append("end", endDate);
     if (companion) params.append("companion", companion);
     regions.forEach((region) => params.append("region", region)); // 모든 지역 추가
+    regionIds.forEach((id) => params.append("region_id", id));
     styles.forEach((style) => params.append("style", style)); // 모든 스타일 추가
 
     if (isNext) {

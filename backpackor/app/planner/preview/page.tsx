@@ -7,31 +7,8 @@ import { ko } from "date-fns/locale";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
-
-/** DB place 스키마와 맞춤 */
-type Place = {
-  place_id: string;
-  place_name: string;
-  place_image?: string | null;
-  average_rating?: number | null;
-  favorite_count?: number | null;
-
-  // 지도 표시용 좌표 (place 테이블에 존재)
-  latitude?: number | null;
-  longitude?: number | null;
-
-  place_address?: string | null;
-};
-
-type Plan = Record<number, Place[]>;
-
-type Draft = {
-  tripIdToEdit: string | null; // 수정 모드면 값 존재
-  tripTitle: string;
-  startDateStr: string; // yyyy-MM-dd
-  endDateStr: string; // yyyy-MM-dd
-  plan: Plan;
-};
+import type { Place, Plan } from "@/types";
+import type { Draft } from "@/types/util";
 
 // ✅ 지도 색상 팔레트 (index 맞춤)
 const ROUTE_COLORS = [
@@ -397,7 +374,7 @@ export default function PreviewPage() {
           </div>
 
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm sticky top-6">
               <KakaoMultiRouteMap
                 plan={
                   Object.fromEntries(

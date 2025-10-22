@@ -16,6 +16,7 @@ export default function AiPlannerCompanionPage() {
 
   // .get('region') 대신 .getAll('region')을 사용하여 모든 지역 정보를 배열로 가져옵니다.
   const regions = searchParams.getAll("region");
+  const regionIds = searchParams.getAll("region_id");
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
 
@@ -38,6 +39,7 @@ export default function AiPlannerCompanionPage() {
     if (endDate) params.append("end", endDate);
     // regions 배열을 순회하며 모든 지역 정보를 같은 이름('region')으로 파라미터에 추가합니다.
     regions.forEach((region) => params.append("region", region));
+    regionIds.forEach((id) => params.append("region_id", id));
 
     if (isNext) {
       // '다음 단계'일 경우, 현재 페이지에서 선택한 동행 정보를 추가합니다.

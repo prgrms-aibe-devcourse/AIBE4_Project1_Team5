@@ -24,7 +24,7 @@ export default function AiLoadingPage() {
         const generatePlan = async () => {
             try {
                 // 1. 백엔드 API에 모든 파라미터를 그대로 넘겨 요청을 보냅니다.
-                const response = await fetch(`/api/planner?${searchParams.toString()}`);
+                const response = await fetch(`/apis/planner?${searchParams.toString()}`);
                 if (!response.ok) {
                     throw new Error('AI 추천 생성에 실패했습니다.');
                 }
@@ -44,6 +44,9 @@ export default function AiLoadingPage() {
 
                     const regionNames = searchParams.getAll('region');
                     regionNames.forEach(region => params.append('region', region));
+
+                    const regionIds = searchParams.getAll('region_id');
+                    regionIds.forEach(id => params.append('region_id', id));
 
                     router.push(`/planner/edit?${params.toString()}`);
                 }, 500);

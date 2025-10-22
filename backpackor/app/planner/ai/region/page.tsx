@@ -22,6 +22,7 @@ export default function AiRegionSelectPage() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedRegionIds, setSelectedRegionIds] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -41,11 +42,16 @@ export default function AiRegionSelectPage() {
   }, []);
 
   // 지역 버튼 클릭 (다중 선택)
-  const handleSelectRegion = (regionName: string) => {
+  const handleSelectRegion = (regionName: string, regionId: number) => {
     setSelectedRegions((prev) =>
       prev.includes(regionName)
         ? prev.filter((r) => r !== regionName)
         : [...prev, regionName]
+    );
+    setSelectedRegionIds((prev) =>
+      prev.includes(regionId)
+        ? prev.filter((id) => id !== regionId)
+        : [...prev, regionId]
     );
   };
 
@@ -60,6 +66,7 @@ export default function AiRegionSelectPage() {
 
     if (isNext) {
       selectedRegions.forEach((region) => params.append("region", region));
+      selectedRegionIds.forEach((id) => params.append("region_id", id.toString()));
       return `/planner/ai/companion?${params.toString()}`;
     } else {
       return `/planner/ai`;
@@ -127,7 +134,7 @@ export default function AiRegionSelectPage() {
             return (
               <button
                 key={region.region_id}
-                onClick={() => handleSelectRegion(region.region_name)}
+                onClick={() => handleSelectRegion(region.region_name, region.region_id)}
                 className={`group relative p-4 bg-white rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
                   isSelected
                     ? "border-blue-500 shadow-lg ring-4 ring-blue-100"

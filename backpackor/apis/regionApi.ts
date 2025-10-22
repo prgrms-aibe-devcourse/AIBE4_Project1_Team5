@@ -2,7 +2,7 @@
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Region, RegionOption } from "@/types/region";
 
-/** DB에서 모든 지역 목록 가져오기 */
+// DB에서 모든 지역 목록 가져오기
 export const getRegions = async (): Promise<Region[]> => {
   try {
     const supabase = createBrowserClient();
@@ -23,7 +23,7 @@ export const getRegions = async (): Promise<Region[]> => {
   }
 };
 
-/** 필터용 지역 옵션 가져오기 ("전체" 포함) */
+// 필터용 지역 옵션 가져오기 ("전체" 포함)
 export const getRegionOptions = async (): Promise<RegionOption[]> => {
   const regions = await getRegions();
 
@@ -34,7 +34,7 @@ export const getRegionOptions = async (): Promise<RegionOption[]> => {
   ];
 };
 
-/** region_name으로 region_id 찾기 */
+// region_name으로 region_id 찾기
 export const getRegionIdByName = async (regionName: string): Promise<number | null> => {
   try {
     const supabase = createBrowserClient();

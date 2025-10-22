@@ -4,24 +4,9 @@
 import KakaoMultiRouteMap from "@/components/map/KakaoMultiRouteMap";
 import TripDetailClient from "@/components/my-planner/TripDetailClient";
 import { createBrowserClient } from "@/lib/supabaseClient";
-import type { Place } from "@/types/place";
+import type { TripPlan, TripPlanDetailWithPlace, GroupedDetails } from "@/types";
 import { notFound, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
-interface TripPlan {
-  trip_id: number;
-  trip_title: string;
-  trip_start_date: string;
-  trip_end_date: string;
-}
-
-interface TripPlanDetailRow {
-  day_number: number;
-  visit_order: number;
-  place: Place;
-}
-
-type GroupedDetails = Record<number, TripPlanDetailRow[]>;
 
 export default function TripDetailPage() {
   const params = useParams();
@@ -78,7 +63,7 @@ export default function TripDetailPage() {
       }
 
       // Supabase 반환 데이터 명시적 캐스팅
-      const rows = (details ?? []) as unknown as TripPlanDetailRow[];
+      const rows = (details ?? []) as unknown as TripPlanDetailWithPlace[];
 
       // Day별 그룹화
       const grouped = rows.reduce<GroupedDetails>((acc, detail) => {

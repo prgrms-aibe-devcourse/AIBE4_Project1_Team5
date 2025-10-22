@@ -14,6 +14,7 @@ export default function AiPlannerTransportPage() {
 
   // 다중 파라미터들을 배열로 받아옵니다.
   const regions = searchParams.getAll("region");
+  const regionIds = searchParams.getAll("region_id");
   const styles = searchParams.getAll("style");
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
@@ -53,6 +54,7 @@ export default function AiPlannerTransportPage() {
     if (companion) params.append("companion", companion);
     if (speed) params.append("speed", speed);
     regions.forEach((region) => params.append("region", region));
+    regionIds.forEach((id) => params.append("region_id", id));
     styles.forEach((style) => params.append("style", style));
 
     if (isNext) {
