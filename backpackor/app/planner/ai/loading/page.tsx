@@ -1,13 +1,13 @@
 // app/planner/ai/loading/page.tsx
 'use client';
 
-import { useEffect, useState, useRef } from 'react'; // useRef import 추가
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 /**
  * AI 추천 생성을 위해 백엔드 API를 호출하고 대기하는 로딩 페이지입니다.
  */
-export default function AiLoadingPage() {
+function AiLoadingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [progress, setProgress] = useState(10);
@@ -85,4 +85,21 @@ export default function AiLoadingPage() {
             </p>
         </div>
     );
+}
+
+export default function AiLoadingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <AiLoadingContent />
+    </Suspense>
+  );
 }

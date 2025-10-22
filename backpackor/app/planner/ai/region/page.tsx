@@ -3,7 +3,7 @@
 import { createBrowserClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 // Region 타입 정의
 interface Region {
@@ -15,7 +15,7 @@ interface Region {
  * AI 여행 계획 생성을 위한 지역 선택 페이지 컴포넌트 (다중 선택)
  * 기능 및 라우팅은 그대로 유지하고 디자인만 개선됨
  */
-export default function AiRegionSelectPage() {
+function AiRegionSelectContent() {
   const searchParams = useSearchParams();
   const supabase = createBrowserClient();
 
@@ -229,5 +229,22 @@ export default function AiRegionSelectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AiRegionSelectPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">로딩 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <AiRegionSelectContent />
+    </Suspense>
   );
 }

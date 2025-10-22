@@ -187,7 +187,7 @@ export default function PlanList({ initialPlans }: PlanListProps) {
             </div>
 
             {/* 제목 */}
-            <h2 className="text-lg font-bold text-gray-900 mb-2 truncate">
+            <h2 className="text-base font-bold text-gray-900 mb-2 truncate">
               {plan.trip_title}
             </h2>
 
