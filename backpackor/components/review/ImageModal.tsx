@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Image from "next/image";
 
 interface ImageModalProps {
   images: string[];
@@ -54,11 +55,13 @@ export default function ImageModal({ images, currentIndex, onClose, onNext, onPr
         className="max-w-5xl max-h-[90vh] p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <img
-          src={images[currentIndex]}
-          alt={`Image ${currentIndex + 1}`}
-          className="max-w-full max-h-full object-contain"
-        />
+          <Image
+              src={images[currentIndex]}
+              alt={`Image ${currentIndex + 1}`}
+              width={800}
+              height={600}
+              className="max-w-full max-h-full object-contain"
+          />
         
         {/* 이미지 카운터 */}
         {images.length > 1 && (

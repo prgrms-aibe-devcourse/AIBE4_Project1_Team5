@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/auth/useProfile";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Page() {
@@ -58,13 +59,14 @@ export default function Page() {
         }
       `}</style>
       <main className="min-h-screen bg-white">
-        {/* ✅ Hero Section (복구) */}
         <section className="relative h-[60vh] min-h-[520px] overflow-hidden">
-          <img
-            src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/banner/1.jpg"
-            alt="여행 배너"
-            className="absolute inset-0 w-full h-full object-cover z-0"
-          />
+            <Image
+                src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/banner/1.jpg"
+                alt="여행 배너"
+                fill
+                className="object-cover z-0"
+                priority
+            />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-400/30 via-blue-300/20 to-blue-200/30 z-10"></div>
           <div className="relative z-20 h-full flex items-center justify-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-10">
