@@ -219,7 +219,7 @@ function ReviewCard({
 // 리뷰 목록 페이지
 export default function ReviewListPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
   const [sortedReviews, setSortedReviews] = useState<ReviewWithImages[]>([]);
@@ -227,6 +227,16 @@ export default function ReviewListPage() {
   const [currentSort, setCurrentSort] = useState("created_desc");
   const [isLoading, setIsLoading] = useState(true);
   const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false);
+
+  // 로그인 체크 및 리다이렉트
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      const redirectPath = encodeURIComponent("/review");
+      router.replace(`/login?redirect=${redirectPath}`);
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -282,12 +292,15 @@ export default function ReviewListPage() {
     router.push(`/review/write?edit=${reviewId}`);
   };
 
-  if (isLoading) {
+  // 인증 로딩 중이거나 리뷰 로딩 중일 때
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">리뷰를 불러오는 중...</p>
+          <p className="text-gray-600 font-semibold">
+            {authLoading ? "로딩 중..." : "리뷰를 불러오는 중..."}
+          </p>
         </div>
       </div>
     );
