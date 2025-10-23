@@ -18,22 +18,28 @@ export const useMapFocus = ({
   onFocusComplete,
 }: UseMapFocusProps) => {
   useEffect(() => {
-    if (!focusDay || !mapRef.current || !dayBoundsRef.current[focusDay]) {
+    if (!focusDay || !mapRef.current) {
       return;
     }
 
     const map = mapRef.current;
     const bounds = dayBoundsRef.current[focusDay];
 
-    if (bounds && !bounds.isEmpty()) {
-      map.setBounds(bounds);
-
-      // 약간 줌 아웃 (여유 공간 확보)
-      setTimeout(() => {
-        const currentLevel = map.getLevel();
-        map.setLevel(currentLevel + 1);
-      }, 300);
+    // Vercel 환경에서 bounds가 준비될 때까지 대기
+    if (!bounds || bounds.isEmpty()) {
+      console.warn(`[useMapFocus] Day ${focusDay}의 bounds가 아직 준비되지 않았습니다.`);
+      return;
     }
+
+    // requestAnimationFrame을 사용하여 지도가 완전히 렌더링된 후 bounds 적용
+    requestAnimationFrame(() => {
+      try {
+        map.setBounds(bounds);
+        console.log(`[useMapFocus] Day ${focusDay} 포커스 완료`);
+      } catch (error) {
+        console.error(`[useMapFocus] setBounds 실패:`, error);
+      }
+    });
 
     // 포커스 완료 콜백은 자동 호출하지 않음 (사용자가 명시적으로 호출해야 함)
     // if (onFocusComplete) {

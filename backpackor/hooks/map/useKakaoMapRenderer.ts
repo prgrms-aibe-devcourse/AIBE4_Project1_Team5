@@ -145,8 +145,12 @@ export const useKakaoMapRenderer = ({
     dayBoundsRef.current = bounds;
     allBoundsRef.current = allBounds;
 
+    // requestAnimationFrame으로 렌더링 완료 후 bounds 적용
     if (!allBounds.isEmpty()) {
-      map.setBounds(allBounds);
+      requestAnimationFrame(() => {
+        map.setBounds(allBounds);
+        console.log('[useKakaoMapRenderer] 초기 전체 지도 bounds 설정 완료');
+      });
     }
   }, [loaded, plan, dayKeys]);
 
