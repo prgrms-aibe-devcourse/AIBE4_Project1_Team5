@@ -155,7 +155,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 | 개발 & 배포 | 서비스 구성 |
 |:---:|:---:|
-| *(아키텍처 다이어그램 이미지 삽입)* | *(서비스 구성도 이미지 삽입)* |
+| <img width="282" height="529" alt="Image" src="https://github.com/user-attachments/assets/828c2f0e-210d-4250-982d-be453e677138" /> | <img width="586" height="477" alt="Image" src="https://github.com/user-attachments/assets/9bb16fcf-a709-4066-8c4b-d0d2e7d80a18" /> |
 
 <br>
 
