@@ -43,7 +43,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 공통
 | 메인 화면 | 여행지 목록 | 검색 기능 | AI 코스 추천 | 소셜 로그인 |
 |:---:|:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+| ![메인 화면 GIF](https://github.com/user-attachments/assets/7b33c51f-43bb-4841-80f0-12373b7d0340) | ![여행지 목록 GIF](https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85) | ![검색 기능 GIF](https://github.com/user-attachments/assets/a1537882-4a7c-4fec-acba-ffa075d72d34) | ![AI 코스 추천 GIF](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) | ![소셜 로그인 GIF](https://github.com/user-attachments/assets/2ce54773-3a98-4d45-ab98-7f5b87f6bbb9) |
 
 ## 💡 공통 핵심 기능
 
