@@ -43,14 +43,13 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 공통
 | 메인 화면 | 여행지 목록 | 검색 기능 | AI 코스 추천 | 소셜 로그인 |
 |:---:|:---:|:---:|:---:|:---:|
-| ![메인 화면 GIF](https://github.com/user-attachments/assets/7b33c51f-43bb-4841-80f0-12373b7d0340) | ![여행지 목록 GIF](https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85) | ![검색 기능 GIF](https://github.com/user-attachments/assets/a1537882-4a7c-4fec-acba-ffa075d72d34) | ![AI 코스 추천 GIF](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) | ![소셜 로그인 GIF](https://github.com/user-attachments/assets/2ce54773-3a98-4d45-ab98-7f5b87f6bbb9) |
-
+| <img src="https://github.com/user-attachments/assets/7b33c51f-43bb-4841-80f0-12373b7d0340" width="200"> | <img src="https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85" width="200"> | <img src="https://github.com/user-attachments/assets/a1537882-4a7c-4fec-acba-ffa075d72d34" width="200"> | <img src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" width="200"> | <img src="https://github.com/user-attachments/assets/2ce54773-3a98-4d45-ab98-7f5b87f6bbb9" width="200"> |
 ## 💡 공통 핵심 기능
 
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
 | **여행지 검색 / 필터 / 정렬** | 사용자가 원하는 여행지를 **키워드로 검색**하고, **지역/카테고리/평점순** 등 다양한 기준으로 **필터링 및 정렬**할 수 있습니다. |
-| **피드 형태의 여행지 목록** | **인스타그램 피드**처럼 스크롤하며 다양한 여행지 정보를 **한눈에 탐색**할 수 있는 UI를 제공합니다. |
+| **피드 형태의 여행지 목록** | 인스타그램 **피드처럼 스크롤**하며 다양한 여행지 정보를 **한눈에 탐색**할 수 있는 UI를 제공합니다. |
 | **비로그인 정보 열람** | 회원가입이나 **로그인 없이도** 서비스의 **핵심 기능**인 여행지 정보, 리뷰 등을 **자유롭게 열람**할 수 있습니다. |
 | **회원 전용 기능 (찜, 리뷰)** | **로그인한 사용자**는 마음에 드는 여행지를 **'찜'**하여 보관하거나, 직접 경험한 여행지에 대한 **별점과 리뷰를 작성**할 수 있습니다. |
 | **AI 기반 여행 코스 자동 추천** | 사용자의 **선호도나 트렌드**를 기반으로 **AI**가 **최적의 여행 동선**을 포함한 코스를 **자동으로 생성**하고 추천합니다. |
