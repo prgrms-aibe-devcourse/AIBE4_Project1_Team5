@@ -59,7 +59,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 여행지
 | 여행지 목록 | 여행지 상세 | 여행지 리뷰 | 찜하기 | 카카오맵 경로 |
 |:---:|:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+| <img src="https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85" width="200"> | <img src="https://github.com/user-attachments/assets/b61509ad-3d4b-419b-8331-b3d0ce518912" width="200"> | <img src="https://github.com/user-attachments/assets/a4f64e36-2add-44c6-9e00-c570ce383027" width="200"> | <img src="https://github.com/user-attachments/assets/a455cd1b-3dbb-4a20-88a8-4010506d6d51" width="200"> | <img src="https://github.com/user-attachments/assets/4d66c537-72b8-47ca-a463-09e18517dc9d" width="200"> |
 
 ## 💡 여행지 핵심 기능
 
