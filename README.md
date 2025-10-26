@@ -70,14 +70,16 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 일정 계획
 | 내 일정 목록 | 일정 상세 | AI 일정 추천 | 일정 공유 |
 |:---:|:---:|:---:|:---:|
-| <img width="1092" height="782" alt="image" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" />
- | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+ | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" />
+ | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" />
+ | ![Image](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) 
+ | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/8686aa56-701d-46a5-ae6e-546109def9d2" /> |
 
-- **여행 일정 생성 및 여행지 추가**
-- **날짜별 일정 구성 및 순서 지정**
-- **AI 기반 맞춤형 일정 자동 생성**
-- **총 비용, 방문 지역, 체류 시간 등 요약 정보 표시**
-- **일정 공유 기능 (링크 복사)**
+- **여행 일정 생성 및 여행지 추가**: 여행 일정은 AI기반으로 추천을 받거나 사용자가 여행지를 직접 추가하는 2가지 방법으로 생성이 가능합니다.
+- **날짜별 일정 구성 및 순서 지정**: 사용자는 여행 날짜를 선택할 수 있고 여행지 목록을 모두 선택/추천 받아 확정지은 후 순서를 수정할 수 있습니다.
+- **AI 기반 맞춤형 일정 자동 생성**: 사용자가 원하는 카테고리를 선택하면 해당 카테고리와 관련된 여행지로 AI가 자동으로 추천을 해줍니다.(gif참고)
+- **일정 상세**: 사용자가 AI/직접 여행지를 확정 지은 후 내 일정 목록에 들어가서 해당 일정을 클릭하면 확정지은 여행지 목록을 다시 확인할 수 있습니다.
+- **일정 공유 기능 (링크 복사)**: 사용자가 여행지를 확정지은 후 링크를 보내주는 방법으로 일정 공유가 가능합니다.
 
 <br>
 
