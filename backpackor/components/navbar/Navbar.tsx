@@ -3,7 +3,6 @@
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/auth/useProfile";
 import { useSocialLogin } from "@/hooks/auth/useSocialLogin";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -44,13 +43,10 @@ export default function Navbar() {
         className="flex items-center transition-transform duration-300 hover:scale-105"
       >
         <div className="relative w-[200px] h-[56px]">
-          <Image
+          <img
             src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png"
             alt="로고"
-            fill
-            sizes="200px"
-            priority
-            className="object-contain"
+            className="object-contain w-full h-full"
           />
         </div>
       </Link>
@@ -83,15 +79,11 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="relative w-9 h-9">
-                <Image
-                  src={profileUrl || DEFAULT_PROFILE_IMAGE}
-                  alt="프로필 이미지"
-                  fill
-                  sizes="36px"
-                  className="rounded-full object-cover ring-1 ring-gray-200"
-                />
-              </div>
+              <img
+                src={profileUrl || DEFAULT_PROFILE_IMAGE}
+                alt="프로필 이미지"
+                className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
+              />
               <span className="text-sm text-gray-800">
                 {profile?.display_name || "사용자"}님
               </span>

@@ -1,6 +1,5 @@
 // 프로필 이미지 업로더 컴포넌트
 import { useRef } from "react";
-import Image from "next/image";
 
 interface ProfileImageUploaderProps {
   imageUrl: string | null;
@@ -66,11 +65,9 @@ export const ProfileImageUploader = ({
   // 이미지만 렌더링
   if (!showButtons && showImageOnly) {
     return (
-      <Image
+      <img
         src={imageUrl || DEFAULT_IMAGE}
         alt="프로필 이미지"
-        width={80}
-        height={80}
         className="w-20 h-20 rounded-full object-cover ring-2 ring-gray-200"
       />
     );
@@ -79,11 +76,9 @@ export const ProfileImageUploader = ({
   // 기본: 이미지 + 버튼 모두 렌더링 (기존 레이아웃)
   return (
     <div className="flex items-center space-x-6">
-      <Image
+      <img
         src={imageUrl || DEFAULT_IMAGE}
         alt="프로필 이미지"
-        width={80}
-        height={80}
         className="w-20 h-20 rounded-full object-cover ring-2 ring-gray-200"
       />
       <div className="flex gap-2">

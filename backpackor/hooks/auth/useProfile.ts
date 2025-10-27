@@ -138,8 +138,12 @@ export function useProfile(userId?: string) {
           throw uploadError;
         }
 
-        // 타임스탬프 없이 기본 URL만 저장
-        profileImageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile/${fileName}`;
+        // Supabase Storage public URL 생성
+        const { data: publicUrlData } = supabase.storage
+          .from("profile")
+          .getPublicUrl(fileName);
+
+        profileImageUrl = publicUrlData.publicUrl;
       }
 
       // user_profile 테이블 업데이트
