@@ -20,6 +20,12 @@ export const useSocialLogin = () => {
         ? `${baseUrl}${redirectParam}`
         : `${baseUrl}/`;
 
+      // 디버깅: 어떤 URL로 리다이렉트되는지 확인
+      console.log("🔍 [로그인 디버깅]");
+      console.log("  - 현재 hostname:", window.location.hostname);
+      console.log("  - 감지된 baseUrl:", baseUrl);
+      console.log("  - 최종 redirectTo:", redirectTo);
+
       const { error } = await loginWithSocial(provider, redirectTo);
 
       if (error) {

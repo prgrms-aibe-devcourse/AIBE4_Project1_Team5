@@ -29,9 +29,12 @@ export const TravelListItem = ({
               src={place.place_image}
               alt={place.place_name}
               fill
+              style={{ objectFit: "cover" }}
               sizes="56px"
-              className="rounded-lg object-cover"
-              loading="lazy"
+              priority={false}
+              quality={75}
+              unoptimized={place.place_image.includes("picsum.photos")}
+              className="rounded-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

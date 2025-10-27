@@ -64,8 +64,11 @@ export default function Page() {
                 src="https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/banner/1.jpg"
                 alt="여행 배너"
                 fill
-                className="object-cover z-0"
+                style={{ objectFit: "cover" }}
+                sizes="100vw"
+                quality={85}
                 priority
+                className="z-0"
             />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-400/30 via-blue-300/20 to-blue-200/30 z-10"></div>
           <div className="relative z-20 h-full flex items-center justify-center">

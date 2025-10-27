@@ -22,6 +22,9 @@ export const PlaceCard = ({ place }: PlaceCardProps) => {
       : "0.0";
   const displayFavoriteCount = place.favorite_count ?? 0;
 
+  // picsum.photos나 외부 불안정한 API는 unoptimized 처리
+  const shouldUnoptimize = imgSrc.includes("picsum.photos");
+
   return (
     <Link
       href={`/place/${place.place_id}`}
@@ -34,9 +37,9 @@ export const PlaceCard = ({ place }: PlaceCardProps) => {
           fill
           style={{ objectFit: "cover" }}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgZmlsbD0iI2VlZSIvPjwvc3ZnPg=="
+          priority={false}
+          quality={75}
+          unoptimized={shouldUnoptimize}
           onError={() => setImgSrc("/default-image.png")}
         />
       </div>

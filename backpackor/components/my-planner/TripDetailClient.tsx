@@ -242,8 +242,12 @@ export default function TripDetailClient({
                               src={detail.place.place_image}
                               alt={detail.place.place_name}
                               fill
-                              className="object-cover rounded-lg"
+                              style={{ objectFit: "cover" }}
                               sizes="56px"
+                              priority={false}
+                              quality={75}
+                              unoptimized={detail.place.place_image.includes("picsum.photos")}
+                              className="rounded-lg"
                               onError={() =>
                                 console.error(
                                   "이미지 로드 실패:",
