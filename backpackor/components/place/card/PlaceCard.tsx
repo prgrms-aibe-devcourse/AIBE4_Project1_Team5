@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { Place } from "@/types/place";
 
@@ -27,11 +28,15 @@ export const PlaceCard = ({ place }: PlaceCardProps) => {
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
     >
       <div className="relative w-full aspect-video bg-gray-100">
-        <img
+        <Image
           src={imgSrc}
           alt={place.place_name}
-          className="w-full h-full object-cover"
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           loading="lazy"
+          placeholder="blur"
+          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgZmlsbD0iI2VlZSIvPjwvc3ZnPg=="
           onError={() => setImgSrc("/default-image.png")}
         />
       </div>
