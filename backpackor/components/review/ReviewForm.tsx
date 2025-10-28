@@ -94,7 +94,6 @@ export default function ReviewForm({
           place_category: item.place_category,
           review_count: null,
           place_description: null,
-          place_detail_image: null,
           latitude: null,
           longitude: null,
         }));
@@ -158,7 +157,6 @@ export default function ReviewForm({
               favorite_count: placeData.favorite_count,
               review_count: null,
               place_description: null,
-              place_detail_image: null,
               region_id: (placeData as any).region?.region_id || null,
               place_category: null,
               latitude: null,

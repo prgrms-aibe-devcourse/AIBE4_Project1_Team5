@@ -28,7 +28,7 @@ export default function PlaceDetailContent({
       {/* 커버 이미지 섹션 */}
       <div
         className="relative h-[400px] bg-cover bg-center mb-0 flex items-center justify-center md:h-[350px] sm:h-[300px]"
-        style={{ backgroundImage: `url(${place.place_detail_image})` }}
+        style={{ backgroundImage: `url(${place.place_image})` }}
       >
         {/* 밝은 그라데이션 오버레이 */}
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-b from-white/40 to-white/60" />

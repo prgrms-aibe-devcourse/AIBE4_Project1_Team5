@@ -34,7 +34,6 @@ export const coercePlace = (raw: any): Place => {
     favorite_count: (raw?.favorite_count as number | null) ?? null,
     review_count: (raw?.review_count as number | null) ?? null,
     place_description: null,
-    place_detail_image: null,
     region_id: null,
     place_category: null,
     visit_order: raw?.visit_order ?? undefined,

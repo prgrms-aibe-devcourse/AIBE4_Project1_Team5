@@ -7,7 +7,6 @@ export interface Place {
   place_address?: string | null; // 주소
   place_description?: string | null; // 설명
   place_image?: string | null; // 대표 이미지
-  place_detail_image?: string | null; // 상세 이미지
   average_rating?: number | null; // 평균 평점
   favorite_count?: number | null; // 좋아요 수
   review_count?: number | null; // 리뷰 수
@@ -27,7 +26,6 @@ export interface PlaceDetail {
   place_address: string;
   place_description: string;
   place_image: string;
-  place_detail_image: string;
   place_category: string;
   latitude: number;
   longitude: number;

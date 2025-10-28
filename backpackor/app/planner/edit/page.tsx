@@ -95,7 +95,6 @@ export default async function EditPlannerPage({
             day_number: item.day_number,
             review_count: null,
             place_description: null,
-            place_detail_image: null,
             region_id: item.place.region?.region_id || null,
             place_category: null,
           });
@@ -166,7 +165,6 @@ export default async function EditPlannerPage({
       favorite_count: p.favorite_count,
       review_count: null,
       place_description: null,
-      place_detail_image: null,
       region_id: p.region_id || null,
       place_category: null,
     }));
