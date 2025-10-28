@@ -20,6 +20,9 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 <br>
 
 ## 배포 링크
+[![백팩코 바로가기](https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png)](https://backpackor.vercel.app/)
+<br>
+[![백팩코 바로가기](https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/black.png)](https://backpackor.vercel.app/)
 
 <br>
 
