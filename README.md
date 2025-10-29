@@ -159,12 +159,12 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
   │   │   ├── navbar/
   │   │   └── profile/
   │   │
-  │   ├── apis/                    # 클라이언트 API 함수
-  │   ├── hooks/                   # 커스텀 React 훅
-  │   ├── types/                   # TypeScript 타입 정의
-  │   ├── utils/                   # 유틸리티
+  │   ├── apis/                     # 클라이언트 API 함수
+  │   ├── hooks/                    # 커스텀 React 훅
+  │   ├── types/                    # TypeScript 타입 정의
+  │   ├── utils/                    # 유틸리티
   │   ├── lib/                      # 라이브러리
-  │   │   └── supabaseClient.ts    # Supabase 클라이언트
+  │   │   └── supabaseClient.ts     # Supabase 클라이언트
   │   └── constants/                # 상수 정의
 
 ```
