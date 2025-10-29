@@ -133,28 +133,40 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 <br>
 
-## 프로젝트 폴더 구조
+## 📁 프로젝트 파일 구조
 ```
-📦 BackpacKOR
-├── 📁 app                     # App Router 기반 페이지 디렉토리
-│   ├── 📁 auth                # 소셜 로그인 및 인증
-│   ├── 📁 mypage              # 마이페이지
-│   ├── 📁 places              # 여행지 관련 페이지
-│   │   └── 📁 [id]            # 여행지 상세 페이지
-│   ├── 📁 schedules           # 일정 관련 페이지
-│   │   ├── 📁 [id]            # 일정 상세 페이지
-│   │   └── 📁 create          # 일정 생성 페이지
-│   └── 📁 api                 # API Routes
-├── 📁 components              # 공통 UI 컴포넌트
-│   ├── 📁 auth                # 인증 관련 컴포넌트
-│   ├── 📁 modal               # 모달 관련 컴포넌트
-│   ├── 📁 places              # 여행지 컴포넌트
-│   ├── 📁 schedules           # 일정 컴포넌트
-│   └── 📁 mypage              # 마이페이지 컴포넌트
-├── 📁 hooks                   # 커스텀 훅
-├── 📁 lib                     # Supabase, 유틸 함수 등
-├── 📁 types                   # TypeScript 타입 정의
-└── 📁 utils                   # 유틸리티 함수
+  AIBE4_Project1_Team5/
+  ├── backpackor/
+  │   ├── app/                      # Next.js App Router
+  │   │   ├── page.tsx              # 메인 페이지
+  │   │   ├── login/                # 로그인
+  │   │   ├── place/                # 여행지
+  │   │   │   └── [placeId]/        # 여행지 상세
+  │   │   ├── planner/              # 일정 계획
+  │   │   ├── my-planner/           # 내 일정
+  │   │   │   └── [tripId]/         
+  │   │   ├── my-page/              # 마이페이지
+  │   │   ├── review/               # 리뷰
+  │   │   └── apis/                 # 서버 API 라우트
+  │   │
+  │   ├── components/               # React 컴포넌트
+  │   │   ├── auth/                 # 인증
+  │   │   ├── map/                  # 지도(Kakao Maps)
+  │   │   ├── place/                # 여행지
+  │   │   ├── planner/              # 일정 계획
+  │   │   ├── my-planner/           # 내 일정
+  │   │   ├── common/               # 공통 컴포넌트
+  │   │   ├── navbar/
+  │   │   └── profile/
+  │   │
+  │   ├── apis/                    # 클라이언트 API 함수
+  │   ├── hooks/                   # 커스텀 React 훅
+  │   ├── types/                   # TypeScript 타입 정의
+  │   ├── utils/                   # 유틸리티
+  │   ├── lib/                      # 라이브러리
+  │   │   └── supabaseClient.ts    # Supabase 클라이언트
+  │   └── constants/                # 상수 정의
+
 ```
 
 <br>
@@ -171,8 +183,6 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 - **reviews**: 리뷰 및 별점 (여행지별)
 - **favorites**: 찜하기 (사용자별)
 - **view_logs**: 조회수 기록
-
-각 테이블 간 외래키(FK) 제약조건을 활용해 참조 무결성을 유지합니다.
 
 <br>
 
