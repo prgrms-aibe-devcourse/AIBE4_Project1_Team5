@@ -102,16 +102,14 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 마이페이지
 | 프로필 관리 | 찜한 여행지 | 내 일정 관리 | 내가 쓴 리뷰 조회 |
 |:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/e1a858a2-7f7d-4bac-acce-23be8a310346" />
- | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/ea1e1477-2a8b-47ec-a197-d4dcd7e3e183" />
- |<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/494e879b-80a5-4005-80f7-674e1094f8da" /> |
+| <img width="400" alt="프로필 관리 이미지" src="https://github.com/user-attachments/assets/1a77dff1-b86b-420b-af12-ad5a65e60924" /> | <img width="400" alt="찜한 여행지 이미지" src="https://github.com/user-attachments/assets/e1a858a2-7f7d-4bac-acce-23be8a310346" /> | <img width="400" alt="내 일정 관리 이미지" src="https://github.com/user-attachments/assets/ea1e1477-2a8b-47ec-a197-d4dcd7e3e183" /> | <img width="400" alt="내가 쓴 리뷰 조회 이미지" src="https://github.com/user-attachments/assets/494e879b-80a5-4005-80f7-674e1094f8da" /> |
 #### 마이페이지 기능 상세
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
-- **소셜 로그인을 통한 프로필 관리**
-- **내가 찜한 여행지 목록 조회**
-- **내가 작성한 일정 목록 조회 및 수정/삭제**
-- **내가 작성한 리뷰 관리**
+| **프로필 관리** | **소셜 로그인을 통해 등록된 계정 정보(닉네임, 프로필 사진 등)를 확인하고 수정**하는 기능을 제공함. 사용자의 개인 정보를 최신 상태로 관리함. |
+| **찜한 여행지** | 사용자가 **'찜하기'를 눌러 저장한 모든 여행지 목록을 한눈에 조회**함. 다시 방문하고 싶거나 관심 있는 여행지를 쉽게 찾아볼 수 있도록 함. |
+| **내 일정 관리** | 사용자가 **작성한 모든 여행 일정 목록을 확인하고, 필요에 따라 해당 일정을 수정하거나 완전히 삭제**할 수 있도록 함. 계획된 여행 관리를 용이하게 함. |
+| **내가 쓴 리뷰 조회** | 사용자가 **작성한 모든 여행지 리뷰 목록을 모아 보여줌**. 작성한 리뷰를 확인하고, 내용 수정 및 삭제를 통해 피드백 내용을 관리할 수 있음. |
 
 <br>
 
