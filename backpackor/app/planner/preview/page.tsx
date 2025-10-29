@@ -26,7 +26,6 @@ const ROUTE_COLORS = [
 
 export default function PreviewPage() {
   const router = useRouter();
-  const supabase = createBrowserClient();
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [activeDay, setActiveDay] = useState<number>(1);
@@ -109,6 +108,7 @@ export default function PreviewPage() {
     try {
       setIsSaving(true);
 
+      const supabase = createBrowserClient();
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id ?? null;
 

@@ -22,12 +22,12 @@ export default function FavoriteButton({
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const supabase = createBrowserClient();
   const router = useRouter();
 
   // 컴포넌트 로드 시, 현재 로그인된 사용자 정보 가져오기
   useEffect(() => {
     const fetchUser = async () => {
+      const supabase = createBrowserClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -46,7 +46,7 @@ export default function FavoriteButton({
       }
     };
     fetchUser();
-  }, [supabase, placeId]);
+  }, [placeId]);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,6 +69,8 @@ export default function FavoriteButton({
     setIsLoading(true);
 
     try {
+      const supabase = createBrowserClient();
+
       if (isFavorite) {
         // 찜 취소: user_favorite_place에서 삭제
         const { error: deleteError } = await supabase

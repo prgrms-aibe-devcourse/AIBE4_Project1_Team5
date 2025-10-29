@@ -14,7 +14,6 @@ export default function TripDetailClient({
   groupedDetails,
   onDayChange,
 }: TripDetailClientProps) {
-  const supabase = createBrowserClient();
   const router = useRouter();
 
   // 모달 상태
@@ -83,6 +82,7 @@ export default function TripDetailClient({
     if (!isConfirmed) return;
 
     try {
+      const supabase = createBrowserClient();
       await supabase
         .from("trip_plan_detail")
         .delete()

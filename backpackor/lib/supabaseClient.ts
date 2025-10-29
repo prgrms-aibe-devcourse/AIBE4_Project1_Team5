@@ -1,64 +1,64 @@
-// Supabase DB와 통신하기 위한 서버용/브라우저용 클라이언트를 생성하는 유틸리티 파일
-import { createClient } from "@supabase/supabase-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { createLoggedSupabaseClient } from "@/utils/queryLogger";
-import { getBaseUrl } from "@/utils/url";
+// lib/supabaseClient.ts
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error("[Supabase 설정 오류] 환경변수가 누락되었습니다.");
+    throw new Error("[Supabase 설정 오류] 환경변수가 누락되었습니다.");
 }
 
-// 개발 환경에서만 쿼리 로깅 활성화
-const enableQueryLogging = process.env.NODE_ENV === "development";
-
-// Supabase 클라이언트 옵션 (auth 설정 포함)
-const getSupabaseOptions = () => ({
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: "pkce" as const,
-  },
-});
-
-// 서버 환경
+/**
+ * 서버용 Supabase 클라이언트
+ * 서버 컴포넌트, API 라우트, 서버 액션에서 사용
+ */
 export const createServerClient = () => {
-  const client = createClient(supabaseUrl, supabaseKey, getSupabaseOptions());
-  return enableQueryLogging ? createLoggedSupabaseClient(client) : client;
+    return createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            persistSession: false, // 서버에서는 세션을 저장하지 않음
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+        },
+    });
 };
 
-// 브라우저 클라이언트 싱글톤 인스턴스
-let browserClientInstance: SupabaseClient | null = null;
+/**
+ * 브라우저용 Supabase 클라이언트 (싱글톤)
+ * 클라이언트 컴포넌트에서 사용
+ */
+let browserClient: SupabaseClient | null = null;
 
-// 클라이언트 환경 (싱글톤 패턴)
 export const createBrowserClient = () => {
-  if (typeof window === "undefined") {
-    // 서버 사이드에서는 매번 새로운 클라이언트 생성
-    const client = createClient(
-      supabaseUrl!,
-      supabaseKey!,
-      getSupabaseOptions()
-    );
-    return enableQueryLogging ? createLoggedSupabaseClient(client) : client;
-  }
+    // 서버 사이드에서 호출되면 에러
+    if (typeof window === "undefined") {
+        throw new Error("createBrowserClient는 브라우저에서만 사용 가능합니다. 서버에서는 createServerClient를 사용하세요.");
+    }
 
-  // 브라우저에서는 싱글톤 인스턴스 재사용
-  if (!browserClientInstance) {
-    const client = createClient(
-      supabaseUrl!,
-      supabaseKey!,
-      getSupabaseOptions()
-    );
-    browserClientInstance = enableQueryLogging
-      ? createLoggedSupabaseClient(client)
-      : client;
-  }
+    // 싱글톤 패턴으로 하나의 인스턴스만 생성
+    if (!browserClient) {
+        browserClient = createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                flowType: "pkce" as const,
+                storage: typeof window !== "undefined" ? window.localStorage : undefined,
+            },
+        });
+    }
 
-  return browserClientInstance;
+    return browserClient;
 };
 
-// 브라우저 환경에서 바로 사용 가능한 기본 인스턴스
-export const supabase = createBrowserClient();
+/**
+ * 레거시 호환용 export
+ * 클라이언트 컴포넌트와 hooks에서만 사용하세요
+ * @deprecated 서버 컴포넌트에서는 createServerClient()를 사용하세요
+ */
+export const supabase = new Proxy({} as SupabaseClient, {
+    get(target, prop) {
+        // 실제 호출 시점에 브라우저 클라이언트를 반환
+        const client = createBrowserClient();
+        return (client as any)[prop];
+    }
+});

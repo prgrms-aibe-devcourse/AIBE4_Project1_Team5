@@ -21,7 +21,6 @@ interface Region {
 function RegionSelectPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const supabase = createBrowserClient();
 
   const [regions, setRegions] = useState<Region[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +34,7 @@ function RegionSelectPageContent() {
   // 컴포넌트가 처음 렌더링될 때 Supabase에서 지역 목록을 가져옵니다.
   useEffect(() => {
     const fetchRegions = async () => {
+      const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from("region")
         .select("*")
@@ -50,7 +50,7 @@ function RegionSelectPageContent() {
     };
 
     fetchRegions();
-  }, [supabase]);
+  }, []);
 
   // 지역 버튼 클릭 시, 선택 목록에 추가하거나 제거하는 함수
   const handleSelectRegion = (regionId: number) => {

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseClient";
 
-// Supabase 클라이언트 인스턴스 생성
-const supabase = createServerClient();
-
 export async function POST(req: NextRequest) {
+  const supabase = createServerClient();
   const { userId, placeId } = await req.json();
 
   if (!userId || !placeId) {
@@ -47,6 +45,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const supabase = createServerClient();
   const { userId, placeId } = await req.json();
 
   if (!userId || !placeId) {
@@ -93,6 +92,7 @@ export async function DELETE(req: NextRequest) {
 
 // GET 메서드 추가 - 찜 여부 확인용
 export async function GET(req: NextRequest) {
+  const supabase = createServerClient();
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId");
   const placeId = searchParams.get("placeId");

@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 export default function TripDetailPage() {
   const params = useParams();
   const tripId = params.tripId as string;
-  const supabase = createBrowserClient();
 
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [groupedDetails, setGroupedDetails] = useState<GroupedDetails>({});
@@ -22,6 +21,9 @@ export default function TripDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+
+      // 브라우저에서만 supabase 클라이언트 생성
+      const supabase = createBrowserClient();
 
       // 일정 기본 정보
       const { data: planData, error: planError } = await supabase
@@ -98,7 +100,7 @@ export default function TripDetailPage() {
     };
 
     fetchData();
-  }, [tripId, supabase]);
+  }, [tripId]);
 
   const handleDayChange = (day: number) => {
     setFocusDay(day);

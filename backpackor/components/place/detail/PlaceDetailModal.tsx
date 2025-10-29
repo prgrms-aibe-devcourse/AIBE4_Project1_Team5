@@ -21,11 +21,12 @@ export default function PlaceDetailModal({
   const [regionName, setRegionName] = useState<string>("알 수 없음");
   const [initialIsFavorite, setInitialIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
-  const supabase = createBrowserClient();
 
   useEffect(() => {
     const fetchPlaceData = async () => {
       setLoading(true);
+
+      const supabase = createBrowserClient();
 
       // place 데이터 조회 (지역명 포함)
       const { data: placeData, error: placeError } = await supabase
@@ -71,7 +72,7 @@ export default function PlaceDetailModal({
     };
 
     fetchPlaceData();
-  }, [placeId, supabase]);
+  }, [placeId]);
 
   // ESC 키로 모달 닫기
   useEffect(() => {

@@ -17,7 +17,6 @@ interface Region {
  */
 function AiRegionSelectContent() {
   const searchParams = useSearchParams();
-  const supabase = createBrowserClient();
 
   const [regions, setRegions] = useState<Region[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,10 +25,11 @@ function AiRegionSelectContent() {
 
   useEffect(() => {
     const fetchRegions = async () => {
+      const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from("region")
         .select("*")
-        .order("region_id", { ascending: true });
+        .order("region_id", { ascending: true});
 
       if (data) setRegions(data);
       else if (error) {

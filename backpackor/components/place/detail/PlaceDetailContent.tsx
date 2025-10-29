@@ -5,6 +5,8 @@ import FavoriteButton from "@/components/place/FavoriteButton";
 import RelatedPlacesSection from "@/components/place/detail/RelatedPlacesSection";
 import TravelReviewSection from "@/components/review/TravelReviewSection";
 import type { PlaceDetail } from "@/types/place";
+import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 
 interface PlaceDetailContentProps {
   place: PlaceDetail;
@@ -23,6 +25,12 @@ export default function PlaceDetailContent({
   averageRating,
   showReviewButton = false,
 }: PlaceDetailContentProps) {
+  const router = useRouter();
+
+  const handleClose = () => {
+    router.back();
+  };
+
   return (
     <div className="w-full bg-white min-h-screen">
       {/* 커버 이미지 섹션 */}
@@ -30,6 +38,15 @@ export default function PlaceDetailContent({
         className="relative h-[400px] bg-cover bg-center mb-0 flex items-center justify-center md:h-[350px] sm:h-[300px]"
         style={{ backgroundImage: `url(${place.place_image})` }}
       >
+        {/* 닫기 버튼 - 우측 상단 */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 rounded-full shadow-lg backdrop-blur-md hover:bg-white transition-all duration-200 hover:shadow-xl flex items-center justify-center group"
+          aria-label="닫기"
+        >
+          <X className="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors" />
+        </button>
+
         {/* 밝은 그라데이션 오버레이 */}
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-b from-white/40 to-white/60" />
 
