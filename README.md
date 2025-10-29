@@ -102,7 +102,9 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 마이페이지
 | 프로필 관리 | 찜한 여행지 | 내 일정 관리 | 내가 쓴 리뷰 조회 |
 |:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+| *(이미지 삽입)* | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/e1a858a2-7f7d-4bac-acce-23be8a310346" />
+ | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/ea1e1477-2a8b-47ec-a197-d4dcd7e3e183" />
+ |<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/494e879b-80a5-4005-80f7-674e1094f8da" /> |
 #### 마이페이지 기능 상세
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
