@@ -6,11 +6,13 @@ import { createBrowserClient } from "@/lib/supabaseClient";
 
 export default function AuthCallback() {
     const router = useRouter();
-    const supabase = createBrowserClient();
 
     useEffect(() => {
         const handleAuthCallback = async () => {
             try {
+                // 브라우저에서만 supabase 클라이언트 생성
+                const supabase = createBrowserClient();
+
                 // URL에서 code 파라미터 확인
                 const params = new URLSearchParams(window.location.search);
                 const code = params.get('code');
@@ -57,7 +59,7 @@ export default function AuthCallback() {
         };
 
         handleAuthCallback();
-    }, [router, supabase]);
+    }, [router]);
 
     return (
         <div
