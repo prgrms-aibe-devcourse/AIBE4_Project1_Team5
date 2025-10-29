@@ -4,29 +4,21 @@
 import { useRouter } from "next/navigation";
 import { loginWithSocial, logout } from "@/apis/authApi";
 import type { SocialProvider } from "@/types/auth";
-import { getBaseUrl } from "@/utils/url";
 
 export const useSocialLogin = () => {
   const router = useRouter();
 
   const handleLogin = async (provider: SocialProvider) => {
     try {
+      // redirect 파라미터가 있으면 sessionStorage에 저장
       const params = new URLSearchParams(window.location.search);
       const redirectParam = params.get("redirect");
 
-      // 환경에 맞는 baseUrl 사용
-      const baseUrl = getBaseUrl();
-      const redirectTo = redirectParam
-        ? `${baseUrl}${redirectParam}`
-        : `${baseUrl}/`;
+      if (redirectParam) {
+        sessionStorage.setItem("redirectAfterLogin", redirectParam);
+      }
 
-      // 디버깅: 어떤 URL로 리다이렉트되는지 확인
-      console.log("🔍 [로그인 디버깅]");
-      console.log("  - 현재 hostname:", window.location.hostname);
-      console.log("  - 감지된 baseUrl:", baseUrl);
-      console.log("  - 최종 redirectTo:", redirectTo);
-
-      const { error } = await loginWithSocial(provider, redirectTo);
+      const { error } = await loginWithSocial(provider);
 
       if (error) {
         throw error;
