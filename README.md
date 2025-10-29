@@ -73,16 +73,15 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 내 일정 & 일정 계획
 | 내 일정 목록 | 일정 상세 | AI 일정 추천 | 직접 일정 계획 | 일정 미리보기 |
 |:---:|:---:|:---:|:---:|:---:|
-| <img width="400" alt="내 일정 목록 이미지" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" /> | <img width="400" alt="일정 상세 이미지" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" /> | ![AI 일정 추천 이미지](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) |![scheduleMyself](https://github.com/user-attachments/assets/d98f59a2-f1b9-493b-acb8-99dd08f76217)
- | <img width="1230" height="837" alt="image" src="https://github.com/user-attachments/assets/4d76cf11-be59-4b19-99ed-f4b85a78bc19" />
- |
+| <img width="300" alt="내 일정 목록 이미지" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" /> | <img width="300" alt="일정 상세 이미지" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" /> | <img width="300" alt="AI 일정 추천 이미지" src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" /> | <img width="300" alt="직접 일정 계획 이미지" src="https://github.com/user-attachments/assets/d98f59a2-f1b9-493b-acb8-99dd08f76217" /> | <img width="300" alt="일정 미리보기 이미지" src="https://github.com/user-attachments/assets/4d76cf11-be59-4b19-99ed-f4b85a78bc19" /> |
+
 #### 일정계획 & 내 일정 기능 상세
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
-| **일정 초기 설정** | **AI 자동 추천** 또는 **사용자 직접 추가** 중 선택하여 여행 일정을 생성함. 효율성과 선호도를 동시에 충족하는 듀얼 생성 방식을 제공함. |
-| **일정 추천 최적화** | **카테고리 기반 추천 알고리즘**을 사용하여 최적 동선과 테마에 맞는 여행지 목록을 AI가 자동으로 구성함. 맞춤형 일정 구성 과정을 간소화함. |
-| **일정 관리** | 여행 기간을 설정하고, 확정된 여행지 목록의 순서를 드래그 앤 드롭으로 자유롭게 수정함. 사용자가 일정의 시간적, 지역적 흐름을 통제함. |
-| **일정 상세** | '내 일정 목록'에서 특정 일정을 클릭하여 **확정된 모든 여행지 목록 및 세부 정보**를 직관적으로 즉시 재확인 가능함. 계획된 내용을 언제든지 수정할 수 있음. |
+| **일정 초기 설정** | 사용자가 **AI 자동 추천** 또는 여행지를 **직접 추가**하는 방식 중 하나를 선택하여 새로운 여행 일정을 생성함. 효율적인 자동 생성과 사용자 선호 기반의 수동 생성을 동시에 제공함. |
+| **일정 추천 최적화** | **카테고리 기반 추천 알고리즘을 활용**하여 여행 동선이 가장 효율적인 방향으로 여행지 목록을 AI가 자동으로 구성함. 사용자는 최적화된 동선과 테마에 맞는 여행지 목록을 즉시 제공받음. |
+| **일정 관리** | 여행 기간을 자유롭게 설정하고, 확정된 여행지 목록의 순서를 **드래그 앤 드롭(Drag & Drop)으로 간편하게 수정**함. 사용자가 일정의 시간적, 지역적 흐름을 유연하게 통제할 수 있게 함. |
+| **일정 상세** | **'내 일정 목록'에서 특정 일정을 선택**하면, 해당 일정에 포함된 **확정된 모든 여행지 목록, 시간, 그리고 지도 기반의 동선 세부 정보**를 직관적으로 재확인하고 수정함. |
 
 <br>
 
