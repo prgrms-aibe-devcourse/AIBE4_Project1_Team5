@@ -73,7 +73,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 내 일정 & 일정 계획
 | 내 일정 목록 | 일정 상세 | AI 일정 추천 | 직접 일정 계획 | 일정 미리보기 |
 |:---:|:---:|:---:|:---:|:---:|
-| <img src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" width="300"> | <img src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" width="300"> | <img src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" width="300"> | <img src="https://github.com/user-attachments/assets/d98f59a2-f1b9-493b-acb8-99dd08f76217" width="300"> | <img src="https://github.com/user-attachments/assets/4d76cf11-be59-4b19-99ed-f4b85a78bc19" width="300"> |
+| <img src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" width="200"> | <img src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" width="200"> | <img src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" width="200"> | <img src="https://github.com/user-attachments/assets/d98f59a2-f1b9-493b-acb8-99dd08f76217" width="200"> | <img src="https://github.com/user-attachments/assets/4d76cf11-be59-4b19-99ed-f4b85a78bc19" width="200"> |
 
 #### 일정계획 & 내 일정 기능 상세
 | 기능 분류 | 상세 설명 |
@@ -103,7 +103,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 마이페이지
 | 프로필 관리 | 찜한 여행지 | 내 일정 관리 | 내가 쓴 리뷰 조회 |
 |:---:|:---:|:---:|:---:|
-| <img src="https://github.com/user-attachments/assets/1a77dff1-b86b-420b-af12-ad5a65e60924" width="300"> | <img src="https://github.com/user-attachments/assets/e1a858a2-7f7d-4bac-acce-23be8a310346" width="300"> | <img src="https://github.com/user-attachments/assets/ea1e1477-2a8b-47ec-a197-d4dcd7e3e183" width="300"> | <img src="https://github.com/user-attachments/assets/494e879b-80a5-4005-80f7-674e1094f8da" width="300"> |
+| <img src="https://github.com/user-attachments/assets/1a77dff1-b86b-420b-af12-ad5a65e60924" width="200"> | <img src="https://github.com/user-attachments/assets/e1a858a2-7f7d-4bac-acce-23be8a310346" width="200"> | <img src="https://github.com/user-attachments/assets/ea1e1477-2a8b-47ec-a197-d4dcd7e3e183" width="200"> | <img src="https://github.com/user-attachments/assets/494e879b-80a5-4005-80f7-674e1094f8da" width="200"> |
 
 #### 마이페이지 기능 상세
 | 기능 분류 | 상세 설명 |
