@@ -10,7 +10,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 사용자는 추천받은 여행지를 확인하고, 리뷰와 평점을 참고하며 나만의 여행 일정을 쉽게 구성할 수 있습니다.
 
-편리함과 즐거움을 동시에 잡은, 국내 여행의 든든한 동반자 **백팩코**와 함께 지금 당장 떠나보세요! 🎒
+편리함과 즐거움을 동시에 잡은, 국내 여행의 든든한 동반자 **백팩코**와 함께 지금 당장 떠나보세요!
 
 <br>
 
@@ -44,8 +44,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | 메인 화면 | 여행지 목록 | 검색 기능 | AI 코스 추천 | 소셜 로그인 |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://github.com/user-attachments/assets/7b33c51f-43bb-4841-80f0-12373b7d0340" width="200"> | <img src="https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85" width="200"> | <img src="https://github.com/user-attachments/assets/a1537882-4a7c-4fec-acba-ffa075d72d34" width="200"> | <img src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" width="200"> | <img src="https://github.com/user-attachments/assets/2ce54773-3a98-4d45-ab98-7f5b87f6bbb9" width="200"> |
-## 💡 공통 핵심 기능
-
+#### 공통 핵심 기능
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
 | **여행지 검색 / 필터 / 정렬** | 사용자가 원하는 여행지를 **키워드로 검색**하고, **지역/카테고리/평점순** 등 다양한 기준으로 **필터링 및 정렬**할 수 있습니다. |
@@ -60,9 +59,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | 여행지 목록 | 여행지 상세 | 여행지 리뷰 | 찜하기 | 카카오맵 경로 |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85" width="200"> | <img src="https://github.com/user-attachments/assets/b61509ad-3d4b-419b-8331-b3d0ce518912" width="200"> | <img src="https://github.com/user-attachments/assets/a4f64e36-2add-44c6-9e00-c570ce383027" width="200"> | <img src="https://github.com/user-attachments/assets/a455cd1b-3dbb-4a20-88a8-4010506d6d51" width="200"> | <img src="https://github.com/user-attachments/assets/4d66c537-72b8-47ca-a463-09e18517dc9d" width="200"> |
-
-## 💡 여행지 핵심 기능
-
+#### 여행지 핵심 기능
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
 | **여행지 상세 정보** | 여행지의 **이름, 지역, 카테고리** 등 기본 정보와 **운영 시간, 비용** 등 방문에 필요한 **상세 정보를 제공**합니다. |
@@ -73,14 +70,11 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 <br>
 
-### 📅 일정 계획
-
+### 일정 계획 & 내 일정
 | 내 일정 목록 | 일정 상세 | AI 일정 추천 | 일정 공유 |
 |:---:|:---:|:---:|:---:|
 | <img width="400" alt="내 일정 목록 이미지" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" /> | <img width="400" alt="일정 상세 이미지" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" /> | ![AI 일정 추천 이미지](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) | <img width="400" alt="일정 공유 이미지" src="https://github.com/user-attachments/assets/8686aa56-701d-46a5-ae6e-546109def9d2" /> |
-
-### 💡 핵심 기능 상세
-
+#### 일정계획 & 내 일정 기능 상세
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
 | **일정 초기 설정** | **AI 자동 추천** 또는 **사용자 직접 추가** 중 선택하여 여행 일정을 생성함. 효율성과 선호도를 동시에 충족하는 듀얼 생성 방식을 제공함. |
@@ -89,31 +83,34 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | **정보 열람** | '내 일정 목록'에서 특정 일정을 클릭하여 **확정된 모든 여행지 목록 및 세부 정보**를 직관적으로 즉시 재확인 가능함. 계획된 내용을 투명하게 관리함. |
 | **협업 및 공유** | 확정된 여행 계획에 대한 **고유 접근 링크**를 생성하여 타인에게 간편하게 공유함. 정보 전달 및 협업의 기반을 마련함. |
 
-
-<br>
-
-### 마이페이지
-| 내 프로필 | 내가 찜한 여행지 | 내 일정 관리 | 내가 쓴 리뷰 |
-|:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
-
-- **소셜 로그인을 통한 프로필 관리**
-- **내가 찜한 여행지 목록 조회**
-- **내가 작성한 일정 목록 조회 및 수정/삭제**
-- **내가 작성한 리뷰 관리**
-
 <br>
 
 ### 리뷰 페이지
-| 리뷰 작성 | 내가 쓴 리뷰 조회 | 내 리뷰 관리 | 리뷰 필터링 | 리뷰 도움됨 시스템 |
+| 리뷰 목록 | 리뷰 필터링 | 리뷰 도움 시스템 | 리뷰 작성 | 내가 쓴 리뷰 조회 |
 |:---:|:---:|:---:|:---:|:---:|
 | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
-
+#### 리뷰 기능 상세
+| 기능 분류 | 상세 설명 |
+|:---:|:---|
 - **리뷰를 통한 작성**
 - **내가 작성한 리뷰 조회**
 - **내가 작성한 리뷰 수정 & 관리**
 - **리뷰 필터링 상세 조회 기능**
 - **도움됐어요 시스템 기능**
+
+<br>
+
+### 마이페이지
+| 프로필 관리 | 찜한 여행지 | 내 일정 관리 | 내가 쓴 리뷰 조회 |
+|:---:|:---:|:---:|:---:|
+| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+#### 마이페이지 기능 상세
+| 기능 분류 | 상세 설명 |
+|:---:|:---|
+- **소셜 로그인을 통한 프로필 관리**
+- **내가 찜한 여행지 목록 조회**
+- **내가 작성한 일정 목록 조회 및 수정/삭제**
+- **내가 작성한 리뷰 관리**
 
 <br>
 
@@ -173,7 +170,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 ## ERD
 *(ERD 이미지를 삽입해주세요)*
-👉 [ERD 전체 보기](#) *(ERD 링크를 입력해주세요)*
+[ERD 전체 보기](#) *(ERD 링크를 입력해주세요)*
 
 **주요 테이블 구조:**
 - **users**: 사용자 프로필 정보 (auth.users 확장)
@@ -186,7 +183,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 <br>
 
-## 🏗 시스템 아키텍처
+## 시스템 아키텍처
 
 | 개발 & 배포 | 서비스 구성 |
 |:---:|:---:|
@@ -197,17 +194,15 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ## 팀 협업 방식
 
 ### Git 브랜치 전략
-- **GitHub Flow** 전략 사용
-  1. 브랜치 생성 (규칙 준수)
-  2. 기능 개발
-  3. PR 작성 (PR 템플릿 기반)
-  4. 코드 리뷰 및 승인
-  5. `main` 브랜치로 merge → Vercel 자동 배포
+**GitHub Flow** 전략 사용
+1. 브랜치 생성 (규칙 준수)
+2. 기능 개발
+3. PR 작성 (PR 템플릿 기반)
+4. 코드 리뷰 및 승인
+5. `main` 브랜치로 merge → Vercel 자동 배포
 
 ### 커밋 컨벤션
-
 #### 커밋 메시지 유형
-
 | 유형 | 의미 |
 |------|------|
 | `FEAT` | 새로운 기능 추가 |
@@ -226,12 +221,10 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | `ASSETS` | 에셋 파일 추가 |
 
 #### 커밋 메시지 형식
-
 **제목:**
 ```
 [YYMMDD] TYPE: 커밋메시지
 ```
-
 **내용:**
 ```markdown
 ### 작업 내용
@@ -241,12 +234,10 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ```
 
 ### PR 템플릿
-
 **제목:**
 ```
 [YYMMDD] PR메시지
 ```
-
 **내용:**
 ```markdown
 ## 이슈 번호
@@ -278,10 +269,19 @@ npm run dev
 **환경 변수 설정:**
 `.env.local` 파일을 생성하고 아래 내용을 입력해주세요.
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-NEXT_PUBLIC_KAKAO_MAP_KEY=your-kakao-map-key
-NEXT_PUBLIC_GEMINI_API_KEY=your-gemini-api-key
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your_project_id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Kakao Map API Key
+NEXT_PUBLIC_KAKAO_MAP_API_KEY=your_kakao_map_api_key
+
+# Gemini API Key
+GEMINI_API_KEY=your_gemini_api_key
+
+# Tour API Service Key
+TOUR_API_SERVICE_KEY=your_tour_api_service_key
 ```
 
 <br>
