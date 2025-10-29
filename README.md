@@ -73,7 +73,9 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ### 내 일정 & 일정 계획
 | 내 일정 목록 | 일정 상세 | AI 일정 추천 | 직접 일정 계획 | 일정 미리보기 |
 |:---:|:---:|:---:|:---:|:---:|
-| <img width="400" alt="내 일정 목록 이미지" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" /> | <img width="400" alt="일정 상세 이미지" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" /> | ![AI 일정 추천 이미지](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) | *(이미지 삽입)* | *(이미지 삽입)* |
+| <img width="400" alt="내 일정 목록 이미지" src="https://github.com/user-attachments/assets/7b12622e-181f-4766-9a0f-158f123cff58" /> | <img width="400" alt="일정 상세 이미지" src="https://github.com/user-attachments/assets/5d94e413-c092-42a8-ab45-f36d7ed604f7" /> | ![AI 일정 추천 이미지](https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4) |![scheduleMyself](https://github.com/user-attachments/assets/d98f59a2-f1b9-493b-acb8-99dd08f76217)
+ | <img width="1230" height="837" alt="image" src="https://github.com/user-attachments/assets/4d76cf11-be59-4b19-99ed-f4b85a78bc19" />
+ |
 #### 일정계획 & 내 일정 기능 상세
 | 기능 분류 | 상세 설명 |
 |:---:|:---|
