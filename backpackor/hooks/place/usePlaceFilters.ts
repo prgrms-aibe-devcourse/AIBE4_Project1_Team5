@@ -11,7 +11,7 @@ export const usePlaceFilters = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const currentSort = searchParams.get("sort") || "popularity_desc";
+  const currentSort = searchParams.get("sort") || "popularity";
   const showFavoritesOnly = searchParams.get("favorite") === "true";
 
   // region_id 기반으로 변경 (null = 전체)

@@ -71,19 +71,60 @@ export const getReviews = async (): Promise<ReviewWithImages[]> => {
   }
 };
 
-// 특정 지역 리뷰 가져오기
-export const getReviewsByRegion = async (regionId: number | null): Promise<ReviewWithImages[]> => {
+// 특정 지역 리뷰 가져오기 (정렬 + 페이지네이션 지원)
+export const getReviewsByRegion = async (
+  regionId: number | null,
+  sortBy: string = "latest",
+  page: number = 1,
+  limit: number = 15,
+  userId?: string
+): Promise<ReviewWithImages[]> => {
   try {
-    // regionId가 null이면 전체 리뷰 조회
-    if (regionId === null) {
-      return await getReviews();
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase.from("review").select("*");
+
+    // 지역 필터
+    if (regionId !== null) {
+      query = query.eq("region_id", regionId);
     }
 
-    const { data: reviews, error: reviewError } = await supabase
-      .from("review")
-      .select("*")
-      .eq("region_id", regionId)
-      .order("created_at", { ascending: false });
+    // 내 리뷰만 보기 필터
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    // 정렬 (DB에서 직접 처리 - 모든 컬럼이 DB에 존재)
+    switch (sortBy) {
+      case "latest":
+      case "created_desc": // 하위 호환성
+        query = query.order("created_at", { ascending: false });
+        break;
+      case "oldest":
+      case "created_asc": // 하위 호환성
+        query = query.order("created_at", { ascending: true });
+        break;
+      case "helpful":
+      case "helpful_desc": // 하위 호환성
+        query = query.order("helpful_count", { ascending: false });
+        break;
+      case "rating_high":
+      case "rating_desc": // 하위 호환성
+        query = query.order("rating", { ascending: false });
+        break;
+      case "rating_low":
+      case "rating_asc": // 하위 호환성
+        query = query.order("rating", { ascending: true });
+        break;
+      default:
+        query = query.order("created_at", { ascending: false });
+    }
+
+    // 페이지네이션
+    query = query.range(from, to);
+
+    const { data: reviews, error: reviewError } = await query;
 
     if (reviewError) {
       console.error("리뷰 가져오기 실패:", reviewError);
@@ -342,6 +383,40 @@ export const deleteReviewImage = async (imageId: number, imageUrl: string): Prom
   } catch (error) {
     console.error("리뷰 수정/삭제 오류:", error);
     return false;
+  }
+};
+
+// 총 리뷰 개수 조회 (페이지네이션용)
+export const getTotalReviewsCount = async (
+  regionId: number | null,
+  userId?: string
+): Promise<number> => {
+  try {
+    let query = supabase
+      .from("review")
+      .select("review_id", { count: "exact", head: true });
+
+    // 지역 필터
+    if (regionId !== null) {
+      query = query.eq("region_id", regionId);
+    }
+
+    // 내 리뷰만 보기 필터
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error("리뷰 개수 조회 실패:", error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error("리뷰 개수 조회 오류:", error);
+    return 0;
   }
 };
 

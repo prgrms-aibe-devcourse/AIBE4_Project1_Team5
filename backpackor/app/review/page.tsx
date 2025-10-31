@@ -1,12 +1,13 @@
 // app/review/page.tsx
 "use client";
 
-import { getReviewsByRegion } from "@/apis/reviewApi";
+import { getReviewsByRegion, getTotalReviewsCount } from "@/apis/reviewApi";
 import { RegionFilter } from "@/components/common/filter/RegionFilter";
 import {
   REVIEW_SORT_OPTIONS,
   SortOptions,
 } from "@/components/common/filter/SortOptions";
+import { Pagination } from "@/components/common/Pagination";
 import {
   ReviewActionButtons,
   WriteButton,
@@ -107,7 +108,7 @@ function ReviewCard({
           </div>
         </div>
       ) : (
-        <div className="w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+        <div className="relative w-full h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-16 w-16 text-gray-300"
@@ -122,6 +123,14 @@ function ReviewCard({
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
+
+          {/* 이미지 없을 때도 별점 표시 */}
+          <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+            <span className="text-yellow-400 text-sm">★</span>
+            <span className="text-sm font-bold text-gray-900">
+              {review.rating.toFixed(1)}
+            </span>
+          </div>
         </div>
       )}
 
@@ -223,11 +232,14 @@ export default function ReviewListPage() {
   const { user, loading: authLoading } = useAuth();
 
   const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
-  const [sortedReviews, setSortedReviews] = useState<ReviewWithImages[]>([]);
-  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null); // region_id 기반
-  const [currentSort, setCurrentSort] = useState("created_desc");
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+  const [currentSort, setCurrentSort] = useState("latest");
   const [isLoading, setIsLoading] = useState(true);
   const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const ITEMS_PER_PAGE = 15;
 
   // 로그인 체크 및 리다이렉트
   useEffect(() => {
@@ -239,50 +251,37 @@ export default function ReviewListPage() {
     }
   }, [user, authLoading, router]);
 
+  // 리뷰 데이터 및 총 개수 조회
   useEffect(() => {
     const fetchReviews = async () => {
       setIsLoading(true);
-      const data = await getReviewsByRegion(selectedRegionId); // null이면 전체 조회
+
+      // 서버에서 정렬된 리뷰 가져오기 (페이지네이션 적용)
+      const data = await getReviewsByRegion(
+        selectedRegionId,
+        currentSort,
+        currentPage,
+        ITEMS_PER_PAGE,
+        showMyReviewsOnly && user ? user.id : undefined
+      );
       setReviews(data);
+
+      // 총 개수 조회하여 totalPages 계산
+      const totalCount = await getTotalReviewsCount(
+        selectedRegionId,
+        showMyReviewsOnly && user ? user.id : undefined
+      );
+      setTotalPages(Math.ceil(totalCount / ITEMS_PER_PAGE));
+
       setIsLoading(false);
     };
     fetchReviews();
-  }, [selectedRegionId]);
+  }, [selectedRegionId, currentSort, currentPage, showMyReviewsOnly, user]);
 
-  // 내 리뷰 필터링 + 정렬 로직 통합
+  // 필터나 정렬이 변경되면 페이지를 1로 리셋
   useEffect(() => {
-    let filtered = [...reviews];
-
-    // 내 리뷰만 보기 필터
-    if (showMyReviewsOnly && user) {
-      filtered = filtered.filter((r) => r.user_id === user.id);
-    }
-
-    // 정렬
-    switch (currentSort) {
-      case "created_desc":
-        // 최신순
-        filtered.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        break;
-      case "helpful_desc":
-        // 도움순
-        filtered.sort((a, b) => (b.helpful_count || 0) - (a.helpful_count || 0));
-        break;
-      case "rating_desc":
-        // 별점높은순
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case "rating_asc":
-        // 별점낮은순
-        filtered.sort((a, b) => a.rating - b.rating);
-        break;
-    }
-
-    setSortedReviews(filtered);
-  }, [reviews, currentSort, showMyReviewsOnly, user]);
+    setCurrentPage(1);
+  }, [selectedRegionId, currentSort, showMyReviewsOnly]);
 
   const handleDeleteCallback = (reviewId: string) => {
     setReviews((prev) => prev.filter((r) => r.review_id !== reviewId));
@@ -355,7 +354,7 @@ export default function ReviewListPage() {
         </div>
 
         {/* 리뷰 목록 */}
-        {sortedReviews.length === 0 ? (
+        {reviews.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -386,17 +385,29 @@ export default function ReviewListPage() {
             {user && <WriteButton />}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedReviews.map((review) => (
-              <ReviewCard
-                key={review.review_id}
-                review={review}
-                user={user}
-                onEdit={handleEdit}
-                onDelete={handleDeleteCallback}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.map((review) => (
+                <ReviewCard
+                  key={review.review_id}
+                  review={review}
+                  user={user}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteCallback}
+                />
+              ))}
+            </div>
+
+            {/* 페이지네이션 */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          </>
         )}
       </div>
     </div>
