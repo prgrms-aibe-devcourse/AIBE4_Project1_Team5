@@ -105,10 +105,19 @@ export const getPlaceInfo = async (placeId: string) => {
  * 모든 여행지 목록
  * ------------------------------------------------------ */
 export const getAllPlaces = async (
-    sortBy: string = "popularity_desc"
+    sortBy: string = "popularity_desc",
+    page: number = 1,
+    limit: number = 50
 ): Promise<Place[]> => {
     try {
-        const { data, error } = await supabase.from("place").select("*");
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        const { data, error } = await supabase
+            .from("place")
+            .select("*")
+            .range(from, to);
+
         if (error) {
             console.error("Database query error:", error);
             return [];
@@ -117,7 +126,8 @@ export const getAllPlaces = async (
         const places = (data || []) as Place[];
         if (places.length === 0) return [];
 
-        const reviewCountMap = await getReviewCountMap();
+        const placeIds = places.map(p => p.place_id);
+        const reviewCountMap = await getReviewCountMap(placeIds);
         for (const p of places) {
             p.review_count = reviewCountMap.get(p.place_id) ?? 0;
         }
@@ -184,5 +194,113 @@ export const getFavoritePlaces = async (
     } catch (err) {
         console.error("Unexpected error:", err);
         return [];
+    }
+};
+
+/* ------------------------------------------------------
+ * 검색 필터로 여행지 검색 (검색어, 지역, 카테고리)
+ * ------------------------------------------------------ */
+export interface PlaceSearchFilters {
+    searchQuery?: string;
+    regionId?: number;
+    category?: string;
+}
+
+export const searchPlaces = async (
+    filters: PlaceSearchFilters,
+    sortBy: string = "popularity_desc",
+    page: number = 1,
+    limit: number = 50
+): Promise<Place[]> => {
+    try {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        let query = supabase.from("place").select("*");
+
+        // 검색어 필터 (장소명, 주소, 설명에서 검색)
+        if (filters.searchQuery && filters.searchQuery.trim() !== "") {
+            const searchTerm = filters.searchQuery.trim();
+            query = query.or(
+                `place_name.ilike.%${searchTerm}%,place_address.ilike.%${searchTerm}%,place_description.ilike.%${searchTerm}%`
+            );
+        }
+
+        // 지역 필터
+        if (filters.regionId) {
+            query = query.eq("region_id", filters.regionId);
+        }
+
+        // 카테고리 필터
+        if (filters.category && filters.category.trim() !== "") {
+            query = query.eq("place_category", filters.category.trim());
+        }
+
+        // 페이지네이션 적용
+        query = query.range(from, to);
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error("Search query error:", error);
+            return [];
+        }
+
+        const places = (data || []) as Place[];
+        if (places.length === 0) return [];
+
+        const placeIds = places.map(p => p.place_id);
+        const reviewCountMap = await getReviewCountMap(placeIds);
+        for (const p of places) {
+            p.review_count = reviewCountMap.get(p.place_id) ?? 0;
+        }
+
+        return sortPlaces(places, sortBy);
+    } catch (err) {
+        console.error("Search unexpected error:", err);
+        return [];
+    }
+};
+
+/* ------------------------------------------------------
+ * 총 여행지 개수 조회 (페이지네이션용)
+ * ------------------------------------------------------ */
+export const getTotalPlacesCount = async (
+    filters?: PlaceSearchFilters
+): Promise<number> => {
+    try {
+        let query = supabase
+            .from("place")
+            .select("place_id", { count: "exact", head: true });
+
+        // 필터가 있으면 적용
+        if (filters) {
+            if (filters.searchQuery && filters.searchQuery.trim() !== "") {
+                const searchTerm = filters.searchQuery.trim();
+                query = query.or(
+                    `place_name.ilike.%${searchTerm}%,place_address.ilike.%${searchTerm}%,place_description.ilike.%${searchTerm}%`
+                );
+            }
+
+            if (filters.regionId) {
+                query = query.eq("region_id", filters.regionId);
+            }
+
+            if (filters.category && filters.category.trim() !== "") {
+                query = query.eq("place_category", filters.category.trim());
+            }
+        }
+
+        const { count, error } = await query;
+
+        if (error) {
+            console.error("Count query error:", error);
+            return 0;
+        }
+
+        return count || 0;
+    } catch (err) {
+        console.error("Count unexpected error:", err);
+        return 0;
     }
 };

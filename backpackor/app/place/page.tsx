@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { RegionFilter } from "@/components/common/filter/RegionFilter";
 import { SortOptions, PLACE_SORT_OPTIONS } from "@/components/common/filter/SortOptions";
 import { PlaceGrid } from "@/components/place/list/PlaceGrid";
+import { Pagination } from "@/components/common/Pagination";
 import { usePlaces } from "@/hooks/place/usePlaces";
 import { usePlaceFilters } from "@/hooks/place/usePlaceFilters";
 
@@ -20,27 +21,36 @@ function PlacePageContent() {
     handleSearchChange,
   } = usePlaceFilters();
 
-  const { places, isLoading } = usePlaces(currentSort, showFavoritesOnly);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // 클라이언트 사이드 지역 필터링 및 검색 (region_id 기반)
-  const filteredPlaces = useMemo(() => {
-    let result = places;
+  // 서버 사이드 필터링
+  const filters = useMemo(() => ({
+    searchQuery: searchKeyword || undefined,
+    regionId: selectedRegionId || undefined,
+  }), [searchKeyword, selectedRegionId]);
 
-    // 지역 필터
-    if (selectedRegionId !== null) {
-      result = result.filter((place) => place.region_id === selectedRegionId);
-    }
+  const {
+    places,
+    isLoading,
+    totalPages
+  } = usePlaces({
+    sortBy: currentSort,
+    showFavoritesOnly,
+    filters,
+    page: currentPage,
+    limit: 15
+  });
 
-    // 검색 필터 (LIKE %검색어%)
-    if (searchKeyword.trim()) {
-      const keyword = searchKeyword.toLowerCase();
-      result = result.filter((place) =>
-        place.place_name.toLowerCase().includes(keyword)
-      );
-    }
+  // 필터나 정렬이 변경되면 페이지를 1로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentSort, showFavoritesOnly, filters]);
 
-    return result;
-  }, [places, selectedRegionId, searchKeyword]);
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Early return: 로딩 중
   if (isLoading) {
@@ -104,7 +114,16 @@ function PlacePageContent() {
       </div>
 
       {/* 여행지 그리드 */}
-      <PlaceGrid places={filteredPlaces} showFavoritesOnly={showFavoritesOnly} />
+      <PlaceGrid places={places} showFavoritesOnly={showFavoritesOnly} />
+
+      {/* 페이지네이션 */}
+      {!showFavoritesOnly && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </main>
   );
 }
