@@ -7,9 +7,11 @@ import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Page() {
+  const router = useRouter();
   const { user } = useAuth();
   const { profile } = useProfile(user?.id);
 
@@ -98,8 +100,21 @@ export default function Page() {
                 </>
               )}
               <div className="flex justify-center pt-6 animate-fade-in-up">
-                <Link
-                  href="/place"
+                <button
+                  onClick={() => {
+                    // 여행지 필터 모두 초기화
+                    sessionStorage.setItem("place_list_page", "1");
+                    sessionStorage.removeItem("place_filter_search_keyword");
+                    sessionStorage.removeItem("place_filter_sort");
+                    sessionStorage.removeItem("place_filter_region_id");
+                    sessionStorage.removeItem("place_filter_favorite");
+                    // 리뷰 필터 초기화
+                    sessionStorage.setItem("review_list_page", "1");
+                    sessionStorage.removeItem("review_filter_sort");
+                    sessionStorage.removeItem("review_filter_region_id");
+                    sessionStorage.removeItem("review_filter_my_reviews");
+                    router.push("/place?page=1");
+                  }}
                   className="group inline-flex items-center gap-2 px-10 py-4 bg-white/95 text-blue-600 font-bold rounded-full text-xl hover:bg-white transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/40"
                 >
                   <svg
@@ -122,7 +137,7 @@ export default function Page() {
                     />
                   </svg>
                   여행지 둘러보기
-                </Link>
+                </button>
               </div>
             </div>
           </div>

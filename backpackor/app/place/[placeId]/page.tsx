@@ -1,4 +1,5 @@
 // app/place/[placeId]/page.tsx
+import { Suspense } from "react";
 import PlaceDetailContent from "@/components/place/detail/PlaceDetailContent";
 import { createServerClient } from "@/lib/supabaseClient";
 import type { PlaceDetail } from "@/types/place";
@@ -65,12 +66,14 @@ export default async function PlaceDetailPage({ params }: PageProps) {
 
   // PlaceDetailContent 컴포넌트에 리뷰 데이터 및 지역명 전달
   return (
-    <PlaceDetailContent
-      place={data as PlaceDetail}
-      regionName={regionName}
-      initialIsFavorite={initialIsFavorite}
-      reviewCount={reviewCount}
-      averageRating={averageRating}
-    />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+      <PlaceDetailContent
+        place={data as PlaceDetail}
+        regionName={regionName}
+        initialIsFavorite={initialIsFavorite}
+        reviewCount={reviewCount}
+        averageRating={averageRating}
+      />
+    </Suspense>
   );
 }

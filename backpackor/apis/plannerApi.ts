@@ -13,8 +13,11 @@ export const savePlanToSession = (draft: PlannerDraft): boolean => {
       const sessionPlaces: SessionPlace[] = arr.map((p, idx) => ({
         place_id: p.place_id,
         place_name: p.place_name,
+        place_address: p.place_address ?? null,
+        place_image: p.place_image ?? null,
         latitude: p.latitude ?? null,
         longitude: p.longitude ?? null,
+        average_rating: p.average_rating ?? null,
         visit_order: idx + 1,
         day_number: day,
       }));
@@ -55,8 +58,11 @@ export const loadPlanFromSession = ():
       const sessionPlaces: SessionPlace[] = (parsed.plan[day] ?? []).map((p: any, idx: number) => ({
         place_id: String(p.place_id),
         place_name: String(p.place_name ?? ""),
+        place_address: p.place_address ?? null,
+        place_image: p.place_image ?? null,
         latitude: p.latitude ?? null,
         longitude: p.longitude ?? null,
+        average_rating: p.average_rating ?? null,
         visit_order: Number(p.visit_order ?? idx + 1),
         day_number: Number(p.day_number ?? day),
       }));

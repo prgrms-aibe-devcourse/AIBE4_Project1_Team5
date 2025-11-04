@@ -19,102 +19,114 @@ function AiPlannerStyleContent() {
   const endDate = searchParams.get("end");
   const companion = searchParams.get("companion");
 
-  // 카테고리 매핑: 사용자 선택 -> DB place_category (8개 대분류)
+  // 카테고리 매핑: 사용자 선택 -> DB place_category (9개 대분류)
   const categoryMapping: Record<string, string[]> = {
     nature: [
       "산", "계곡", "폭포", "호수", "강", "섬", "해수욕장", "해안절경",
-      "자연휴양림", "국립공원", "도립공원", "군립공원", "공원",
-      "수목원", "동굴", "기암괴석", "약수터", "등대", "희귀동.식물",
-      "다리/대교", "분수", "자연생태관광지", "항구/포구"
+      "동굴", "기암괴석", "약수터", "희귀동.식물"
+    ],
+    park: [
+      "국립공원", "도립공원", "군립공원", "공원", "수목원", "자연휴양림",
+      "자연생태관광지", "관광단지", "테마공원"
     ],
     culture: [
-      "사찰", "고궁", "성", "문", "유적지/사적지", "종교성지",
-      "박물관", "미술관/화랑", "기념관", "전시관", "기념탑/기념비/전망대",
-      "한옥", "고택", "생가", "민속마을", "동상",
-      "도서관", "문화원", "공연장", "유명건물"
+      "고궁", "성", "사찰", "유적지/사적지", "생가", "고택", "한옥", "문",
+      "동상", "기념탑/기념비/전망대", "등대", "터널", "다리/대교",
+      "종교성지", "안보관광"
+    ],
+    museum: [
+      "박물관", "미술관/화랑", "전시관", "기념관", "문화원", "전시회", "도서관"
     ],
     experience: [
-      "전통체험", "이색체험", "농.산.어촌 체험", "공예/공방",
-      "전통공연", "안보관광", "수련시설", "발전소"
+      "농.산.어촌 체험", "전통체험", "이색체험", "공예/공방", "민속마을",
+      "문화전수시설", "홈스테이", "산사체험"
     ],
-    activity: [
-      "스키/스노보드", "골프", "수상레포츠", "카트", "승마",
-      "트래킹", "자전거하이킹", "수영", "스케이트", "인라인(실내 인라인 포함)",
-      "민물낚시", "바다낚시", "유람선/잠수함관광", "요트",
-      "복합 레포츠", "경기장", "경륜"
+    performance: [
+      "공연장", "전통공연", "연극", "무용", "영화", "영화관", "클래식음악회",
+      "대중콘서트", "문화관광축제", "일반축제", "박람회"
     ],
-    theme: [
-      "테마공원", "관광단지", "관광호텔", "이색거리"
-    ],
-    healing: [
-      "온천/욕장/스파", "이색찜질방", "힐링코스", "헬스투어",
-      "야영장,오토캠핑장"
+    sports: [
+      "스키/스노보드", "썰매장", "골프", "승마", "자전거하이킹", "MTB",
+      "도보코스", "트래킹", "암벽등반", "인라인(실내 인라인 포함)", "스케이트",
+      "카트", "ATV", "오프로드", "경기장", "경마", "경륜", "사격장", "복합 레포츠",
+      "수상레포츠", "래프팅", "카약/카누", "윈드서핑/제트스키", "유람선/잠수함관광",
+      "요트", "스노쿨링/스킨스쿠버다이빙", "수영", "민물낚시", "바다낚시",
+      "헹글라이딩/패러글라이딩", "열기구", "초경량비행", "스카이다이빙",
+      "항공레포츠", "번지점프"
     ],
     shopping: [
-      "백화점", "대형서점", "5일장", "상설시장", "전문매장/상가", "특산물판매점",
-      "한식", "일식", "중식", "서양식", "이색음식점", "카페/전통찻집", "식음료"
+      "백화점", "대형마트", "상설시장", "5일장", "전문매장/상가",
+      "특산물판매점", "대형서점"
     ],
-    festival: [
-      "문화관광축제", "일반축제", "박람회", "기타행사"
+    food: [
+      "한식", "중식", "일식", "서양식", "이색음식점", "카페/전통찻집",
+      "식음료", "맛코스"
     ]
   };
 
   const styleOptions = [
     {
-      name: "자연 & 경관",
+      name: "자연/경관",
       value: "nature",
       icon: "🏔️",
-      desc: "산, 계곡, 해변, 공원",
+      desc: "산, 계곡, 폭포, 호수",
       categories: categoryMapping.nature
     },
     {
-      name: "문화 & 역사",
+      name: "공원/휴양",
+      value: "park",
+      icon: "🌳",
+      desc: "국립공원, 수목원, 테마파크",
+      categories: categoryMapping.park
+    },
+    {
+      name: "문화/역사",
       value: "culture",
       icon: "🏛️",
-      desc: "사찰, 박물관, 한옥",
+      desc: "고궁, 사찰, 유적지",
       categories: categoryMapping.culture
     },
     {
-      name: "체험 & 학습",
+      name: "박물관/전시",
+      value: "museum",
+      icon: "🎨",
+      desc: "박물관, 미술관, 전시관",
+      categories: categoryMapping.museum
+    },
+    {
+      name: "체험/학습",
       value: "experience",
-      icon: "🎭",
-      desc: "전통체험, 공예",
+      icon: "👩‍🌾",
+      desc: "전통체험, 공예, 농촌체험",
       categories: categoryMapping.experience
     },
     {
-      name: "레저 & 액티비티",
-      value: "activity",
-      icon: "🎿",
-      desc: "스키, 골프, 수상레포츠",
-      categories: categoryMapping.activity
+      name: "공연/문화예술",
+      value: "performance",
+      icon: "🎭",
+      desc: "공연장, 연극, 콘서트, 축제",
+      categories: categoryMapping.performance
     },
     {
-      name: "테마파크 & 관광",
-      value: "theme",
-      icon: "🎢",
-      desc: "테마공원, 관광단지",
-      categories: categoryMapping.theme
+      name: "레저/스포츠",
+      value: "sports",
+      icon: "⛷️",
+      desc: "스키, 수상레포츠, 등산",
+      categories: categoryMapping.sports
     },
     {
-      name: "힐링 & 캠핑",
-      value: "healing",
-      icon: "🧘",
-      desc: "온천, 캠핑, 힐링",
-      categories: categoryMapping.healing
-    },
-    {
-      name: "쇼핑 & 맛집",
+      name: "쇼핑",
       value: "shopping",
       icon: "🛍️",
-      desc: "시장, 식당, 카페",
+      desc: "백화점, 시장, 특산물",
       categories: categoryMapping.shopping
     },
     {
-      name: "축제 & 이벤트",
-      value: "festival",
-      icon: "🎉",
-      desc: "문화축제, 박람회",
-      categories: categoryMapping.festival
+      name: "음식/카페",
+      value: "food",
+      icon: "🍴",
+      desc: "맛집, 카페, 음식점",
+      categories: categoryMapping.food
     }
   ];
 

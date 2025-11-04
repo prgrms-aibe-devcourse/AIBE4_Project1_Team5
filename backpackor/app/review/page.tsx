@@ -15,11 +15,12 @@ import {
 import { HelpfulButton } from "@/components/review/HelpfulButton";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/auth/useProfile";
+import { useReviewFilters } from "@/hooks/review/useReviewFilters";
 import { supabase } from "@/lib/supabaseClient";
 import type { ReviewWithImages } from "@/types/review";
 import { formatDateShort } from "@/utils/dateFormat";
 import { renderStars } from "@/utils/rating";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // 개별 리뷰 카드 컴포넌트
@@ -229,15 +230,38 @@ function ReviewCard({
 // 리뷰 목록 페이지
 export default function ReviewListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
 
+  const {
+    currentSort,
+    showMyReviewsOnly,
+    selectedRegionId,
+    handleRegionChange,
+    handleSortChange,
+    handleMyReviewsToggle,
+  } = useReviewFilters();
+
   const [reviews, setReviews] = useState<ReviewWithImages[]>([]);
-  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-  const [currentSort, setCurrentSort] = useState("latest");
   const [isLoading, setIsLoading] = useState(true);
-  const [showMyReviewsOnly, setShowMyReviewsOnly] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // 페이지 번호는 URL > sessionStorage 순으로 확인
+  const [currentPage, setCurrentPage] = useState(() => {
+    const pageFromUrl = searchParams.get("page");
+    if (pageFromUrl) {
+      const pageNum = parseInt(pageFromUrl, 10);
+      if (!isNaN(pageNum) && pageNum > 0) {
+        return pageNum;
+      }
+    }
+    if (typeof window !== "undefined") {
+      const savedPage = sessionStorage.getItem("review_list_page");
+      return savedPage ? parseInt(savedPage, 10) : 1;
+    }
+    return 1;
+  });
 
   const ITEMS_PER_PAGE = 15;
 
@@ -278,10 +302,60 @@ export default function ReviewListPage() {
     fetchReviews();
   }, [selectedRegionId, currentSort, currentPage, showMyReviewsOnly, user]);
 
+  // 초기 로드 시 URL에 page 파라미터가 없으면 추가
+  useEffect(() => {
+    const pageFromUrl = searchParams.get("page");
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (!pageFromUrl) {
+      params.set("page", currentPage.toString());
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      sessionStorage.setItem("review_list_page", currentPage.toString());
+    } else {
+      const pageNum = parseInt(pageFromUrl, 10);
+      if (!isNaN(pageNum) && pageNum > 0 && pageNum !== currentPage) {
+        setCurrentPage(pageNum);
+        sessionStorage.setItem("review_list_page", pageNum.toString());
+      }
+    }
+  }, []);
+
+  // URL 파라미터 변경 시 currentPage 동기화
+  useEffect(() => {
+    const pageFromUrl = searchParams.get("page");
+    if (pageFromUrl) {
+      const pageNum = parseInt(pageFromUrl, 10);
+      if (!isNaN(pageNum) && pageNum > 0 && pageNum !== currentPage) {
+        setCurrentPage(pageNum);
+        sessionStorage.setItem("review_list_page", pageNum.toString());
+      }
+    }
+  }, [searchParams]);
+
   // 필터나 정렬이 변경되면 페이지를 1로 리셋
   useEffect(() => {
     setCurrentPage(1);
+    sessionStorage.setItem("review_list_page", "1");
+
+    // URL 업데이트
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [selectedRegionId, currentSort, showMyReviewsOnly]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+
+    // URL 업데이트
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    // sessionStorage에 저장
+    sessionStorage.setItem("review_list_page", page.toString());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDeleteCallback = (reviewId: string) => {
     setReviews((prev) => prev.filter((r) => r.review_id !== reviewId));
@@ -328,7 +402,7 @@ export default function ReviewListPage() {
             {/* 지역별 필터 (공통 컴포넌트) */}
             <RegionFilter
               selectedRegionId={selectedRegionId}
-              onRegionChange={setSelectedRegionId}
+              onRegionChange={handleRegionChange}
             />
 
             {/* 내 리뷰만 보기 체크박스 */}
@@ -337,7 +411,7 @@ export default function ReviewListPage() {
                 <input
                   type="checkbox"
                   checked={showMyReviewsOnly}
-                  onChange={(e) => setShowMyReviewsOnly(e.target.checked)}
+                  onChange={handleMyReviewsToggle}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span>내 리뷰</span>
@@ -349,7 +423,7 @@ export default function ReviewListPage() {
           <SortOptions
             currentSort={currentSort}
             options={REVIEW_SORT_OPTIONS}
-            onSortChange={setCurrentSort}
+            onSortChange={handleSortChange}
           />
         </div>
 
@@ -402,10 +476,7 @@ export default function ReviewListPage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={(page) => {
-                setCurrentPage(page);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onPageChange={handlePageChange}
             />
           </>
         )}

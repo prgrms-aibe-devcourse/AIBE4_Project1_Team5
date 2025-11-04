@@ -28,7 +28,25 @@ export default function PlaceDetailContent({
   const router = useRouter();
 
   const handleClose = () => {
-    router.back();
+    // 세션 스토리지에 저장된 페이지, 검색어, 정렬 옵션, 지역 필터 복원
+    const savedPage = sessionStorage.getItem("place_list_page");
+    const savedSearch = sessionStorage.getItem("place_filter_search_keyword");
+    const savedSort = sessionStorage.getItem("place_filter_sort");
+    const savedRegion = sessionStorage.getItem("place_filter_region_id");
+
+    const params = new URLSearchParams();
+    params.set("page", savedPage || "1");
+    if (savedSearch) {
+      params.set("search", savedSearch);
+    }
+    if (savedSort && savedSort !== "popularity") {
+      params.set("sort", savedSort);
+    }
+    if (savedRegion) {
+      params.set("region", savedRegion);
+    }
+
+    router.push(`/place?${params.toString()}`);
   };
 
   return (

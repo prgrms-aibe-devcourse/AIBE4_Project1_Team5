@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/auth/useProfile";
 import { useSocialLogin } from "@/hooks/auth/useSocialLogin";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
@@ -20,6 +21,7 @@ export default function Navbar() {
   const { user, loading } = useAuth();
   const { profile, profileUrl } = useProfile(user?.id);
   const { handleLogout } = useSocialLogin();
+  const router = useRouter();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -38,8 +40,21 @@ export default function Navbar() {
   return (
     <nav className="flex items-center bg-white py-2 px-6 border-b border-gray-200 relative">
       {/* 로고 */}
-      <Link
-        href="/"
+      <button
+        onClick={() => {
+          // 여행지 필터 초기화
+          sessionStorage.setItem("place_list_page", "1");
+          sessionStorage.removeItem("place_filter_search_keyword");
+          sessionStorage.removeItem("place_filter_sort");
+          sessionStorage.removeItem("place_filter_region_id");
+          sessionStorage.removeItem("place_filter_favorite");
+          // 리뷰 필터 초기화
+          sessionStorage.setItem("review_list_page", "1");
+          sessionStorage.removeItem("review_filter_sort");
+          sessionStorage.removeItem("review_filter_region_id");
+          sessionStorage.removeItem("review_filter_my_reviews");
+          router.push("/");
+        }}
         className="flex items-center transition-transform duration-300 hover:scale-105"
       >
         <div className="relative w-[200px] h-[56px]">
@@ -49,18 +64,41 @@ export default function Navbar() {
             className="object-contain w-full h-full"
           />
         </div>
-      </Link>
+      </button>
 
       {/* 메뉴 */}
       <ul className="flex flex-1 justify-center">
         {NAV_LINKS.map(({ href, label }) => (
           <li key={href} className="py-2 px-4">
-            <Link
-              href={href}
-              className="font-bold text-gray-800 hover:text-blue-500 hover:font-bold transition-colors"
-            >
-              {label}
-            </Link>
+            {href === "/place" ? (
+              // "여행지" 링크는 특별 처리: 항상 page=1로 시작, 필터/정렬 초기화
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  sessionStorage.setItem("place_list_page", "1");
+                  sessionStorage.removeItem("place_filter_search_keyword");
+                  sessionStorage.removeItem("place_filter_sort");
+                  sessionStorage.removeItem("place_filter_region_id");
+                  sessionStorage.removeItem("place_filter_favorite");
+                  // 리뷰 필터 초기화
+                  sessionStorage.setItem("review_list_page", "1");
+                  sessionStorage.removeItem("review_filter_sort");
+                  sessionStorage.removeItem("review_filter_region_id");
+                  sessionStorage.removeItem("review_filter_my_reviews");
+                  router.push("/place?page=1");
+                }}
+                className="font-bold text-gray-800 hover:text-blue-500 hover:font-bold transition-colors cursor-pointer"
+              >
+                {label}
+              </button>
+            ) : (
+              <Link
+                href={href}
+                className="font-bold text-gray-800 hover:text-blue-500 hover:font-bold transition-colors"
+              >
+                {label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>
@@ -92,15 +130,41 @@ export default function Navbar() {
             {/* ▼ 드롭다운 메뉴 */}
             {isMenuOpen && (
               <div className="absolute top-12 right-0 z-50 bg-gray-50 border border-gray-200 rounded-md shadow-md w-28 text-sm">
-                <Link
-                  href="/my-page"
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-100 text-center"
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    // 여행지 필터 초기화
+                    sessionStorage.setItem("place_list_page", "1");
+                    sessionStorage.removeItem("place_filter_search_keyword");
+                    sessionStorage.removeItem("place_filter_sort");
+                    sessionStorage.removeItem("place_filter_region_id");
+                    sessionStorage.removeItem("place_filter_favorite");
+                    // 리뷰 필터 초기화
+                    sessionStorage.setItem("review_list_page", "1");
+                    sessionStorage.removeItem("review_filter_sort");
+                    sessionStorage.removeItem("review_filter_region_id");
+                    sessionStorage.removeItem("review_filter_my_reviews");
+                    setIsMenuOpen(false);
+                    router.push("/my-page");
+                  }}
+                  className="block w-full px-4 py-2 text-gray-800 hover:bg-gray-100 text-center"
                 >
                   마이페이지
-                </Link>
+                </button>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => {
+                    // 여행지 필터 초기화
+                    sessionStorage.setItem("place_list_page", "1");
+                    sessionStorage.removeItem("place_filter_search_keyword");
+                    sessionStorage.removeItem("place_filter_sort");
+                    sessionStorage.removeItem("place_filter_region_id");
+                    sessionStorage.removeItem("place_filter_favorite");
+                    // 리뷰 필터 초기화
+                    sessionStorage.setItem("review_list_page", "1");
+                    sessionStorage.removeItem("review_filter_sort");
+                    sessionStorage.removeItem("review_filter_region_id");
+                    sessionStorage.removeItem("review_filter_my_reviews");
+                    handleLogout();
+                  }}
                   className="block w-full px-4 py-2 text-gray-800 hover:bg-gray-100 text-center"
                 >
                   로그아웃

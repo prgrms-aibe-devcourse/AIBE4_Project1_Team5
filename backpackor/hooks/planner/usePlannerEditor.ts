@@ -27,10 +27,24 @@ export const usePlannerEditor = ({
   const startDateStr = searchParams.get("start");
   const endDateStr = searchParams.get("end");
 
-  const [startDate, setStartDate] = useState(startDateStr);
-  const [endDate, setEndDate] = useState(endDateStr);
-  const [tripTitle, setTripTitle] = useState(existingTripTitle);
-  const [plan, setPlan] = useState<Plan>(existingPlan);
+  // sessionStorage에서 draft 확인 (preview에서 뒤로가기한 경우)
+  const getDraftFromSession = () => {
+    if (typeof window === "undefined") return null;
+    const raw = sessionStorage.getItem("planner_draft");
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
+  const draft = getDraftFromSession();
+
+  const [startDate, setStartDate] = useState(draft?.startDateStr || startDateStr);
+  const [endDate, setEndDate] = useState(draft?.endDateStr || endDateStr);
+  const [tripTitle, setTripTitle] = useState(draft?.tripTitle || existingTripTitle);
+  const [plan, setPlan] = useState<Plan>(draft?.plan || existingPlan);
   const [activeDay, setActiveDay] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
@@ -39,6 +53,18 @@ export const usePlannerEditor = ({
   const days = useMemo(() => {
     return generateDays(startDate, endDate);
   }, [startDate, endDate]);
+
+  // 컴포넌트 언마운트 시 planner 관련 페이지가 아니면 draft 삭제
+  useEffect(() => {
+    return () => {
+      // 언마운트될 때 현재 URL 확인
+      const currentPath = window.location.pathname;
+      // /planner로 시작하지 않는 페이지로 이동하는 경우 draft 삭제
+      if (!currentPath.startsWith('/planner')) {
+        sessionStorage.removeItem("planner_draft");
+      }
+    };
+  }, []);
 
   // 새 일정 모드에서만 빈 day 배열 초기화
   useEffect(() => {
@@ -60,8 +86,11 @@ export const usePlannerEditor = ({
     }
   }, [days.length, tripIdToEdit, activeDay]);
 
-  // AI 추천 계획 처리
+  // AI 추천 계획 처리 (draft가 없을 때만)
   useEffect(() => {
+    // draft가 있으면 AI 플랜 무시 (이미 초기화에서 draft 사용)
+    if (draft) return;
+
     const aiGeneratedPlanStr = searchParams.get("aiPlan");
     const aiGeneratedTitle = searchParams.get("aiTitle");
 
@@ -154,7 +183,18 @@ export const usePlannerEditor = ({
         ...curr,
         { ...place, visit_order: curr.length + 1, day_number: day },
       ];
-      return { ...prev, [day]: nextDayList };
+      const updatedPlan = { ...prev, [day]: nextDayList };
+
+      // sessionStorage 업데이트
+      savePlanToSession({
+        tripIdToEdit: tripIdToEdit ?? null,
+        tripTitle,
+        startDateStr: startDate || "",
+        endDateStr: endDate || "",
+        plan: updatedPlan,
+      });
+
+      return updatedPlan;
     });
   };
 
@@ -167,7 +207,18 @@ export const usePlannerEditor = ({
         visit_order: i + 1,
         day_number: day,
       }));
-      return { ...prev, [day]: reordered };
+      const updatedPlan = { ...prev, [day]: reordered };
+
+      // sessionStorage 업데이트
+      savePlanToSession({
+        tripIdToEdit: tripIdToEdit ?? null,
+        tripTitle,
+        startDateStr: startDate || "",
+        endDateStr: endDate || "",
+        plan: updatedPlan,
+      });
+
+      return updatedPlan;
     });
   };
 
@@ -189,7 +240,18 @@ export const usePlannerEditor = ({
         day_number: activeDay,
       }));
 
-      return { ...prev, [activeDay]: reordered };
+      const updatedPlan = { ...prev, [activeDay]: reordered };
+
+      // sessionStorage 업데이트
+      savePlanToSession({
+        tripIdToEdit: tripIdToEdit ?? null,
+        tripTitle,
+        startDateStr: startDate || "",
+        endDateStr: endDate || "",
+        plan: updatedPlan,
+      });
+
+      return updatedPlan;
     });
   };
 

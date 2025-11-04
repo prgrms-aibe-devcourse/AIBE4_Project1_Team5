@@ -17,8 +17,11 @@ export interface PlannerDraft {
 export interface SessionPlace {
   place_id: string;
   place_name: string;
+  place_address?: string | null;
+  place_image?: string | null;
   latitude: number | null;
   longitude: number | null;
+  average_rating?: number | null;
   visit_order: number;
   day_number: number;
 }
