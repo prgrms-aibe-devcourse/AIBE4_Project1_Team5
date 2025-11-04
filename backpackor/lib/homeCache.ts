@@ -1,7 +1,7 @@
 // 메인 페이지 여행지 캐시 관리 유틸리티
 import type { Place } from "@/types/place";
 
-interface HomeCache {
+interface HomeCacheData {
   popularPlaces: Place[];
   bestPlaces: Place[];
   timestamp: number;
@@ -21,7 +21,7 @@ export class HomeCache {
       const cached = localStorage.getItem(CACHE_KEY);
       if (!cached) return null;
 
-      const data: HomeCache = JSON.parse(cached);
+      const data: HomeCacheData = JSON.parse(cached);
 
       // 캐시 만료 확인
       if (Date.now() - data.timestamp > CACHE_DURATION) {
@@ -46,7 +46,7 @@ export class HomeCache {
     try {
       if (typeof window === "undefined") return;
 
-      const data: HomeCache = {
+      const data: HomeCacheData = {
         popularPlaces,
         bestPlaces,
         timestamp: Date.now(),
