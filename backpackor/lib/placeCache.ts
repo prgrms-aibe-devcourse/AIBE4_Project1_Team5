@@ -120,8 +120,8 @@ export class PlaceCache {
     chunkIndex: number,
     data: Place[]
   ): void {
+    const key = this.getCacheKey(sortBy, this.serializeFilters(filters), chunkIndex);
     try {
-      const key = this.getCacheKey(sortBy, this.serializeFilters(filters), chunkIndex);
       const chunk: CacheChunk = {
         data,
         sortBy,
