@@ -22,12 +22,24 @@ export default function Page() {
     const fetchPlaces = async () => {
       const supabase = createBrowserClient();
 
-      // 인기 여행지 (찜 많은 순)
-      const { data: popularData } = await supabase
+      // 인기 여행지 (리뷰수 + 별점 + 하트수 기준)
+      const { data: allPlaces } = await supabase
         .from("place")
-        .select("*")
-        .order("favorite_count", { ascending: false })
-        .limit(3);
+        .select("*");
+
+      // 인기도 점수 계산 후 정렬
+      const sortedPopular = (allPlaces || [])
+        .map((place) => ({
+          ...place,
+          popularityScore:
+            (place.review_count || 0) +
+            (place.favorite_count || 0) +
+            (place.average_rating || 0),
+        }))
+        .sort((a, b) => b.popularityScore - a.popularityScore)
+        .slice(0, 3);
+
+      const { data: popularData } = { data: sortedPopular };
 
       // 별점 높은 여행지 (평균 평점 순)
       const { data: bestData } = await supabase
