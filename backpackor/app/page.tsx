@@ -9,6 +9,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { sortPlaces } from "@/utils/placeSort";
+import { HomeCache } from "@/lib/homeCache";
 
 export default function Page() {
   const router = useRouter();
@@ -17,39 +19,58 @@ export default function Page() {
 
   const [popularPlaces, setPopularPlaces] = useState<Place[]>([]);
   const [bestPlaces, setBestPlaces] = useState<Place[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPlaces = async () => {
+      // 캐시 확인
+      const cached = HomeCache.get();
+      if (cached) {
+        setPopularPlaces(cached.popularPlaces);
+        setBestPlaces(cached.bestPlaces);
+        setIsLoading(false);
+        return;
+      }
+
+      // 캐시 없으면 데이터 가져오기
       const supabase = createBrowserClient();
 
-      // 인기 여행지 (리뷰수 + 별점 + 하트수 기준)
-      const { data: allPlaces } = await supabase
-        .from("place")
-        .select("*");
+      // 병렬로 데이터 조회
+      const [allPlacesResult, allReviewsResult] = await Promise.all([
+        supabase.from("place").select("*"),
+        supabase.from("review").select("place_id")
+      ]);
 
-      // 인기도 점수 계산 후 정렬
-      const sortedPopular = (allPlaces || [])
-        .map((place) => ({
-          ...place,
-          popularityScore:
-            (place.review_count || 0) +
-            (place.favorite_count || 0) +
-            (place.average_rating || 0),
-        }))
-        .sort((a, b) => b.popularityScore - a.popularityScore)
-        .slice(0, 3);
+      const allPlaces = allPlacesResult.data || [];
+      const allReviews = allReviewsResult.data || [];
 
-      const { data: popularData } = { data: sortedPopular };
+      // 리뷰 개수 맵 생성
+      const reviewCountMap = new Map<string, number>();
+      allReviews.forEach((row: any) => {
+        const id = row.place_id;
+        if (id) {
+          reviewCountMap.set(id, (reviewCountMap.get(id) || 0) + 1);
+        }
+      });
 
-      // 별점 높은 여행지 (평균 평점 순)
-      const { data: bestData } = await supabase
-        .from("place")
-        .select("*")
-        .order("average_rating", { ascending: false, nullsFirst: false })
-        .limit(3);
+      // 모든 여행지에 리뷰 개수 적용
+      const placesWithReviewCount = allPlaces.map((place) => ({
+        ...place,
+        review_count: reviewCountMap.get(place.place_id) || 0,
+      }));
 
-      setPopularPlaces(popularData || []);
-      setBestPlaces(bestData || []);
+      // 인기순 정렬 후 상위 3개
+      const sortedPopular = sortPlaces([...placesWithReviewCount], "popularity").slice(0, 3);
+
+      // 별점순 정렬 후 상위 3개
+      const sortedBest = sortPlaces([...placesWithReviewCount], "rating").slice(0, 3);
+
+      // 캐시에 저장
+      HomeCache.set(sortedPopular, sortedBest);
+
+      setPopularPlaces(sortedPopular);
+      setBestPlaces(sortedBest);
+      setIsLoading(false);
     };
 
     fetchPlaces();
