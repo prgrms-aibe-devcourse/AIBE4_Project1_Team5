@@ -76,6 +76,9 @@ export const usePlaceFilters = () => {
       params.set("region", selectedRegionId.toString());
     }
 
+    // 지역 필터가 변경되면 페이지를 1로 리셋
+    params.delete("page");
+
     const newUrl = `${pathname}?${params.toString()}`;
     if (window.location.search !== `?${params.toString()}`) {
       router.replace(newUrl, { scroll: false });
@@ -94,11 +97,8 @@ export const usePlaceFilters = () => {
     const currentParams = new URLSearchParams(window.location.search);
     const params = new URLSearchParams();
 
-    // page 유지
-    const page = currentParams.get("page");
-    if (page) {
-      params.set("page", page);
-    }
+    // 검색 키워드가 변경되면 페이지를 1로 리셋
+    // page 파라미터는 추가하지 않음 (기본값 1)
 
     // search 설정
     if (searchKeyword.trim() !== "") {
@@ -154,6 +154,8 @@ export const usePlaceFilters = () => {
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", sortValue);
+    // 정렬 방식이 변경되면 페이지를 1로 리셋
+    params.delete("page");
     router.push(`?${params.toString()}`);
   };
 
@@ -173,6 +175,8 @@ export const usePlaceFilters = () => {
     } else {
       params.delete("favorite");
     }
+    // 찜 필터가 변경되면 페이지를 1로 리셋
+    params.delete("page");
     router.push(`?${params.toString()}`);
   };
 

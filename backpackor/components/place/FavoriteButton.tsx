@@ -5,6 +5,7 @@ import { Heart } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { PlaceCache } from "@/lib/placeCache";
 
 interface FavoriteButtonProps {
   initialIsFavorite: boolean;
@@ -119,6 +120,10 @@ export default function FavoriteButton({
         setIsFavorite(true);
         setFavoriteCount(favoriteCount + 1);
       }
+
+      // 찜 상태가 변경되면 모든 여행지 캐시를 무효화
+      PlaceCache.clearAllCache();
+
     } catch (error) {
       console.error("찜 업데이트 실패:", error);
       alert("찜 상태를 업데이트하는 데 실패했습니다.");

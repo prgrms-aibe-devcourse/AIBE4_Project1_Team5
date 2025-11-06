@@ -1,6 +1,7 @@
 // 리뷰 CRUD API
 import { supabase } from "@/lib/supabaseClient";
 import type { Review, ReviewWithImages, CreateReviewData, UpdateReviewData } from "@/types/review";
+import { PlaceCache } from "@/lib/placeCache";
 
 // 특정 리뷰 가져오기 (ID로)
 export const getReviewById = async (reviewId: string): Promise<ReviewWithImages | null> => {
@@ -218,6 +219,9 @@ export const saveReview = async (reviewData: CreateReviewData): Promise<Review |
       return null;
     }
 
+    // 리뷰가 저장되면 여행지 캐시 무효화
+    PlaceCache.clearAllCache();
+
     return data;
   } catch (error) {
     console.error("리뷰 저장 오류:", error);
@@ -242,6 +246,9 @@ export const updateReview = async (
     if (error) {
       return false;
     }
+
+    // 리뷰가 수정되면 여행지 캐시 무효화
+    PlaceCache.clearAllCache();
 
     return true;
   } catch (error) {
@@ -274,6 +281,9 @@ export const deleteReview = async (reviewId: string): Promise<boolean> => {
     if (error) {
       return false;
     }
+
+    // 리뷰가 삭제되면 여행지 캐시 무효화
+    PlaceCache.clearAllCache();
 
     return true;
   } catch (error) {
