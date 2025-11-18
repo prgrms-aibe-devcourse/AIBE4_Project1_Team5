@@ -174,15 +174,6 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 [🔗 ERD Cloud 원본 보기](https://www.erdcloud.com/d/g6hhENEjwNEGPmXF3)
 
-**주요 테이블 구조:**
-- **users**: 사용자 프로필 정보 (auth.users 확장)
-- **places**: 여행지 정보 (이름, 지역, 카테고리, 운영시간, 비용 등)
-- **schedules**: 여행 일정 (제목, 날짜, 여행지 목록 등)
-- **schedule_places**: 일정과 여행지 연결 테이블 (M:N 관계)
-- **reviews**: 리뷰 및 별점 (여행지별)
-- **favorites**: 찜하기 (사용자별)
-- **view_logs**: 조회수 기록
-
 <br>
 
 ## 시스템 아키텍처
