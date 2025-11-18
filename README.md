@@ -170,8 +170,9 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 <br>
 
 ## ERD
-*(ERD 이미지를 삽입해주세요)*
-[ERD 전체 보기](#) *(ERD 링크를 입력해주세요)*
+<img width="2200" height="1052" alt="BackpacKOR(백팩코)" src="https://github.com/user-attachments/assets/6cad834f-c470-4aee-a41f-bb729ba5aadd" />
+
+[🔗 ERD Cloud 원본 보기](https://www.erdcloud.com/d/g6hhENEjwNEGPmXF3)
 
 **주요 테이블 구조:**
 - **users**: 사용자 프로필 정보 (auth.users 확장)
