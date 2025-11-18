@@ -122,11 +122,11 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | **프론트엔드** | TypeScript, React, TailwindCSS |
 | **백엔드** | Next.js, Node.js |
 | **데이터베이스** | Supabase (PostgreSQL) |
-| **인증** | Supabase Auth (Google, Kakao 소셜 로그인) |
-| **AI 서비스** | Gemini 2.5 Flash (AI 기반 일정 추천) |
-| **외부 API** | Kakao 지도 API (경로 시각화) |
+| **인증** | Supabase Auth |
+| **AI 서비스** | Gemini 2.5 Flash |
+| **외부 API** | Kakao 지도 API |
 | **정적 분석** | Prettier, ESLint |
-| **배포** | Vercel (CI/CD 자동 배포) |
+| **배포** | Vercel |
 | **협업** | GitHub, Notion, Slack |
 
 <br>
