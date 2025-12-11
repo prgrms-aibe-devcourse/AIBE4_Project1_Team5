@@ -46,7 +46,7 @@ export const useKakaoLoader = (apiKey?: string): KakaoLoaderState => {
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
 
     script.onload = () => {
-      window.kakao.maps.load(() => {
+      window.kakao?.maps.load(() => {
         // SDK 완전 로드까지 약간의 지연
         setTimeout(() => setLoaded(true), 100);
       });
