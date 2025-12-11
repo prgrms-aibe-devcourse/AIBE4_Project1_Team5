@@ -53,7 +53,12 @@ export async function PUT(request: NextRequest) {
 
     const contentType = request.headers.get("content-type") || "";
 
-    let updates: any = {};
+    interface ProfileUpdates {
+      display_name?: string;
+      profile_image?: string;
+    }
+
+    const updates: ProfileUpdates = {};
 
     if (contentType.includes("application/json")) {
       // JSON 데이터 (닉네임 업데이트)

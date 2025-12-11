@@ -18,6 +18,7 @@ import { useProfile } from "@/hooks/auth/useProfile";
 import { useReviewFilters } from "@/hooks/review/useReviewFilters";
 import { supabase } from "@/lib/supabaseClient";
 import type { ReviewWithImages } from "@/types/review";
+import type { User } from "@supabase/supabase-js";
 import { formatDateShort } from "@/utils/dateFormat";
 import { renderStars } from "@/utils/rating";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -31,7 +32,7 @@ function ReviewCard({
   onDelete,
 }: {
   review: ReviewWithImages;
-  user: any;
+  user: User | null;
   onEdit: (reviewId: string, e: React.MouseEvent) => void;
   onDelete: (reviewId: string) => void;
 }) {

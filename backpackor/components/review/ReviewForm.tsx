@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
+import { PlaceCache } from "@/lib/placeCache";
+import { HomeCache } from "@/lib/homeCache";
 
 export default function ReviewForm({
   reviewId,
@@ -83,20 +85,32 @@ export default function ReviewForm({
 
         if (error) throw error;
 
-        const placesWithRegion = (data || []).map((item: any) => ({
-          place_id: item.place_id,
-          place_name: item.place_name,
-          place_address: item.place_address,
-          place_image: item.place_image,
-          average_rating: item.average_rating,
-          favorite_count: item.favorite_count,
-          region_id: item.region_id,
-          place_category: item.place_category,
-          review_count: null,
-          place_description: null,
-          latitude: null,
-          longitude: null,
-        }));
+        const placesWithRegion = (data || []).map((item: unknown) => {
+          const placeItem = item as {
+            place_id: string;
+            place_name: string;
+            place_address?: string;
+            place_image?: string;
+            average_rating?: number;
+            favorite_count?: number;
+            region_id?: number;
+            place_category?: string;
+          };
+          return {
+            place_id: placeItem.place_id,
+            place_name: placeItem.place_name,
+            place_address: placeItem.place_address,
+            place_image: placeItem.place_image,
+            average_rating: placeItem.average_rating,
+            favorite_count: placeItem.favorite_count,
+            region_id: placeItem.region_id,
+            place_category: placeItem.place_category,
+            review_count: null,
+            place_description: null,
+            latitude: null,
+            longitude: null,
+          };
+        });
 
         setAllPlaces(placesWithRegion);
 
@@ -271,6 +285,15 @@ export default function ReviewForm({
           await saveReviewImages(review_id!, validUrls);
         }
       }
+
+      // 리뷰 작성/수정 시 여행지 캐시 무효화 (평점/리뷰 개수 변경됨)
+      console.log("[리뷰 작성/수정] 캐시 무효화 시작");
+      PlaceCache.clearAllCache();
+      HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+      // TOP 3 Materialized View 갱신
+      console.log("[리뷰 작성/수정] TOP 3 갱신 시작");
+      await supabase.rpc('refresh_top_places');
 
       alert(
         currentReviewId

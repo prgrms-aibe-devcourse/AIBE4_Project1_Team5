@@ -99,7 +99,7 @@ export default function TripDetailReviewForm({
                 .order("image_order", { ascending: true });
 
               if (!imagesError && imagesData) {
-                const urls = (imagesData as any[])
+                const urls = (imagesData as Array<{ review_image_id: number; review_image: string; image_order: number }>)
                   .map((r) => r.review_image)
                   .filter(Boolean);
                 setImagePreviews(urls);
@@ -142,12 +142,13 @@ export default function TripDetailReviewForm({
             .single();
 
           if (!placeError && placeData) {
+            const placeWithRegion = placeData as typeof placeData & { region?: { region_name: string; region_id: number } };
             setPlaceInfo({
               place_name: placeData.place_name,
               place_address: placeData.place_address,
               place_image: placeData.place_image,
-              region_name: (placeData as any).region?.region_name || null,
-              region_id: (placeData as any).region?.region_id || null,
+              region_name: placeWithRegion.region?.region_name || null,
+              region_id: placeWithRegion.region?.region_id || null,
             });
             // placeName이 비어있으면 placeData로 채움
             if (!placeName) {
@@ -262,7 +263,7 @@ export default function TripDetailReviewForm({
     setIsSubmitting(true);
 
     try {
-      let savedReview: any = null;
+      let savedReview: { review_id: string } | null = null;
 
       if (editId) {
         // 편집 모드: 기존 리뷰 업데이트
@@ -295,7 +296,7 @@ export default function TripDetailReviewForm({
         savedReview = result;
       }
 
-      const reviewId = editId ?? savedReview.review_id;
+      const reviewId = editId ?? savedReview?.review_id ?? "";
 
       // 이미지 업로드 (새로 선택한 파일들만 업로드)
       if (imageFiles.length > 0) {
@@ -329,7 +330,7 @@ export default function TripDetailReviewForm({
       if (editId) {
         router.push(`/review/detail/${reviewId}`);
       } else {
-        const targetPlaceId = placeId ?? savedReview?.place_id ?? "";
+        const targetPlaceId = placeId ?? "";
         if (targetPlaceId) {
           router.push(`/place/${targetPlaceId}`);
         } else {

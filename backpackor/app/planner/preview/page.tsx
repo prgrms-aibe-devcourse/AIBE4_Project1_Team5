@@ -151,9 +151,10 @@ export default function PreviewPage() {
       sessionStorage.removeItem("planner_draft");
 
       router.replace(`/my-planner/${tripId}`);
-    } catch (e: any) {
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "";
       console.error(e);
-      alert(`저장 중 오류가 발생했습니다.\n${e?.message ?? ""}`);
+      alert(`저장 중 오류가 발생했습니다.\n${errorMessage}`);
     } finally{
       setIsSaving(false);
     }

@@ -78,10 +78,10 @@ export function useProfile(userId?: string) {
         },
         (payload) => {
           if (payload.new) {
+            const newData = payload.new as { display_name?: string; profile_image?: string };
             setProfile({
-              display_name: (payload.new as any).display_name ?? null,
-              profile_image:
-                (payload.new as any).profile_image ?? DEFAULT_PROFILE_URL,
+              display_name: newData.display_name ?? null,
+              profile_image: newData.profile_image ?? DEFAULT_PROFILE_URL,
             });
           }
         }
@@ -147,7 +147,7 @@ export function useProfile(userId?: string) {
       }
 
       // user_profile 테이블 업데이트
-      const updateData: any = {};
+      const updateData: { display_name?: string; profile_image?: string | null } = {};
       if (updates.display_name !== undefined) {
         updateData.display_name = updates.display_name;
       }

@@ -1,12 +1,13 @@
 // 여행지 리스트 컨테이너 (리뷰, 플래너에서 사용)
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type { Place } from "@/types/place";
-import { usePlaceRealtime } from "@/hooks/place/usePlaceRealtime";
 import { useTravelListFavorites } from "@/hooks/place/useTravelListFavorites";
 import { TravelListItem } from "../card/TravelListItem";
 import { RegionFilter } from "@/components/common/filter/RegionFilter";
+import { getAllPlaces, searchPlaces, getFavoritePlaces } from "@/apis/placeApi";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 interface TravelListContainerProps {
   places: Place[];
@@ -16,8 +17,7 @@ interface TravelListContainerProps {
   initialRegionId?: number | null;
 }
 
-const INITIAL_ITEM_COUNT = 10;
-const LOAD_MORE_COUNT = 10;
+const PAGE_SIZE = 10;
 
 export default function TravelListContainer({
   places,
@@ -26,74 +26,92 @@ export default function TravelListContainer({
   regionIds = [],
   initialRegionId = null,
 }: TravelListContainerProps) {
+  const { user } = useAuth();
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [sortOrder, setSortOrder] = useState("popularity_desc");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_ITEM_COUNT);
+  const [sortOrder, setSortOrder] = useState("popularity");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [displayPlaces, setDisplayPlaces] = useState<Place[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
   // regionIds가 있으면 첫 번째 값으로 초기화, 없으면 initialRegionId 사용
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(
     regionIds.length > 0 ? regionIds[0] : initialRegionId
   );
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  const updatedPlaces = usePlaceRealtime(places);
   const { isLoading: isLoadingFavorites, favoritePlaceIds } =
     useTravelListFavorites();
 
-  // 필터링 및 정렬
-  const displayPlaces = useMemo(() => {
-    let filtered = [...updatedPlaces];
+  // 필터 변경 시 초기화
+  useEffect(() => {
+    setCurrentPage(1);
+    setDisplayPlaces([]);
+    setHasMore(true);
+  }, [sortOrder, selectedRegionId, searchKeyword, showFavoritesOnly]);
 
-    // 찜 필터
-    if (showFavoritesOnly) {
-      filtered = filtered.filter((place) =>
-        favoritePlaceIds.has(place.place_id)
-      );
-    }
-
-    // 지역 필터
-    if (selectedRegionId !== null) {
-      filtered = filtered.filter(
-        (place) => place.region_id === selectedRegionId
-      );
-    }
-
-    // 정렬
-    const sorted = filtered.sort((a, b) => {
-      switch (sortOrder) {
-        case "reviews_desc":
-          // 리뷰많은순
-          return (b.review_count || 0) - (a.review_count || 0);
-        case "rating_desc":
-          // 별점높은순
-          return (b.average_rating || 0) - (a.average_rating || 0);
-        case "popularity_desc":
-        default:
-          // 인기순 = 리뷰 개수 + 찜 개수 + 평점
-          const scoreA = (a.review_count || 0) + (a.favorite_count || 0) + (a.average_rating || 0);
-          const scoreB = (b.review_count || 0) + (b.favorite_count || 0) + (b.average_rating || 0);
-          return scoreB - scoreA;
+  // 데이터 로드
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      if (currentPage === 1) {
+        setIsLoadingMore(true);
       }
-    });
 
-    // 검색 필터
-    if (!searchKeyword) {
-      return sorted;
-    }
+      try {
+        let fetchedPlaces: Place[] = [];
 
-    return sorted.filter((place) =>
-      place.place_name.toLowerCase().includes(searchKeyword.toLowerCase())
-    );
-  }, [
-    updatedPlaces,
-    sortOrder,
-    searchKeyword,
-    selectedRegionId,
-    showFavoritesOnly,
-    favoritePlaceIds,
-  ]);
+        // 필터 조건
+        const filters = {
+          searchQuery: searchKeyword || undefined,
+          regionId: selectedRegionId || undefined,
+        };
+
+        const hasFilters = searchKeyword || selectedRegionId;
+
+        if (showFavoritesOnly) {
+          // 찜한 여행지
+          if (!user) {
+            setDisplayPlaces([]);
+            setHasMore(false);
+            return;
+          }
+          fetchedPlaces = await getFavoritePlaces(user.id, sortOrder, filters);
+          // 찜 목록은 페이지네이션 없이 전체 로드
+          if (currentPage === 1) {
+            setDisplayPlaces(fetchedPlaces);
+          }
+          setHasMore(false);
+        } else {
+          // 일반 여행지 목록
+          if (hasFilters) {
+            fetchedPlaces = await searchPlaces(filters, sortOrder, currentPage, PAGE_SIZE);
+          } else {
+            fetchedPlaces = await getAllPlaces(sortOrder, currentPage, PAGE_SIZE);
+          }
+
+          if (currentPage === 1) {
+            setDisplayPlaces(fetchedPlaces);
+          } else {
+            setDisplayPlaces((prev) => [...prev, ...fetchedPlaces]);
+          }
+
+          // 더 가져올 데이터가 있는지 확인
+          setHasMore(fetchedPlaces.length === PAGE_SIZE);
+        }
+      } catch (error) {
+        console.error("여행지 목록 로드 오류:", error);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    };
+
+    fetchPlaces();
+  }, [currentPage, sortOrder, selectedRegionId, searchKeyword, showFavoritesOnly, user]);
 
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+    if (!isLoadingMore && hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
   };
 
   return (
@@ -105,9 +123,9 @@ export default function TravelListContainer({
           onChange={(e) => setSortOrder(e.target.value)}
           className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="popularity_desc">인기순</option>
-          <option value="rating_desc">별점높은순</option>
-          <option value="reviews_desc">리뷰많은순</option>
+          <option value="popularity">인기순</option>
+          <option value="rating">별점높은순</option>
+          <option value="reviews">리뷰많은순</option>
         </select>
       </div>
 
@@ -162,10 +180,10 @@ export default function TravelListContainer({
       </div>
 
       <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        {/* Early return: 로딩 중 */}
-        {isLoadingFavorites ? (
+        {/* 로딩 중 */}
+        {isLoadingFavorites || (isLoadingMore && currentPage === 1) ? (
           <div className="text-center py-12 text-gray-500">
-            찜 목록을 확인하는 중...
+            {isLoadingFavorites ? "찜 목록을 확인하는 중..." : "여행지를 불러오는 중..."}
           </div>
         ) : displayPlaces.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
@@ -175,7 +193,7 @@ export default function TravelListContainer({
           </div>
         ) : (
           <>
-            {displayPlaces.slice(0, visibleCount).map((place) => (
+            {displayPlaces.map((place) => (
               <TravelListItem
                 key={place.place_id}
                 place={place}
@@ -183,13 +201,14 @@ export default function TravelListContainer({
                 onAddPlace={onAddPlace}
               />
             ))}
-            {visibleCount < displayPlaces.length && (
+            {hasMore && (
               <div className="mt-4 text-center">
                 <button
                   onClick={handleLoadMore}
-                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                  disabled={isLoadingMore}
+                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  더보기
+                  {isLoadingMore ? "불러오는 중..." : "더보기"}
                 </button>
               </div>
             )}

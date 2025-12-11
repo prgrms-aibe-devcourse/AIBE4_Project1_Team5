@@ -6,6 +6,7 @@ import { createBrowserClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { PlaceCache } from "@/lib/placeCache";
+import { HomeCache } from "@/lib/homeCache";
 
 interface FavoriteButtonProps {
   initialIsFavorite: boolean;
@@ -119,10 +120,34 @@ export default function FavoriteButton({
 
         setIsFavorite(true);
         setFavoriteCount(favoriteCount + 1);
+
+        const { data: updatedPlace } = await supabase
+          .from("place")
+          .select("favorite_count")
+          .eq("place_id", placeId)
+          .single();
+
+        console.log(`[찜 추가] ${placeId}: favorite_count = ${updatedPlace?.favorite_count}`);
       }
 
       // 찜 상태가 변경되면 모든 여행지 캐시를 무효화
+      console.log(`[찜 ${isFavorite ? '취소' : '추가'}] ${placeId} - 캐시 무효화 시작`);
       PlaceCache.clearAllCache();
+      HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+      // TOP 3 Materialized View 갱신
+      console.log("[찜] TOP 3 갱신 시작");
+      await supabase.rpc('refresh_top_places');
+
+      // 페이지 리프레시하여 새로운 정렬 데이터 가져오기
+      console.log("[찜] router.refresh() 호출");
+      router.refresh();
+
+      // DB 동기화 대기
+      setTimeout(() => {
+        console.log("[찜] 2차 router.refresh() 호출");
+        router.refresh();
+      }, 100);
 
     } catch (error) {
       console.error("찜 업데이트 실패:", error);

@@ -27,8 +27,6 @@ const compareNames = (a: string, b: string): number => {
 
 export const sortPlaces = (places: Place[], sortBy: string): Place[] => {
     return places.sort((a, b) => {
-        let result = 0;
-
         switch (sortBy) {
             case "reviews":
             case "reviews_desc": // 하위 호환성
@@ -51,19 +49,35 @@ export const sortPlaces = (places: Place[], sortBy: string): Place[] => {
             case "popularity":
             case "popularity_desc": // 하위 호환성
             default: {
-                const scoreA =
-                    (a.review_count || 0) +
-                    (a.favorite_count || 0) +
-                    (a.average_rating || 0);
-                const scoreB =
-                    (b.review_count || 0) +
-                    (b.favorite_count || 0) +
-                    (b.average_rating || 0);
+                // 인기순 정렬 우선순위:
+                // 1순위: 찜 개수 (favorite_count) DESC
+                // 2순위: 평점 (average_rating) DESC
+                // 3순위: 리뷰 개수 (review_count) DESC
+                // 4순위: 이름 ㄱㄴㄷ순
 
-                if (scoreB !== scoreA) {
-                    return scoreB - scoreA;
+                const favoriteA = a.favorite_count || 0;
+                const favoriteB = b.favorite_count || 0;
+                const reviewA = a.review_count || 0;
+                const reviewB = b.review_count || 0;
+                const ratingA = a.average_rating || 0;
+                const ratingB = b.average_rating || 0;
+
+                // 1순위: 찜 개수
+                if (favoriteB !== favoriteA) {
+                    return favoriteB - favoriteA;
                 }
-                // 인기도가 같을 경우 → ㄱㄴㄷ순
+
+                // 2순위: 평점
+                if (ratingB !== ratingA) {
+                    return ratingB - ratingA;
+                }
+
+                // 3순위: 리뷰 개수
+                if (reviewB !== reviewA) {
+                    return reviewB - reviewA;
+                }
+
+                // 4순위: 이름 ㄱㄴㄷ순
                 return compareNames(a.place_name, b.place_name);
             }
         }

@@ -11,33 +11,34 @@ export const toNumOrNull = (v: unknown): number | null => {
 };
 
 /** Place 객체로 변환 (다양한 형태의 raw 데이터를 통일) */
-export const coercePlace = (raw: any): Place => {
+export const coercePlace = (raw: unknown): Place => {
+  const rawData = raw as Record<string, unknown>;
   const place_id =
-    raw?.place_id ?? raw?.id ?? raw?.place?.place_id ?? raw?.place?.id ?? "";
+    rawData?.place_id ?? rawData?.id ?? (rawData?.place as Record<string, unknown>)?.place_id ?? (rawData?.place as Record<string, unknown>)?.id ?? "";
   const place_name =
-    raw?.place_name ??
-    raw?.name ??
-    raw?.place?.place_name ??
-    raw?.place?.name ??
+    rawData?.place_name ??
+    rawData?.name ??
+    (rawData?.place as Record<string, unknown>)?.place_name ??
+    (rawData?.place as Record<string, unknown>)?.name ??
     "";
 
   return {
-    place_id,
-    place_name,
+    place_id: String(place_id),
+    place_name: String(place_name),
     place_address:
-      raw?.place_address ?? raw?.address ?? raw?.place?.place_address ?? null,
-    latitude: toNumOrNull(raw?.latitude ?? raw?.place?.latitude),
-    longitude: toNumOrNull(raw?.longitude ?? raw?.place?.longitude),
+      (rawData?.place_address as string | null | undefined) ?? (rawData?.address as string | null | undefined) ?? ((rawData?.place as Record<string, unknown>)?.place_address as string | null | undefined) ?? null,
+    latitude: toNumOrNull(rawData?.latitude ?? (rawData?.place as Record<string, unknown>)?.latitude),
+    longitude: toNumOrNull(rawData?.longitude ?? (rawData?.place as Record<string, unknown>)?.longitude),
     place_image:
-      raw?.place_image ?? raw?.image ?? raw?.place?.place_image ?? "",
-    average_rating: (raw?.average_rating as number | null) ?? null,
-    favorite_count: (raw?.favorite_count as number | null) ?? null,
-    review_count: (raw?.review_count as number | null) ?? null,
+      (rawData?.place_image as string | undefined) ?? (rawData?.image as string | undefined) ?? ((rawData?.place as Record<string, unknown>)?.place_image as string | undefined) ?? "",
+    average_rating: (rawData?.average_rating as number | null) ?? null,
+    favorite_count: (rawData?.favorite_count as number | null) ?? null,
+    review_count: (rawData?.review_count as number | null) ?? null,
     place_description: null,
     region_id: null,
     place_category: null,
-    visit_order: raw?.visit_order ?? undefined,
-    day_number: raw?.day_number ?? undefined,
+    visit_order: rawData?.visit_order as number | undefined,
+    day_number: rawData?.day_number as number | undefined,
   };
 };
 

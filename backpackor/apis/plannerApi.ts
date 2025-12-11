@@ -55,17 +55,30 @@ export const loadPlanFromSession = ():
 
     Object.keys(parsed.plan || {}).forEach((dayKey) => {
       const day = parseInt(dayKey, 10);
-      const sessionPlaces: SessionPlace[] = (parsed.plan[day] ?? []).map((p: any, idx: number) => ({
-        place_id: String(p.place_id),
-        place_name: String(p.place_name ?? ""),
-        place_address: p.place_address ?? null,
-        place_image: p.place_image ?? null,
-        latitude: p.latitude ?? null,
-        longitude: p.longitude ?? null,
-        average_rating: p.average_rating ?? null,
-        visit_order: Number(p.visit_order ?? idx + 1),
-        day_number: Number(p.day_number ?? day),
-      }));
+      const sessionPlaces: SessionPlace[] = (parsed.plan[day] ?? []).map((p: unknown, idx: number) => {
+        const place = p as {
+          place_id?: unknown;
+          place_name?: unknown;
+          place_address?: string | null;
+          place_image?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          average_rating?: number | null;
+          visit_order?: unknown;
+          day_number?: unknown;
+        };
+        return {
+          place_id: String(place.place_id),
+          place_name: String(place.place_name ?? ""),
+          place_address: place.place_address ?? null,
+          place_image: place.place_image ?? null,
+          latitude: place.latitude ?? null,
+          longitude: place.longitude ?? null,
+          average_rating: place.average_rating ?? null,
+          visit_order: Number(place.visit_order ?? idx + 1),
+          day_number: Number(place.day_number ?? day),
+        };
+      });
       plan[day] = sessionPlaces;
     });
 

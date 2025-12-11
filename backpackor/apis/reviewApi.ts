@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { Review, ReviewWithImages, CreateReviewData, UpdateReviewData } from "@/types/review";
 import { PlaceCache } from "@/lib/placeCache";
+import { HomeCache } from "@/lib/homeCache";
 
 // 특정 리뷰 가져오기 (ID로)
 export const getReviewById = async (reviewId: string): Promise<ReviewWithImages | null> => {
@@ -219,8 +220,14 @@ export const saveReview = async (reviewData: CreateReviewData): Promise<Review |
       return null;
     }
 
-    // 리뷰가 저장되면 여행지 캐시 무효화
+    // 리뷰 작성 시 여행지 캐시 무효화 (평점/리뷰 개수 변경됨)
+    console.log("[리뷰 작성] 캐시 무효화 시작");
     PlaceCache.clearAllCache();
+    HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+    // TOP 3 Materialized View 갱신
+    console.log("[리뷰 작성] TOP 3 갱신 시작");
+    await supabase.rpc('refresh_top_places');
 
     return data;
   } catch (error) {
@@ -247,8 +254,14 @@ export const updateReview = async (
       return false;
     }
 
-    // 리뷰가 수정되면 여행지 캐시 무효화
+    // 리뷰 수정 시 여행지 캐시 무효화 (평점/리뷰 개수 변경 가능)
+    console.log("[리뷰 수정] 캐시 무효화 시작");
     PlaceCache.clearAllCache();
+    HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+    // TOP 3 Materialized View 갱신
+    console.log("[리뷰 수정] TOP 3 갱신 시작");
+    await supabase.rpc('refresh_top_places');
 
     return true;
   } catch (error) {
@@ -282,8 +295,14 @@ export const deleteReview = async (reviewId: string): Promise<boolean> => {
       return false;
     }
 
-    // 리뷰가 삭제되면 여행지 캐시 무효화
+    // 리뷰 삭제 시 여행지 캐시 무효화 (평점/리뷰 개수 변경됨)
+    console.log("[리뷰 삭제] 캐시 무효화 시작");
     PlaceCache.clearAllCache();
+    HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+    // TOP 3 Materialized View 갱신
+    console.log("[리뷰 삭제] TOP 3 갱신 시작");
+    await supabase.rpc('refresh_top_places');
 
     return true;
   } catch (error) {

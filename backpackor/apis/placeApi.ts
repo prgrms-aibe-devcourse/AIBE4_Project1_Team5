@@ -24,8 +24,9 @@ const getReviewCountMap = async (placeIds?: string[]) => {
 
         // JS에서 직접 그룹화 (리뷰 개수 계산)
         const map = new Map<string, number>();
-        (data || []).forEach((row: any) => {
-            const id = row.place_id;
+        (data || []).forEach((row: unknown) => {
+            const reviewRow = row as { place_id?: string };
+            const id = reviewRow.place_id;
             if (id) {
                 map.set(id, (map.get(id) || 0) + 1);
             }
@@ -75,7 +76,7 @@ export const getPlaceInfo = async (placeId: string) => {
 };
 
 /* ------------------------------------------------------
- * 모든 여행지 목록
+ * 모든 여행지 목록 (DB에서 완전 정렬 - View 사용)
  * ------------------------------------------------------ */
 export const getAllPlaces = async (
     sortBy: string = "popularity",
@@ -86,64 +87,57 @@ export const getAllPlaces = async (
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        // 리뷰순과 인기순은 전체 데이터를 가져와서 정렬 후 페이징
-        if (sortBy === "reviews" || sortBy === "reviews_desc" ||
-            sortBy === "popularity" || sortBy === "popularity_desc") {
-            // 전체 데이터 가져오기 (최대 10000개로 제한)
-            const { data, error } = await supabase
-                .from("place")
-                .select("*")
-                .limit(10000);
+        // View 조회 - DB에서 review_count 계산됨
+        let query = supabase.from("place_with_review_count").select("*");
 
-            if (error) {
-                console.error("Database query error (reviews/popularity sort):", error);
-                return [];
-            }
-
-            const places = (data || []) as Place[];
-            if (places.length === 0) return [];
-
-            // 모든 place의 review_count 계산
-            const placeIds = places.map(p => p.place_id);
-            const reviewCountMap = await getReviewCountMap(placeIds);
-            for (const p of places) {
-                p.review_count = reviewCountMap.get(p.place_id) ?? 0;
-            }
-
-            // 정렬
-            const sortedPlaces = sortPlaces(places, sortBy);
-
-            // 페이징
-            return sortedPlaces.slice(from, to + 1);
+        // 정렬 조건 적용
+        if (sortBy === "reviews" || sortBy === "reviews_desc") {
+            // 리뷰순: 리뷰 개수 → 이름
+            query = query
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else if (sortBy === "rating" || sortBy === "rating_desc") {
+            // 평점순: 평점 → 이름
+            query = query
+                .order("average_rating", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else {
+            // 인기순: 찜 → 평점 → 리뷰 → 이름
+            query = query
+                .order("favorite_count", { ascending: false })
+                .order("average_rating", { ascending: false })
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
         }
 
-        // 평점순은 DB에서 정렬 후 페이징
-        let query = supabase.from("place").select("*");
-
-        if (sortBy === "rating" || sortBy === "rating_desc") {
-            query = query.order("average_rating", { ascending: false });
-        }
-
+        // 페이징
         query = query.range(from, to);
 
         const { data, error } = await query;
 
         if (error) {
-            console.error("Database query error (rating sort):", error);
+            console.error("Database query error:", {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
             return [];
         }
 
         const places = (data || []) as Place[];
-        if (places.length === 0) return [];
 
-        // review_count 계산 (카드에 표시용)
-        const placeIds = places.map(p => p.place_id);
-        const reviewCountMap = await getReviewCountMap(placeIds);
-        for (const p of places) {
-            p.review_count = reviewCountMap.get(p.place_id) ?? 0;
+        // 클라이언트에서 한번 더 정렬 (한글 ㄱㄴㄷ순 보장)
+        const sortedPlaces = sortPlaces(places, sortBy);
+
+        // 디버깅: 정렬 결과 확인
+        if (sortBy === "popularity" || sortBy === "popularity_desc") {
+            console.log("[정렬 결과] TOP 5:", sortedPlaces.slice(0, 5).map(p =>
+                `${p.place_name}: 찜${p.favorite_count||0} 리뷰${p.review_count||0} 평점${(p.average_rating||0).toFixed(2)}`
+            ));
         }
 
-        return places;
+        return sortedPlaces;
     } catch (err) {
         console.error("Unexpected error:", err);
         return [];
@@ -173,7 +167,7 @@ export const getFavoritePlaceIds = async (userId: string): Promise<string[]> => 
 };
 
 /* ------------------------------------------------------
- * 찜한 여행지 목록
+ * 찜한 여행지 목록 (DB에서 완전 정렬 - View 사용)
  * ------------------------------------------------------ */
 export const getFavoritePlaces = async (
     userId: string,
@@ -184,8 +178,9 @@ export const getFavoritePlaces = async (
         const favoritePlaceIds = await getFavoritePlaceIds(userId);
         if (favoritePlaceIds.length === 0) return [];
 
+        // View 조회 - DB에서 review_count 계산됨
         let query = supabase
-            .from("place")
+            .from("place_with_review_count")
             .select("*")
             .in("place_id", favoritePlaceIds);
 
@@ -204,21 +199,39 @@ export const getFavoritePlaces = async (
             query = query.eq("place_category", filters.category);
         }
 
+        // 정렬 조건 적용
+        if (sortBy === "reviews" || sortBy === "reviews_desc") {
+            query = query
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else if (sortBy === "rating" || sortBy === "rating_desc") {
+            query = query
+                .order("average_rating", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else {
+            // 인기순: 찜 → 평점 → 리뷰 → 이름
+            query = query
+                .order("favorite_count", { ascending: false })
+                .order("average_rating", { ascending: false })
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
+        }
+
         const { data, error } = await query;
 
         if (error) {
-            console.error("Database query error:", error);
+            console.error("Database query error:", {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
             return [];
         }
 
         const places = (data || []) as Place[];
-        if (places.length === 0) return [];
 
-        const reviewCountMap = await getReviewCountMap(favoritePlaceIds);
-        for (const p of places) {
-            p.review_count = reviewCountMap.get(p.place_id) ?? 0;
-        }
-
+        // 클라이언트에서 한번 더 정렬 (한글 ㄱㄴㄷ순 보장)
         return sortPlaces(places, sortBy);
     } catch (err) {
         console.error("Unexpected error:", err);
@@ -245,56 +258,8 @@ export const searchPlaces = async (
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        // 리뷰순과 인기순은 전체 필터링된 데이터를 가져와서 정렬 후 페이징
-        if (sortBy === "reviews" || sortBy === "reviews_desc" ||
-            sortBy === "popularity" || sortBy === "popularity_desc") {
-            let query = supabase.from("place").select("*");
-
-            // 검색어 필터 (장소명만 검색)
-            if (filters.searchQuery && filters.searchQuery.trim() !== "") {
-                const searchTerm = filters.searchQuery.trim();
-                query = query.ilike("place_name", `%${searchTerm}%`);
-            }
-
-            // 지역 필터
-            if (filters.regionId) {
-                query = query.eq("region_id", filters.regionId);
-            }
-
-            // 카테고리 필터
-            if (filters.category && filters.category.trim() !== "") {
-                query = query.eq("place_category", filters.category.trim());
-            }
-
-            // 전체 데이터 가져오기 (최대 10000개로 제한)
-            query = query.limit(10000);
-
-            const { data, error } = await query;
-
-            if (error) {
-                console.error("Search query error (reviews/popularity sort):", error);
-                return [];
-            }
-
-            const places = (data || []) as Place[];
-            if (places.length === 0) return [];
-
-            // 모든 place의 review_count 계산
-            const placeIds = places.map(p => p.place_id);
-            const reviewCountMap = await getReviewCountMap(placeIds);
-            for (const p of places) {
-                p.review_count = reviewCountMap.get(p.place_id) ?? 0;
-            }
-
-            // 정렬
-            const sortedPlaces = sortPlaces(places, sortBy);
-
-            // 페이징
-            return sortedPlaces.slice(from, to + 1);
-        }
-
-        // 평점순은 DB에서 정렬 후 페이징
-        let query = supabase.from("place").select("*");
+        // View 조회 - DB에서 review_count 계산됨
+        let query = supabase.from("place_with_review_count").select("*");
 
         // 검색어 필터 (장소명만 검색)
         if (filters.searchQuery && filters.searchQuery.trim() !== "") {
@@ -312,30 +277,45 @@ export const searchPlaces = async (
             query = query.eq("place_category", filters.category.trim());
         }
 
-        if (sortBy === "rating" || sortBy === "rating_desc") {
-            query = query.order("average_rating", { ascending: false });
+        // 정렬 조건 적용
+        if (sortBy === "reviews" || sortBy === "reviews_desc") {
+            // 리뷰순: 리뷰 개수 → 이름
+            query = query
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else if (sortBy === "rating" || sortBy === "rating_desc") {
+            // 평점순: 평점 → 이름
+            query = query
+                .order("average_rating", { ascending: false })
+                .order("place_name", { ascending: true });
+        } else {
+            // 인기순: 찜 → 평점 → 리뷰 → 이름
+            query = query
+                .order("favorite_count", { ascending: false })
+                .order("average_rating", { ascending: false })
+                .order("review_count", { ascending: false })
+                .order("place_name", { ascending: true });
         }
 
+        // 페이징
         query = query.range(from, to);
 
         const { data, error } = await query;
 
         if (error) {
-            console.error("Search query error (rating sort):", error);
+            console.error("Search query error:", {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
             return [];
         }
 
         const places = (data || []) as Place[];
-        if (places.length === 0) return [];
 
-        // review_count 계산 (카드에 표시용)
-        const placeIds = places.map(p => p.place_id);
-        const reviewCountMap = await getReviewCountMap(placeIds);
-        for (const p of places) {
-            p.review_count = reviewCountMap.get(p.place_id) ?? 0;
-        }
-
-        return places;
+        // 클라이언트에서 한번 더 정렬 (한글 ㄱㄴㄷ순 보장)
+        return sortPlaces(places, sortBy);
     } catch (err) {
         console.error("Search unexpected error:", err);
         return [];

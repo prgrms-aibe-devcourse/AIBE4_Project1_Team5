@@ -3,6 +3,9 @@
 
 import { useRouter } from 'next/navigation';
 import { deleteReview } from '@/apis/reviewApi';
+import { PlaceCache } from '@/lib/placeCache';
+import { HomeCache } from '@/lib/homeCache';
+import { createBrowserClient } from '@/lib/supabaseClient';
 
 // ========== 리뷰 작성 버튼 ==========
 interface WriteButtonProps {
@@ -77,8 +80,18 @@ export function DeleteButton({ reviewId, className = '', onDelete, onClick }: De
 
     try {
       const success = await deleteReview(reviewId);
-      
+
       if (success) {
+        // 리뷰 삭제 시 여행지 캐시 무효화 (평점/리뷰 개수 변경됨)
+        console.log('[리뷰 삭제] 캐시 무효화 시작');
+        PlaceCache.clearAllCache();
+        HomeCache.clear(); // 메인페이지 캐시도 무효화
+
+        // TOP 3 Materialized View 갱신
+        console.log('[리뷰 삭제] TOP 3 갱신 시작');
+        const supabase = createBrowserClient();
+        await supabase.rpc('refresh_top_places');
+
         alert('리뷰가 삭제되었습니다.');
         if (onDelete) {
           onDelete(); // 삭제 후 콜백 실행

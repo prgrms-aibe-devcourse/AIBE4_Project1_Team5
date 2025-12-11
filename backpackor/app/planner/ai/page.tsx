@@ -19,6 +19,20 @@ export default function AiPlannerDatePage() {
       return;
     }
 
+    // AI 일정 생성 가능 날짜 제한 (최대 5일)
+    // 빡빡한 일정 기준 (하루 8개 × 5일 = 40개)을 고려하여 제한
+    const nights = differenceInDays(selectedRange.to, selectedRange.from);
+    const days = nights + 1;
+    const MAX_DAYS = 5;
+
+    if (days > MAX_DAYS) {
+      alert(
+        "AI 일정 생성은 4박 5일 이내로 선택해주세요.\n\n" +
+        "5박 6일 이상의 긴 일정은 직접 생성해주세요."
+      );
+      return;
+    }
+
     const startDate = format(selectedRange.from, "yyyy-MM-dd");
     const endDate = format(selectedRange.to, "yyyy-MM-dd");
 

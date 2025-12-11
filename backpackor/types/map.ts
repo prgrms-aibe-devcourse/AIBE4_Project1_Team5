@@ -33,6 +33,9 @@ export type DayDistances = Record<number, number>;
 /** Kakao Maps 전역 타입 */
 declare global {
   interface Window {
-    kakao: any;
+    kakao: {
+      maps: unknown;
+      [key: string]: unknown;
+    };
   }
 }

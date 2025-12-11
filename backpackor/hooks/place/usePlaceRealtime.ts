@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@/lib/supabaseClient";
 import type { Place } from "@/types/place";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export const usePlaceRealtime = (initialPlaces: Place[]) => {
   const [places, setPlaces] = useState<Place[]>(initialPlaces);
@@ -20,15 +21,17 @@ export const usePlaceRealtime = (initialPlaces: Place[]) => {
           schema: "public",
           table: "place",
         },
-        (payload: any) => {
+        (payload: RealtimePostgresChangesPayload<Place>) => {
           const updated = payload.new as Place;
-          setPlaces((prev) =>
-            prev.map((p) =>
-              p.place_id === updated.place_id
-                ? { ...p, average_rating: updated.average_rating }
-                : p
-            )
-          );
+          if (updated && updated.place_id) {
+            setPlaces((prev) =>
+              prev.map((p) =>
+                p.place_id === updated.place_id
+                  ? { ...p, average_rating: updated.average_rating }
+                  : p
+              )
+            );
+          }
         }
       )
       .subscribe();

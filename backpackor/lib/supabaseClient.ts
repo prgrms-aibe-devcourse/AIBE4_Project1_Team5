@@ -51,14 +51,15 @@ export const createBrowserClient = () => {
 };
 
 /**
- * 레거시 호환용 export
- * 클라이언트 컴포넌트와 hooks에서만 사용하세요
- * @deprecated 서버 컴포넌트에서는 createServerClient()를 사용하세요
+ * 브라우저용 Supabase 클라이언트 (편의성 export)
+ * 클라이언트 컴포넌트와 hooks에서 사용하세요
+ *
+ * 주의: 서버 컴포넌트에서는 createServerClient()를 사용하세요
  */
 export const supabase = new Proxy({} as SupabaseClient, {
     get(target, prop) {
         // 실제 호출 시점에 브라우저 클라이언트를 반환
         const client = createBrowserClient();
-        return (client as any)[prop];
+        return client[prop as keyof SupabaseClient];
     }
 });

@@ -78,24 +78,39 @@ export default async function EditPlannerPage({
 
       if (detailData && detailData.length > 0) {
         // 3. 기존 일정을 Plan 형태로 변환
-        existingPlan = detailData.reduce((acc: Plan, item: any) => {
-          const day = item.day_number;
+        existingPlan = detailData.reduce((acc: Plan, item: unknown) => {
+          const detailItem = item as {
+            day_number: number;
+            visit_order: number;
+            place: {
+              place_id: string;
+              place_name: string;
+              place_address?: string;
+              latitude?: number;
+              longitude?: number;
+              place_image?: string;
+              average_rating?: number;
+              favorite_count?: number;
+              region?: { region_id: number };
+            };
+          };
+          const day = detailItem.day_number;
           if (!acc[day]) acc[day] = [];
 
           acc[day].push({
-            place_id: item.place.place_id,
-            place_name: item.place.place_name,
-            place_address: item.place.place_address,
-            latitude: item.place.latitude,
-            longitude: item.place.longitude,
-            place_image: item.place.place_image,
-            average_rating: item.place.average_rating,
-            favorite_count: item.place.favorite_count,
-            visit_order: item.visit_order,
-            day_number: item.day_number,
+            place_id: detailItem.place.place_id,
+            place_name: detailItem.place.place_name,
+            place_address: detailItem.place.place_address,
+            latitude: detailItem.place.latitude,
+            longitude: detailItem.place.longitude,
+            place_image: detailItem.place.place_image,
+            average_rating: detailItem.place.average_rating,
+            favorite_count: detailItem.place.favorite_count,
+            visit_order: detailItem.visit_order,
+            day_number: detailItem.day_number,
             review_count: null,
             place_description: null,
-            region_id: item.place.region?.region_id || null,
+            region_id: detailItem.place.region?.region_id || null,
             place_category: null,
           });
 
@@ -103,7 +118,7 @@ export default async function EditPlannerPage({
         }, {});
 
         // 4. 지역 ID 정보 추출
-        const placeIds = detailData.map((item: any) => item.place_id);
+        const placeIds = detailData.map((item: unknown) => (item as { place_id: string }).place_id);
         const { data: regionData, error: regionError } = await supabase
           .from("place")
           .select("region_id")
@@ -116,7 +131,7 @@ export default async function EditPlannerPage({
         }
 
         regionIdsForFiltering = [
-          ...new Set(regionData.map((item: any) => item.region_id)),
+          ...new Set(regionData.map((item: unknown) => (item as { region_id: number }).region_id)),
         ];
       }
     } else {
@@ -154,21 +169,35 @@ export default async function EditPlannerPage({
     }
 
     // 필드 매핑
-    places = (placeData || []).map((p: any) => ({
-      place_id: p.place_id,
-      place_name: p.place_name,
-      place_address: p.place_address,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      place_image: p.place_image,
-      average_rating: p.average_rating,
-      favorite_count: p.favorite_count,
-      review_count: null,
-      place_description: null,
-      region_id: p.region_id || null,
-      place_category: null,
-    }));
-  } catch (error: any) {
+    places = (placeData || []).map((p: unknown) => {
+      const placeItem = p as {
+        place_id: string;
+        place_name: string;
+        place_address?: string;
+        latitude?: number;
+        longitude?: number;
+        place_image?: string;
+        average_rating?: number;
+        favorite_count?: number;
+        region_id?: number;
+      };
+      return {
+        place_id: placeItem.place_id,
+        place_name: placeItem.place_name,
+        place_address: placeItem.place_address,
+        latitude: placeItem.latitude,
+        longitude: placeItem.longitude,
+        place_image: placeItem.place_image,
+        average_rating: placeItem.average_rating,
+        favorite_count: placeItem.favorite_count,
+        review_count: null,
+        place_description: null,
+        region_id: placeItem.region_id || null,
+        place_category: null,
+      };
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="max-w-md w-full mx-auto px-4">
@@ -190,7 +219,7 @@ export default async function EditPlannerPage({
               데이터를 불러올 수 없습니다
             </h2>
             <p className="text-gray-600 mb-4">
-              {error.message || "알 수 없는 오류가 발생했습니다."}
+              {errorMessage}
             </p>
             <button
               onClick={() => window.history.back()}

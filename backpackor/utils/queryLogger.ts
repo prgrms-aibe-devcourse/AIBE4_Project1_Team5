@@ -37,19 +37,19 @@ const logQuery = (log: QueryLog) => {
  * PostgrestQueryBuilder를 래핑하여 쿼리 로깅 추가
  */
 export const wrapQueryWithLogging = (
-    originalQuery: any,
+    originalQuery: unknown,
     tableName: string,
     queryParts: string[] = []
 ) => {
     const startTime = Date.now();
     const timestamp = new Date().toISOString();
 
-    const wrappedQuery = new Proxy(originalQuery, {
+    const wrappedQuery = new Proxy(originalQuery as object, {
         get(target, prop: string) {
-            const originalMethod = target[prop];
+            const originalMethod = (target as Record<string, unknown>)[prop];
 
             if (typeof originalMethod === "function") {
-                return function (...args: any[]) {
+                return function (...args: unknown[]) {
                     const result = originalMethod.apply(target, args);
                     const newQueryParts = [...queryParts];
 
@@ -78,9 +78,9 @@ export const wrapQueryWithLogging = (
                     } else if (prop === "lte") {
                         newQueryParts.push(`WHERE ${args[0]} <= '${args[1]}'`);
                     } else if (prop === "in") {
-                        newQueryParts.push(`WHERE ${args[0]} IN (${args[1].join(", ")})`);
+                        newQueryParts.push(`WHERE ${args[0]} IN (${(args[1] as unknown[]).join(", ")})`);
                     } else if (prop === "order") {
-                        const direction = args[1]?.ascending ? "ASC" : "DESC";
+                        const direction = (args[1] as { ascending?: boolean })?.ascending ? "ASC" : "DESC";
                         newQueryParts.push(`ORDER BY ${args[0]} ${direction}`);
                     } else if (prop === "limit") {
                         newQueryParts.push(`LIMIT ${args[0]}`);
@@ -129,7 +129,7 @@ export const createLoggedSupabaseClient = (client: SupabaseClient) => {
 
             if (prop === "from" && typeof originalMethod === "function") {
                 return function (tableName: string) {
-                    const query = (originalMethod as any).call(target, tableName);
+                    const query = (originalMethod as (tableName: string) => unknown).call(target, tableName);
                     return wrapQueryWithLogging(query, tableName);
                 };
             }

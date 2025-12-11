@@ -1,5 +1,6 @@
 // 여행지 캐시 관리 유틸리티
 import type { Place } from "@/types/place";
+import type { PlaceSearchFilters } from "@/apis/placeApi";
 
 interface CacheChunk {
   data: Place[];
@@ -27,7 +28,7 @@ export class PlaceCache {
   /**
    * 필터를 문자열로 직렬화
    */
-  private static serializeFilters(filters?: any): string {
+  private static serializeFilters(filters?: PlaceSearchFilters): string {
     if (!filters) return "all";
     return JSON.stringify(filters);
   }
@@ -45,7 +46,7 @@ export class PlaceCache {
    */
   static getChunk(
     sortBy: string,
-    filters: any,
+    filters: PlaceSearchFilters | undefined,
     chunkIndex: number
   ): Place[] | null {
     try {
@@ -116,7 +117,7 @@ export class PlaceCache {
    */
   static setChunk(
     sortBy: string,
-    filters: any,
+    filters: PlaceSearchFilters | undefined,
     chunkIndex: number,
     data: Place[]
   ): void {
@@ -160,7 +161,7 @@ export class PlaceCache {
    */
   static getPageData(
     sortBy: string,
-    filters: any,
+    filters: PlaceSearchFilters | undefined,
     page: number,
     limit: number
   ): Place[] | null {
@@ -177,7 +178,7 @@ export class PlaceCache {
   /**
    * 특정 정렬/필터 조건의 모든 캐시 삭제
    */
-  static clearCache(sortBy: string, filters: any): void {
+  static clearCache(sortBy: string, filters: PlaceSearchFilters | undefined): void {
     try {
       const filterStr = this.serializeFilters(filters);
       const keys = Object.keys(localStorage);
@@ -202,11 +203,15 @@ export class PlaceCache {
   static clearAllCache(): void {
     try {
       const keys = Object.keys(localStorage);
-      keys.forEach((key) => {
-        if (key.startsWith(CACHE_KEY_PREFIX)) {
-          localStorage.removeItem(key);
-        }
+      const cacheKeys = keys.filter((key) => key.startsWith(CACHE_KEY_PREFIX));
+
+      console.log(`[캐시 무효화] 삭제할 캐시 개수: ${cacheKeys.length}`);
+
+      cacheKeys.forEach((key) => {
+        localStorage.removeItem(key);
       });
+
+      console.log(`[캐시 무효화] 모든 여행지 캐시 삭제 완료`);
     } catch (error) {
       console.error("전체 캐시 삭제 오류:", error);
     }

@@ -25,14 +25,14 @@ export interface UseImageModalReturn {
 /** 지도 포커스 Hook Props */
 export interface UseMapFocusProps {
   focusDay: number | null;
-  plan: Record<number, any[]>;
-  map: any;
+  plan: Record<number, Place[]>;
+  map: unknown;
   onFocusComplete?: () => void;
 }
 
 /** 카카오 지도 렌더러 Hook Props */
 export interface UseKakaoMapRendererProps {
-  map: any;
+  map: unknown;
   plan: Record<number, Array<{ latitude: number; longitude: number; name: string; order: number }>>;
   focusDay: number | null;
   onFocusComplete?: () => void;

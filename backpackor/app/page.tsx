@@ -32,44 +32,31 @@ export default function Page() {
         return;
       }
 
-      // 캐시 없으면 데이터 가져오기
+      // TOP 3를 Materialized View에서 직접 가져오기 (미리 계산된 데이터)
       const supabase = createBrowserClient();
 
-      // 병렬로 데이터 조회
-      const [allPlacesResult, allReviewsResult] = await Promise.all([
-        supabase.from("place").select("*"),
-        supabase.from("review").select("place_id")
+      // Materialized View에서 TOP 3 조회
+      const [popularResult, bestResult] = await Promise.all([
+        // 인기순 TOP 3
+        supabase
+          .from("top_popular_places")
+          .select("*")
+          .order("rank", { ascending: true }),
+        // 평점순 TOP 3
+        supabase
+          .from("top_best_places")
+          .select("*")
+          .order("rank", { ascending: true })
       ]);
 
-      const allPlaces = allPlacesResult.data || [];
-      const allReviews = allReviewsResult.data || [];
-
-      // 리뷰 개수 맵 생성
-      const reviewCountMap = new Map<string, number>();
-      allReviews.forEach((row: any) => {
-        const id = row.place_id;
-        if (id) {
-          reviewCountMap.set(id, (reviewCountMap.get(id) || 0) + 1);
-        }
-      });
-
-      // 모든 여행지에 리뷰 개수 적용
-      const placesWithReviewCount = allPlaces.map((place) => ({
-        ...place,
-        review_count: reviewCountMap.get(place.place_id) || 0,
-      }));
-
-      // 인기순 정렬 후 상위 3개
-      const sortedPopular = sortPlaces([...placesWithReviewCount], "popularity").slice(0, 3);
-
-      // 별점순 정렬 후 상위 3개
-      const sortedBest = sortPlaces([...placesWithReviewCount], "rating").slice(0, 3);
+      const popularPlacesData = popularResult.data || [];
+      const bestPlacesData = bestResult.data || [];
 
       // 캐시에 저장
-      HomeCache.set(sortedPopular, sortedBest);
+      HomeCache.set(popularPlacesData, bestPlacesData);
 
-      setPopularPlaces(sortedPopular);
-      setBestPlaces(sortedBest);
+      setPopularPlaces(popularPlacesData);
+      setBestPlaces(bestPlacesData);
       setIsLoading(false);
     };
 

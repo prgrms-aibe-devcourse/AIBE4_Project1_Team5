@@ -4,7 +4,7 @@
 export interface QueryLog {
   timestamp: string;
   query: string;
-  params?: any;
+  params?: Record<string, unknown>;
   duration?: number;
 }
 

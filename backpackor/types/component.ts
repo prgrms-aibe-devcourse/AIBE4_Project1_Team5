@@ -3,6 +3,7 @@ import type { Place } from './place';
 import type { Review } from './review';
 import type { TripPlan, TripPlanDetail, GroupedDetails } from './trip';
 import type { Region } from './region';
+import type { DragEndEvent } from '@dnd-kit/core';
 
 /** 페이지 Props (동적 라우팅) */
 export interface PageProps<T = Record<string, string>> {
@@ -189,7 +190,7 @@ export interface DayPlanListProps {
   places: Place[];
   onRemove: (placeId: string) => void;
   onPlaceClick: (placeId: string) => void;
-  onDragEnd: (event: any) => void;
+  onDragEnd: (event: DragEndEvent) => void;
 }
 
 /** Sortable 아이템 Props */
