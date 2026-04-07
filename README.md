@@ -1,4 +1,5 @@
 # BackpacKOR [ 국내 여행 코스 추천 플랫폼 ]
+<img width="300" height="300" alt="최종" src="https://github.com/user-attachments/assets/70dcdcb8-0f36-4e2d-8808-33960b9daa21" />
 
 <h3 align="left">"Be a Backpacker with backpacKOR!"</h3>
 
@@ -14,26 +15,14 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 <br>
 
-## 개발 기간
-**2025.09 ~ 2025.10**
-
-<br>
-
-## 배포 링크
-[![백팩코 바로가기](https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/red.png)](https://backpackor.vercel.app/)
-<br>
-[![백팩코 바로가기](https://rlnpoyrapczrsgmxtlrr.supabase.co/storage/v1/object/public/logo/brand/black.png)](https://backpackor.vercel.app/)
-
-<br>
-
 ## 팀원 및 담당 기능
 
 | 이름 | 주요 담당 기능 |
 |------|----------------|
-| **김소명** | 소셜 로그인/인증, 마이페이지, 카카오맵 경로 시각화, AI 고도화, 페이지네이션/캐싱 |
+| **김소명** | 소셜 로그인/인증, 마이페이지, 카카오맵 경로 데이터화, LLM 응답 품질 고도화, 페이지네이션/캐싱 |
 | **박형민** | 별점·리뷰 시스템 |
 | **서희수** | 메인 화면, 여행지, 찜 시스템 |
-| **승명배** | 일정 계획 시스템, AI 기반 일정 추천, 내 일정 시스템 |
+| **승명배** | 일정 계획 시스템, LLM 기반 일정 추천, 내 일정 시스템 |
 | **장창용** | 여행지 상세 페이지, 모달, 찜 시스템, 리뷰 도움 시스템 |
 
 <br>
@@ -41,7 +30,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 ## 주요 기능
 
 ### 공통
-| 메인 화면 | 여행지 목록 | 검색 기능 | AI 코스 추천 | 소셜 로그인 |
+| 메인 화면 | 여행지 목록 | 검색 기능 | LLM 코스 추천 | 소셜 로그인 |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://github.com/user-attachments/assets/7b33c51f-43bb-4841-80f0-12373b7d0340" width="200"> | <img src="https://github.com/user-attachments/assets/81c01d7b-ea96-4ddd-b1ce-0aa5320d1c85" width="200"> | <img src="https://github.com/user-attachments/assets/a1537882-4a7c-4fec-acba-ffa075d72d34" width="200"> | <img src="https://github.com/user-attachments/assets/3e4086ba-06e8-4b5a-932a-80a15dbb07a4" width="200"> | <img src="https://github.com/user-attachments/assets/2ce54773-3a98-4d45-ab98-7f5b87f6bbb9" width="200"> |
 #### 공통 핵심 기능
@@ -85,10 +74,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 
 <br>
 
-### 리뷰 페이지
-| 리뷰 목록 | 리뷰 필터링 | 리뷰 도움 시스템 | 리뷰 작성 | 내가 쓴 리뷰 조회 |
-|:---:|:---:|:---:|:---:|:---:|
-| *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* | *(이미지 삽입)* |
+### 리뷰
 #### 리뷰 기능 상세
 | 기능 분류 | 상세 설명 |	
 |:---:|:---|
@@ -123,7 +109,7 @@ AI가 나만의 여행 코스를 자동으로 제안해주며, 버튼 한 번으
 | **백엔드** | Next.js, Node.js |
 | **데이터베이스** | Supabase (PostgreSQL) |
 | **인증** | Supabase Auth |
-| **AI 서비스** | Gemini 2.5 Flash |
+| **LLM** | Gemini 2.5 Flash |
 | **외부 API** | Kakao 지도 API |
 | **정적 분석** | Prettier, ESLint |
 | **배포** | Vercel |
